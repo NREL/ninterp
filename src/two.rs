@@ -22,7 +22,7 @@ impl Interp2D {
         f_xy: Vec<Vec<f64>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, ValidationError> {
         let interp = Self {
             x,
             y,
@@ -54,25 +54,25 @@ impl Interp2D {
     /// Function to set x variable from Interp2D
     /// # Arguments
     /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), ValidationError> {
         self.x = new_x;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set y variable from Interp2D
     /// # Arguments
     /// - `new_y`: updated `y` variable to replace the current `y` variable
-    pub fn set_y(&mut self, new_y: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_y(&mut self, new_y: Vec<f64>) -> Result<(), ValidationError> {
         self.y = new_y;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set f_xy variable from Interp2D
     /// # Arguments
     /// - `new_f_xy`: updated `f_xy` variable to replace the current `f_xy` variable
-    pub fn set_f_xy(&mut self, new_f_xy: Vec<Vec<f64>>) -> anyhow::Result<()> {
+    pub fn set_f_xy(&mut self, new_f_xy: Vec<Vec<f64>>) -> Result<(), ValidationError> {
         self.f_xy = new_f_xy;
-        Ok(self.validate()?)
+        self.validate()
     }
 }
 
@@ -84,7 +84,7 @@ impl InterpMethods for Interp2D {
         }
 
         // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+        if matches!(self.extrapolate, Extrapolate::Enable) {
             return Err(ValidationError::ExtrapolationSelection);
         }
 
@@ -177,7 +177,7 @@ mod tests {
             vec![0., 1.],
             vec![vec![0., 1.], vec![2., 3.]],
             Strategy::Linear,
-            Extrapolate::Extrapolate,
+            Extrapolate::Enable,
         )
         .is_err());
         // Extrapolate::Error

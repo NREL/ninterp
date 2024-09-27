@@ -20,7 +20,7 @@ impl Interp1D {
         f_x: Vec<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, ValidationError> {
         let interp = Self {
             x,
             f_x,
@@ -36,7 +36,7 @@ impl Interp1D {
             return Ok(self.f_x[i]);
         }
         // Extrapolate, if applicable
-        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+        if matches!(self.extrapolate, Extrapolate::Enable) {
             if point < self.x[0] {
                 let slope = (self.f_x[1] - self.f_x[0]) / (self.x[1] - self.x[0]);
                 return Ok(slope * (point - self.x[0]) + self.f_x[0]);
@@ -83,17 +83,17 @@ impl Interp1D {
     /// Function to set x variable from Interp1D
     /// # Arguments
     /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), ValidationError> {
         self.x = new_x;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set f_x variable from Interp1D
     /// # Arguments
     /// - `new_f_x`: updated `f_x` variable to replace the current `f_x` variable
-    pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> Result<(), ValidationError> {
         self.f_x = new_f_x;
-        Ok(self.validate()?)
+        self.validate()
     }
 }
 
@@ -102,7 +102,7 @@ impl InterpMethods for Interp1D {
         let x_grid_len = self.x.len();
 
         // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+        if matches!(self.extrapolate, Extrapolate::Enable) {
             if !matches!(self.strategy, Strategy::Linear) {
                 return Err(ValidationError::ExtrapolationSelection);
             }
@@ -233,7 +233,7 @@ mod tests {
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Strategy::Nearest,
-            Extrapolate::Extrapolate,
+            Extrapolate::Enable,
         )
         .is_err());
         // Extrapolate::Error
@@ -272,7 +272,7 @@ mod tests {
                 vec![0., 1., 2., 3., 4.],
                 vec![0.2, 0.4, 0.6, 0.8, 1.0],
                 Strategy::Linear,
-                Extrapolate::Extrapolate,
+                Extrapolate::Enable,
             )
             .unwrap(),
         );

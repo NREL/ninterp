@@ -24,7 +24,7 @@ impl Interp3D {
         f_xyz: Vec<Vec<Vec<f64>>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, ValidationError> {
         let interp = Self {
             x,
             y,
@@ -67,33 +67,33 @@ impl Interp3D {
     /// Function to set x variable from Interp3D
     /// # Arguments
     /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), ValidationError> {
         self.x = new_x;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set y variable from Interp3D
     /// # Arguments
     /// - `new_y`: updated `y` variable to replace the current `y` variable
-    pub fn set_y(&mut self, new_y: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_y(&mut self, new_y: Vec<f64>) -> Result<(), ValidationError> {
         self.y = new_y;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set z variable from Interp3D
     /// # Arguments
     /// - `new_z`: updated `z` variable to replace the current `z` variable
-    pub fn set_z(&mut self, new_z: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_z(&mut self, new_z: Vec<f64>) -> Result<(), ValidationError> {
         self.z = new_z;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set f_xyz variable from Interp3D
     /// # Arguments
     /// - `new_f_xyz`: updated `f_xyz` variable to replace the current `f_xyz` variable
-    pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> anyhow::Result<()> {
+    pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), ValidationError> {
         self.f_xyz = new_f_xyz;
-        Ok(self.validate()?)
+        self.validate()
     }
 }
 
@@ -105,7 +105,7 @@ impl InterpMethods for Interp3D {
         }
 
         // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+        if matches!(self.extrapolate, Extrapolate::Enable) {
             return Err(ValidationError::ExtrapolationSelection);
         }
 
@@ -266,7 +266,7 @@ mod tests {
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
             Strategy::Linear,
-            Extrapolate::Extrapolate,
+            Extrapolate::Enable,
         )
         .is_err());
         // Extrapolate::Error

@@ -24,7 +24,7 @@ impl InterpND {
         values: ndarray::ArrayD<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, ValidationError> {
         let interp = Self {
             grid,
             values,
@@ -146,41 +146,41 @@ impl InterpND {
     /// Function to set grid variable from InterpND
     /// # Arguments
     /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
-    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> anyhow::Result<()> {
+    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
         self.grid = new_grid;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set grid x variable from InterpND
     /// # Arguments
     /// - `new_x`: updated `grid[0]` to replace the current `grid[0]`
-    pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> Result<(), ValidationError> {
         self.grid[0] = new_grid_x;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set grid y variable from InterpND
     /// # Arguments
     /// - `new_y`: updated `grid[1]` to replace the current `grid[1]`
-    pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> Result<(), ValidationError> {
         self.grid[1] = new_grid_y;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set grid z variable from InterpND
     /// # Arguments
     /// - `new_z`: updated `grid[2]` to replace the current `grid[2]`
-    pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> Result<(), ValidationError> {
         self.grid[2] = new_grid_z;
-        Ok(self.validate()?)
+        self.validate()
     }
 
     /// Function to set values variable from InterpND
     /// # Arguments
     /// - `new_values`: updated `values` variable to replace the current `values` variable
-    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> anyhow::Result<()> {
+    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
         self.values = new_values;
-        Ok(self.validate()?)
+        self.validate()
     }
 }
 
@@ -200,7 +200,7 @@ impl InterpMethods for InterpND {
         }
 
         // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+        if matches!(self.extrapolate, Extrapolate::Enable) {
             return Err(ValidationError::ExtrapolationSelection);
         }
 
@@ -341,7 +341,7 @@ mod tests {
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
             ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
-            Extrapolate::Extrapolate,
+            Extrapolate::Enable,
         )
         .is_err());
         // Extrapolate::Error

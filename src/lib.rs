@@ -60,7 +60,7 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///         vec![0., 1., 2.], // x0, x1, x2
 ///         vec![0.2, 0.4, 0.6], // f(x0), f(x1), f(x2)
 ///         Strategy::Linear, // linear interpolation
-///         Extrapolate::Extrapolate, // linearly extrapolate when point is out of bounds
+///         Extrapolate::Enable, // linearly extrapolate when point is out of bounds
 ///     )
 ///     .unwrap(), // handle data validation results
 /// );
@@ -306,199 +306,186 @@ impl Interpolator {
     }
 
     /// Function to get x variable from enum variants
-    pub fn x(&self) -> anyhow::Result<Vec<f64>> {
+    pub fn x(&self) -> Result<Vec<f64>, Error> {
         match self {
             Interpolator::Interp1D(interp) => Ok(interp.x.to_vec()),
             Interpolator::Interp2D(interp) => Ok(interp.x.to_vec()),
             Interpolator::Interp3D(interp) => Ok(interp.x.to_vec()),
-            _ => anyhow::bail!("Variant does not have `x` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set x variable from enum variants
     /// # Arguments
     /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => interp.set_x(new_x)?,
-            Interpolator::Interp2D(interp) => interp.set_x(new_x)?,
-            Interpolator::Interp3D(interp) => interp.set_x(new_x)?,
+            Interpolator::Interp1D(interp) => Ok(interp.set_x(new_x)?),
+            Interpolator::Interp2D(interp) => Ok(interp.set_x(new_x)?),
+            Interpolator::Interp3D(interp) => Ok(interp.set_x(new_x)?),
             #[cfg(feature = "nd")]
-            Interpolator::InterpND(interp) => interp.set_grid_x(new_x)?,
-            _ => {
-                anyhow::bail!(
-                    "Variant does not have `x` field (or a grid row 0 in the case of InterpND)."
-                )
-            }
+            Interpolator::InterpND(interp) => Ok(interp.set_grid_x(new_x)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get f_x variable from enum variants
-    pub fn f_x(&self) -> anyhow::Result<Vec<f64>> {
+    pub fn f_x(&self) -> Result<Vec<f64>, Error> {
         match self {
             Interpolator::Interp1D(interp) => Ok(interp.f_x.to_vec()),
-            _ => anyhow::bail!("Variant does not have `f_x` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set f_x variable from enum variants
     /// # Arguments
     /// - `new_f_x`: updated `f_x` variable to replace the current `f_x` variable
-    pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => interp.set_f_x(new_f_x)?,
-            _ => anyhow::bail!("Variant does not have `f_x` field."),
+            Interpolator::Interp1D(interp) => Ok(interp.set_f_x(new_f_x)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get strategy variable from enum variants
-    pub fn strategy(&self) -> anyhow::Result<Strategy> {
+    pub fn strategy(&self) -> Result<Strategy, Error> {
         match self {
             Interpolator::Interp1D(interp) => Ok(interp.strategy.to_owned()),
             Interpolator::Interp2D(interp) => Ok(interp.strategy.to_owned()),
             Interpolator::Interp3D(interp) => Ok(interp.strategy.to_owned()),
             #[cfg(feature = "nd")]
             Interpolator::InterpND(interp) => Ok(interp.strategy.to_owned()),
-            _ => anyhow::bail!("Variant does not have `strategy` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set strategy variable from enum variants
     /// # Arguments
     /// - `new_strategy`: updated `strategy` variable to replace the current `strategy` variable
-    pub fn set_strategy(&mut self, new_strategy: Strategy) -> anyhow::Result<()> {
+    pub fn set_strategy(&mut self, new_strategy: Strategy) -> Result<(), Error> {
         match self {
             Interpolator::Interp1D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp2D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp3D(interp) => interp.strategy = new_strategy,
             #[cfg(feature = "nd")]
             Interpolator::InterpND(interp) => interp.strategy = new_strategy,
-            _ => anyhow::bail!("Variant does not have `strategy` field."),
+            _ => return Err(Error::NoSuchField),
         }
         Ok(())
     }
 
     /// Function to get extrapolate variable from enum variants
-    pub fn extrapolate(&self) -> anyhow::Result<Extrapolate> {
+    pub fn extrapolate(&self) -> Result<Extrapolate, Error> {
         match self {
             Interpolator::Interp1D(interp) => Ok(interp.extrapolate.to_owned()),
             Interpolator::Interp2D(interp) => Ok(interp.extrapolate.to_owned()),
             Interpolator::Interp3D(interp) => Ok(interp.extrapolate.to_owned()),
             #[cfg(feature = "nd")]
             Interpolator::InterpND(interp) => Ok(interp.extrapolate.to_owned()),
-            _ => anyhow::bail!("Variant does not have `extrapolate` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set extrapolate variable from enum variants
     /// # Arguments
     /// - `new_extrapolate`: updated `extrapolate` variable to replace the current `extrapolate` variable
-    pub fn set_extrapolate(&mut self, new_extrapolate: Extrapolate) -> anyhow::Result<()> {
+    pub fn set_extrapolate(&mut self, new_extrapolate: Extrapolate) -> Result<(), Error> {
         match self {
             Interpolator::Interp1D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp2D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp3D(interp) => interp.extrapolate = new_extrapolate,
             #[cfg(feature = "nd")]
             Interpolator::InterpND(interp) => interp.extrapolate = new_extrapolate,
-            _ => anyhow::bail!("Variant does not have `extrapolate` field."),
+            _ => return Err(Error::NoSuchField),
         }
         Ok(())
     }
 
     /// Function to get y variable from enum variants
-    pub fn y(&self) -> anyhow::Result<Vec<f64>> {
+    pub fn y(&self) -> Result<Vec<f64>, Error> {
         match self {
             Interpolator::Interp2D(interp) => Ok(interp.y.to_vec()),
             Interpolator::Interp3D(interp) => Ok(interp.y.to_vec()),
-            _ => anyhow::bail!("Variant does not have `y` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set y variable from enum variants
     /// # Arguments
     /// - `new_y`: updated `y` variable to replace the current `y` variable
-    pub fn set_y(&mut self, new_y: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_y(&mut self, new_y: Vec<f64>) -> Result<(), Error> {
         match self {
             Interpolator::Interp2D(interp) => interp.set_y(new_y)?,
             Interpolator::Interp3D(interp) => interp.set_y(new_y)?,
             #[cfg(feature = "nd")]
             Interpolator::InterpND(interp) => interp.set_grid_y(new_y)?,
-            _ => {
-                anyhow::bail!("Variant does not have `y` field (or a grid row 1 (indexed from 0) in the case of InterpND).")
-            }
+            _ => return Err(Error::NoSuchField),
         }
         Ok(())
     }
 
     /// Function to get f_xy variable from enum variants
-    pub fn f_xy(&self) -> anyhow::Result<Vec<Vec<f64>>> {
+    pub fn f_xy(&self) -> Result<Vec<Vec<f64>>, Error> {
         match self {
             Interpolator::Interp2D(interp) => Ok(interp.f_xy.to_vec()),
-            _ => anyhow::bail!("Variant does not have `f_xy` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set f_xy variable from enum variants
     /// # Arguments
     /// - `new_f_xy`: updated `f_xy` variable to replace the current `f_xy` variable
-    pub fn set_f_xy(&mut self, new_f_xy: Vec<Vec<f64>>) -> anyhow::Result<()> {
+    pub fn set_f_xy(&mut self, new_f_xy: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp2D(interp) => interp.set_f_xy(new_f_xy)?,
-            _ => anyhow::bail!("Variant does not have `f_xy` field."),
+            Interpolator::Interp2D(interp) => Ok(interp.set_f_xy(new_f_xy)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get z variable from enum variants
-    pub fn z(&self) -> anyhow::Result<Vec<f64>> {
+    pub fn z(&self) -> Result<Vec<f64>, Error> {
         match self {
             Interpolator::Interp3D(interp) => Ok(interp.z.to_vec()),
-            _ => anyhow::bail!("Variant does not have `z` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set z variable from enum variants
     /// # Arguments
     /// - `new_z`: updated `z` variable to replace the current `z` variable
-    pub fn set_z(&mut self, new_z: Vec<f64>) -> anyhow::Result<()> {
+    pub fn set_z(&mut self, new_z: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp3D(interp) => interp.set_z(new_z)?,
+            Interpolator::Interp3D(interp) => Ok(interp.set_z(new_z)?),
             #[cfg(feature = "nd")]
-            Interpolator::InterpND(interp) => interp.set_grid_z(new_z)?,
-            _ => {
-                anyhow::bail!("Variant does not have `z` field (or a grid row 2 (indexed from 0) in the case of InterpND).")
-            }
+            Interpolator::InterpND(interp) => Ok(interp.set_grid_z(new_z)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get f_xyz variable from enum variants
-    pub fn f_xyz(&self) -> anyhow::Result<Vec<Vec<Vec<f64>>>> {
+    pub fn f_xyz(&self) -> Result<Vec<Vec<Vec<f64>>>, Error> {
         match self {
             Interpolator::Interp3D(interp) => Ok(interp.f_xyz.to_vec()),
-            _ => anyhow::bail!("Variant does not have `f_xyz` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Function to set f_xyz variable from enum variants
     /// # Arguments
     /// - `new_f_xyz`: updated `f_xyz` variable to replace the current `f_xyz` variable
-    pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> anyhow::Result<()> {
+    pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp3D(interp) => interp.set_f_xyz(new_f_xyz)?,
-            _ => anyhow::bail!("Variant does not have `f_xyz` field."),
+            Interpolator::Interp3D(interp) => Ok(interp.set_f_xyz(new_f_xyz)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get grid variable from enum variants
     #[cfg(feature = "nd")]
-    pub fn grid(&self) -> anyhow::Result<Vec<Vec<f64>>> {
+    pub fn grid(&self) -> Result<Vec<Vec<f64>>, Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(interp.grid.to_vec()),
-            _ => anyhow::bail!("Variant does not have `grid` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
@@ -506,20 +493,19 @@ impl Interpolator {
     /// # Arguments
     /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
     #[cfg(feature = "nd")]
-    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> anyhow::Result<()> {
+    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
-            Interpolator::InterpND(interp) => interp.set_grid(new_grid)?,
-            _ => anyhow::bail!("Variant does not have `grid` field."),
+            Interpolator::InterpND(interp) => Ok(interp.set_grid(new_grid)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 
     /// Function to get values variable from enum variants
     #[cfg(feature = "nd")]
-    pub fn values(&self) -> anyhow::Result<&ndarray::ArrayD<f64>> {
+    pub fn values(&self) -> Result<&ndarray::ArrayD<f64>, Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(&interp.values),
-            _ => anyhow::bail!("Variant does not have `values` field."),
+            _ => Err(Error::NoSuchField),
         }
     }
 
@@ -527,12 +513,11 @@ impl Interpolator {
     /// # Arguments
     /// - `new_values`: updated `values` variable to replace the current `values` variable
     #[cfg(feature = "nd")]
-    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> anyhow::Result<()> {
+    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::InterpND(interp) => interp.set_values(new_values)?,
-            _ => anyhow::bail!("Variant does not have `values` field."),
+            Interpolator::InterpND(interp) => Ok(interp.set_values(new_values)?),
+            _ => Err(Error::NoSuchField),
         }
-        Ok(())
     }
 }
 
@@ -561,7 +546,7 @@ pub enum Extrapolate {
     /// If interpolant point is beyond the limits of the interpolation grid,
     /// find result via extrapolation using slope of nearby points.  
     /// Only implemented for 1-D linear interpolation.
-    Extrapolate,
+    Enable,
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
@@ -570,8 +555,7 @@ pub enum Extrapolate {
 }
 
 pub trait InterpMethods {
-    // TODO: maybe add `new` to `InterpMethods`
-    /// Validate data stored in [Self].  By design, [Self] can be instantiatated
+    /// Validate data stored in [Self]. By design, [Self] can be instantiatated
     /// only via [Self::new], which calls this method.
     fn validate(&self) -> Result<(), ValidationError>;
     fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64>;
