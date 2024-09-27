@@ -37,7 +37,7 @@ impl Interp3D {
         Ok(interp)
     }
 
-    pub fn linear(&self, point: &[f64]) -> anyhow::Result<f64> {
+    pub fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         let x_l = find_nearest_index(&self.x, point[0]);
         let x_u = x_l + 1;
         let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
@@ -158,7 +158,7 @@ impl InterpMethods for Interp3D {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
             _ => unreachable!(),

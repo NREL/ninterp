@@ -31,7 +31,7 @@ impl Interp1D {
         Ok(interp)
     }
 
-    pub fn linear(&self, point: f64) -> anyhow::Result<f64> {
+    pub fn linear(&self, point: f64) -> Result<f64, InterpolationError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
@@ -51,7 +51,7 @@ impl Interp1D {
         Ok(self.f_x[lower_index] * (1.0 - diff) + self.f_x[lower_index + 1] * diff)
     }
 
-    pub fn left_nearest(&self, point: f64) -> anyhow::Result<f64> {
+    pub fn left_nearest(&self, point: f64) -> Result<f64, InterpolationError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
@@ -59,7 +59,7 @@ impl Interp1D {
         Ok(self.f_x[lower_index])
     }
 
-    pub fn right_nearest(&self, point: f64) -> anyhow::Result<f64> {
+    pub fn right_nearest(&self, point: f64) -> Result<f64, InterpolationError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
@@ -67,7 +67,7 @@ impl Interp1D {
         Ok(self.f_x[lower_index + 1])
     }
 
-    pub fn nearest(&self, point: f64) -> anyhow::Result<f64> {
+    pub fn nearest(&self, point: f64) -> Result<f64, InterpolationError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
@@ -131,7 +131,7 @@ impl InterpMethods for Interp1D {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point[0]),
             Strategy::LeftNearest => self.left_nearest(point[0]),

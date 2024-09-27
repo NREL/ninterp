@@ -12,8 +12,6 @@ pub use two::*;
 #[cfg(feature = "nd")]
 pub use n::*;
 
-use anyhow::Context;
-
 // This method contains code from RouteE Compass, another NREL-developed tool
 // https://www.nrel.gov/transportation/route-energy-prediction-model.html
 // https://github.com/NREL/routee-compass/
@@ -174,8 +172,8 @@ pub enum Interpolator {
 impl Interpolator {
     /// Interpolate at supplied point, after checking point validity.
     /// Length of supplied point must match interpolator dimensionality.
-    pub fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
-        self.validate_inputs(point)?;
+    pub fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        self.validate_point(point)?;
         match self {
             Self::Interp0D(value) => Ok(*value),
             Self::Interp1D(interp) => {
@@ -186,13 +184,12 @@ impl Interpolator {
                         return interp.interpolate(clamped_point);
                     }
                     Extrapolate::Error => {
-                        let x_dim_ok =
-                            interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap();
-                        anyhow::ensure!(
-                            x_dim_ok,
-                            "Attempted to interpolate at point beyond grid data: point = {point:?}, grid = {:?}",
-                            interp.x,
-                        );
+                        if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, grid = {:?}",
+                                interp.x
+                            )));
+                        }
                     }
                     _ => {}
                 };
@@ -208,16 +205,18 @@ impl Interpolator {
                         return interp.interpolate(clamped_point);
                     }
                     Extrapolate::Error => {
-                        let x_dim_ok =
-                            interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap();
-                        let y_dim_ok =
-                            interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap();
-                        anyhow::ensure!(
-                            x_dim_ok && y_dim_ok,
-                            "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}, y grid = {:?}",
-                            interp.x,
-                            interp.y,
-                        );
+                        if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}",
+                                interp.x
+                            )));
+                        }
+                        if !(interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, y grid = {:?}",
+                                interp.y
+                            )));
+                        }
                     }
                     _ => {}
                 };
@@ -234,18 +233,24 @@ impl Interpolator {
                         return interp.interpolate(clamped_point);
                     }
                     Extrapolate::Error => {
-                        let x_dim_ok =
-                            interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap();
-                        let y_dim_ok =
-                            interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap();
-                        let z_dim_ok =
-                            interp.z[0] <= point[2] && &point[2] <= interp.z.last().unwrap();
-                        anyhow::ensure!(x_dim_ok && y_dim_ok && z_dim_ok,
-                            "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}, y grid = {:?}, z grid = {:?}",
-                            interp.x,
-                            interp.y,
-                            interp.z,
-                        );
+                        if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}",
+                                interp.x
+                            )));
+                        }
+                        if !(interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, y grid = {:?}",
+                                interp.y
+                            )));
+                        }
+                        if !(interp.z[0] <= point[2] && &point[2] <= interp.z.last().unwrap()) {
+                            return Err(InterpolationError::Other(format!(
+                                "Attempted to interpolate at point beyond grid data: point = {point:?}, z grid = {:?}",
+                                interp.z
+                            )));
+                        }
                     }
                     _ => {}
                 };
@@ -258,16 +263,21 @@ impl Interpolator {
                         let clamped_point: Vec<f64> = point
                             .iter()
                             .enumerate()
-                            .map(|(dim, pt)|
+                            .map(|(dim, pt)| {
                                 pt.clamp(interp.grid[dim][0], *interp.grid[dim].last().unwrap())
-                            ).collect();
+                            })
+                            .collect();
                         return interp.interpolate(&clamped_point);
                     }
-                    Extrapolate::Error => anyhow::ensure!(
-                        point.iter().enumerate().all(|(dim, pt_dim)| &interp.grid[dim][0] <= pt_dim && pt_dim <= interp.grid[dim].last().unwrap()),
-                        "Attempted to interpolate at point beyond grid data: point = {point:?}, grid: {:?}",
-                        interp.grid,
-                    ),
+                    Extrapolate::Error => {
+                        if !point.iter().enumerate().all(|(dim, pt_dim)| {
+                            &interp.grid[dim][0] <= pt_dim
+                                && pt_dim <= interp.grid[dim].last().unwrap()
+                        }) {
+                            return Err(InterpolationError::Other(format!("Attempted to interpolate at point beyond grid data: point = {point:?}, grid: {:?}",
+                        interp.grid,)));
+                        }
+                    }
                     _ => {}
                 };
                 interp.interpolate(point)
@@ -276,19 +286,17 @@ impl Interpolator {
     }
 
     /// Ensure that point is valid for the interpolator instance.
-    fn validate_inputs(&self, point: &[f64]) -> anyhow::Result<()> {
+    fn validate_point(&self, point: &[f64]) -> Result<(), InterpolationError> {
         let n = self.ndim();
         // Check supplied point dimensionality
-        if n == 0 {
-            anyhow::ensure!(
-                point.is_empty(),
-                "No point should be provided for 0-D interpolation"
-            )
-        } else {
-            anyhow::ensure!(
-                point.len() == n,
+        if n == 0 && !point.is_empty() {
+            return Err(InterpolationError::InvalidPoint(
+                "No point should be provided for 0-D interpolation".into(),
+            ));
+        } else if point.len() != n {
+            return Err(InterpolationError::InvalidPoint(format!(
                 "Supplied point slice should have length {n} for {n}-D interpolation"
-            )
+            )));
         }
         Ok(())
     }
@@ -558,7 +566,7 @@ pub trait InterpMethods {
     /// Validate data stored in [Self]. By design, [Self] can be instantiatated
     /// only via [Self::new], which calls this method.
     fn validate(&self) -> Result<(), ValidationError>;
-    fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64>;
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError>;
 }
 
 #[cfg(test)]

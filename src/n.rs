@@ -44,7 +44,7 @@ impl InterpND {
         }
     }
 
-    pub fn linear(&self, point: &[f64]) -> anyhow::Result<f64> {
+    pub fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         // Dimensionality
         let mut n = self.values.ndim();
 
@@ -67,9 +67,7 @@ impl InterpND {
         }
         if values_view.len() == 1 {
             // Supplied point is coincident with a grid point, so just return the value
-            return values_view.first().copied().with_context(|| {
-                "Could not extract value (on grid) during multilinear interpolation"
-            });
+            return Ok(values_view.first().copied().unwrap());
         }
         // Simplified dimensionality
         n = values_view.ndim();
@@ -110,11 +108,9 @@ impl InterpND {
                 let l = index_permutations[i].as_slice();
                 let u = index_permutations[next_idxs.len() + i].as_slice();
                 if dim == 0 {
-                    anyhow::ensure!(
-                        !interp_vals[l].is_nan() && !interp_vals[u].is_nan(),
-                        "Surrounding value(s) cannot be NaN:\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                        self.values
-                    );
+                    if interp_vals[l].is_nan() || interp_vals[u].is_nan() {
+                        return Err(InterpolationError::NaNError);
+                    }
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
                 // 2^(n-2) times in the second iteration, etc.
@@ -126,10 +122,7 @@ impl InterpND {
         }
 
         // return the only value contained within the 0-dimensional array
-        interp_vals
-            .first()
-            .copied()
-            .with_context(|| "Could not extract value during multilinear interpolation")
+        Ok(interp_vals.first().copied().unwrap())
     }
 
     fn get_index_permutations(&self, shape: &[usize]) -> Vec<Vec<usize>> {
@@ -242,7 +235,7 @@ impl InterpMethods for InterpND {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
             _ => unreachable!(),
