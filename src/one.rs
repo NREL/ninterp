@@ -5,14 +5,12 @@ use super::*;
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", Deserialize, Serialize)]
 pub struct Interp1D {
-    pub(super) x: Vec<f64>,
-    pub(super) f_x: Vec<f64>,
+    pub(crate) x: Vec<f64>,
+    pub(crate) f_x: Vec<f64>,
+    #[cfg_attr(feature = "serde", serde(default))]
     pub strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
-    /// Phantom private field to prevent direct instantiation in other modules
-    #[cfg_attr(feature = "serde", serde(skip))]
-    _phantom: PhantomData<()>,
 }
 
 impl Interp1D {
@@ -28,7 +26,6 @@ impl Interp1D {
             f_x,
             strategy,
             extrapolate,
-            _phantom: PhantomData,
         };
         interp.validate()?;
         Ok(interp)
@@ -49,7 +46,7 @@ impl Interp1D {
                 return Ok(slope * (point - self.x.last().unwrap()) + self.f_x.last().unwrap());
             }
         }
-        let lower_index = find_nearest_index(&self.x, point)?;
+        let lower_index = find_nearest_index(&self.x, point);
         let diff = (point - self.x[lower_index]) / (self.x[lower_index + 1] - self.x[lower_index]);
         Ok(self.f_x[lower_index] * (1.0 - diff) + self.f_x[lower_index + 1] * diff)
     }
@@ -58,7 +55,7 @@ impl Interp1D {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
-        let lower_index = find_nearest_index(&self.x, point)?;
+        let lower_index = find_nearest_index(&self.x, point);
         Ok(self.f_x[lower_index])
     }
 
@@ -66,7 +63,7 @@ impl Interp1D {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
-        let lower_index = find_nearest_index(&self.x, point)?;
+        let lower_index = find_nearest_index(&self.x, point);
         Ok(self.f_x[lower_index + 1])
     }
 
@@ -74,7 +71,7 @@ impl Interp1D {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point) {
             return Ok(self.f_x[i]);
         }
-        let lower_index = find_nearest_index(&self.x, point)?;
+        let lower_index = find_nearest_index(&self.x, point);
         let diff = (point - self.x[lower_index]) / (self.x[lower_index + 1] - self.x[lower_index]);
         Ok(if diff < 0.5 {
             self.f_x[lower_index]
@@ -88,7 +85,7 @@ impl Interp1D {
     /// - `new_x`: updated `x` variable to replace the current `x` variable
     pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
         self.x = new_x;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set f_x variable from Interp1D
@@ -96,41 +93,40 @@ impl Interp1D {
     /// - `new_f_x`: updated `f_x` variable to replace the current `f_x` variable
     pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> anyhow::Result<()> {
         self.f_x = new_f_x;
-        self.validate()
+        Ok(self.validate()?)
     }
 }
 
 impl InterpMethods for Interp1D {
-    fn validate(&self) -> anyhow::Result<()> {
+    fn validate(&self) -> Result<(), ValidationError> {
         let x_grid_len = self.x.len();
 
+        // Check that extrapolation variant is applicable
         if matches!(self.extrapolate, Extrapolate::Extrapolate) {
-            anyhow::ensure!(
-                matches!(self.strategy, Strategy::Linear),
-                "`Extrapolate` is only implemented for 1-D linear, use `Clamp` or `Error` extrapolation strategy instead"
-            );
-            anyhow::ensure!(
-                self.x.len() >= 2,
-                "At least 2 data points are required for extrapolation: x = {:?}, f_x = {:?}",
-                self.x,
-                self.f_x,
-            );
+            if !matches!(self.strategy, Strategy::Linear) {
+                return Err(ValidationError::ExtrapolationSelection);
+            }
+            if x_grid_len < 2 {
+                return Err(ValidationError::Other(
+                    "At least 2 data points are required for extrapolation".into(),
+                ));
+            }
         }
 
         // Check that each grid dimension has elements
-        anyhow::ensure!(x_grid_len != 0, "Supplied x-coordinates cannot be empty");
+        if x_grid_len == 0 {
+            return Err(ValidationError::EmptyGrid("x".into()));
+        }
+
         // Check that grid points are monotonically increasing
-        anyhow::ensure!(
-            self.x.windows(2).all(|w| w[0] <= w[1]),
-            "Supplied x-coordinates must be sorted and non-repeating"
-        );
+        if !self.x.windows(2).all(|w| w[0] <= w[1]) {
+            return Err(ValidationError::Monotonicity("x".into()));
+        }
+
         // Check that grid and values are compatible shapes
-        anyhow::ensure!(
-            x_grid_len == self.f_x.len(),
-            "Supplied grid and values are not compatible shapes, {} {}",
-            x_grid_len,
-            self.f_x.len()
-        );
+        if x_grid_len != self.f_x.len() {
+            return Err(ValidationError::IncompatibleShapes("x".into()));
+        }
 
         Ok(())
     }

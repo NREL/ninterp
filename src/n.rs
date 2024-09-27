@@ -9,14 +9,12 @@ use ndarray;
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", Deserialize, Serialize)]
 pub struct InterpND {
-    pub(super) grid: Vec<Vec<f64>>,
-    pub(super) values: ndarray::ArrayD<f64>,
+    pub(crate) grid: Vec<Vec<f64>>,
+    pub(crate) values: ndarray::ArrayD<f64>,
+    #[cfg_attr(feature = "serde", serde(default))]
     pub strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
-    /// Phantom private field to prevent direct instantiation in other modules
-    #[cfg_attr(feature = "serde", serde(skip))]
-    _phantom: PhantomData<()>,
 }
 
 impl InterpND {
@@ -32,7 +30,6 @@ impl InterpND {
             values,
             strategy,
             extrapolate,
-            _phantom: PhantomData,
         };
         interp.validate()?;
         Ok(interp)
@@ -82,7 +79,7 @@ impl InterpND {
         let mut lower_idxs = Vec::with_capacity(n);
         let mut interp_diffs = Vec::with_capacity(n);
         for dim in 0..n {
-            let lower_idx = find_nearest_index(&grid[dim], point[dim])?;
+            let lower_idx = find_nearest_index(&grid[dim], point[dim]);
             let interp_diff = (point[dim] - grid[dim][lower_idx])
                 / (grid[dim][lower_idx + 1] - grid[dim][lower_idx]);
             lower_idxs.push(lower_idx);
@@ -114,10 +111,10 @@ impl InterpND {
                 let u = index_permutations[next_idxs.len() + i].as_slice();
                 if dim == 0 {
                     anyhow::ensure!(
-                            !interp_vals[l].is_nan() && !interp_vals[u].is_nan(),
-                            "Surrounding value(s) cannot be NaN:\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                            self.values
-                        );
+                        !interp_vals[l].is_nan() && !interp_vals[u].is_nan(),
+                        "Surrounding value(s) cannot be NaN:\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
+                        self.values
+                    );
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
                 // 2^(n-2) times in the second iteration, etc.
@@ -151,7 +148,7 @@ impl InterpND {
     /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
     pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> anyhow::Result<()> {
         self.grid = new_grid;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set grid x variable from InterpND
@@ -159,7 +156,7 @@ impl InterpND {
     /// - `new_x`: updated `grid[0]` to replace the current `grid[0]`
     pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> anyhow::Result<()> {
         self.grid[0] = new_grid_x;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set grid y variable from InterpND
@@ -167,7 +164,7 @@ impl InterpND {
     /// - `new_y`: updated `grid[1]` to replace the current `grid[1]`
     pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> anyhow::Result<()> {
         self.grid[1] = new_grid_y;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set grid z variable from InterpND
@@ -175,7 +172,7 @@ impl InterpND {
     /// - `new_z`: updated `grid[2]` to replace the current `grid[2]`
     pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> anyhow::Result<()> {
         self.grid[2] = new_grid_z;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set values variable from InterpND
@@ -183,57 +180,64 @@ impl InterpND {
     /// - `new_values`: updated `values` variable to replace the current `values` variable
     pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> anyhow::Result<()> {
         self.values = new_values;
-        self.validate()
+        Ok(self.validate()?)
     }
 }
 
 impl InterpMethods for InterpND {
-    fn validate(&self) -> anyhow::Result<()> {
+    fn validate(&self) -> Result<(), ValidationError> {
         let n = self.ndim();
 
+        // Warn user if there is a hardcoded interpolator alternative
         #[cfg(feature = "logging")]
         if n <= 3 {
             log::warn!("Using N-D interpolator for {n}-D interpolation, use hardcoded {n}-D interpolator for better performance");
         }
 
-        anyhow::ensure!(!matches!(self.extrapolate, Extrapolate::Extrapolate), "`Extrapolate` is not implemented for N-D, use `Clamp` or `Error` extrapolation strategy instead");
+        // Check that interpolation strategy is applicable
+        if !matches!(self.strategy, Strategy::Linear) {
+            return Err(ValidationError::StrategySelection);
+        }
+
+        // Check that extrapolation variant is applicable
+        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+            return Err(ValidationError::ExtrapolationSelection);
+        }
 
         // Check that each grid dimension has elements
         for i in 0..n {
-            // Indexing `grid` directly is okay because `grid == vec![]` is caught at compilation
-            anyhow::ensure!(
-                !self.grid[i].is_empty(),
-                "Supplied `grid` coordinates cannot be empty: dimension {i}, {:?}",
-                self.grid[i]
-            );
+            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
+            if self.grid[i].is_empty() {
+                return Err(ValidationError::EmptyGrid(i.to_string()));
+            }
         }
+
         // Check that grid points are monotonically increasing
         for i in 0..n {
-            anyhow::ensure!(
-                self.grid[i].windows(2).all(|w| w[0] <= w[1]),
-                "Supplied `grid` coordinates must be sorted and non-repeating: dimension {i}, {:?}",
-                self.grid[i]
-            );
+            if !self.grid[i].windows(2).all(|w| w[0] <= w[1]) {
+                return Err(ValidationError::Monotonicity(i.to_string()));
+            }
         }
+
         // Check that grid and values are compatible shapes
         for i in 0..n {
-            anyhow::ensure!(
-                self.grid[i].len() == self.values.shape()[i],
-                "Supplied grid and values are not compatible shapes: dimension {i}, lengths {} != {}",
-                self.grid[i].len(),
-                self.values.shape()[i]);
+            if self.grid[i].len() != self.values.shape()[i] {
+                return Err(ValidationError::IncompatibleShapes(i.to_string()));
+            }
         }
-        // Check grid dimensionality
-        let grid_len = if self.grid[0].is_empty() {
-            0
-        } else {
-            self.grid.len()
-        };
-        anyhow::ensure!(
-            grid_len == n,
-            "Length of supplied `grid` must be same as `values` dimensionality: {:?} is not {n}-dimensional",
-            self.grid
-        );
+
+        // // Check grid dimensionality
+        // let grid_len = if self.grid[0].is_empty() {
+        //     0
+        // } else {
+        //     self.grid.len()
+        // };
+        // if grid_len != n {
+        //     return Err(Error::ValidationError(format!(
+        //         "Length of supplied `grid` must be same as `values` dimensionality: {:?} is not {n}-dimensional",
+        //         self.grid
+        //     )));
+        // }
 
         Ok(())
     }
@@ -241,11 +245,7 @@ impl InterpMethods for InterpND {
     fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
-            _ => anyhow::bail!(
-                "Provided strategy {:?} is not applicable for {}-D interpolation",
-                self.strategy,
-                self.ndim()
-            ),
+            _ => unreachable!(),
         }
     }
 }

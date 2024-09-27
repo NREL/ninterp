@@ -1,8 +1,10 @@
+pub mod error;
 pub mod n;
 pub mod one;
 pub mod three;
 pub mod two;
 
+pub use error::*;
 pub use one::*;
 pub use three::*;
 pub use two::*;
@@ -11,14 +13,13 @@ pub use two::*;
 pub use n::*;
 
 use anyhow::Context;
-use std::marker::PhantomData;
 
 // This method contains code from RouteE Compass, another NREL-developed tool
 // https://www.nrel.gov/transportation/route-energy-prediction-model.html
 // https://github.com/NREL/routee-compass/
-fn find_nearest_index(arr: &[f64], target: f64) -> anyhow::Result<usize> {
+fn find_nearest_index(arr: &[f64], target: f64) -> usize {
     if &target == arr.last().unwrap() {
-        return Ok(arr.len() - 2);
+        return arr.len() - 2;
     }
 
     let mut low = 0;
@@ -35,9 +36,9 @@ fn find_nearest_index(arr: &[f64], target: f64) -> anyhow::Result<usize> {
     }
 
     if low > 0 && arr[low] >= target {
-        Ok(low - 1)
+        low - 1
     } else {
-        Ok(low)
+        low
     }
 }
 
@@ -536,10 +537,11 @@ impl Interpolator {
 }
 
 /// Interpolation strategy.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", Deserialize, Serialize)]
 pub enum Strategy {
     /// Linear interpolation: https://en.wikipedia.org/wiki/Linear_interpolation
+    #[default]
     Linear,
     /// Left-nearest (previous value) interpolation: https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation
     LeftNearest,
@@ -571,7 +573,7 @@ pub trait InterpMethods {
     // TODO: maybe add `new` to `InterpMethods`
     /// Validate data stored in [Self].  By design, [Self] can be instantiatated
     /// only via [Self::new], which calls this method.
-    fn validate(&self) -> anyhow::Result<()>;
+    fn validate(&self) -> Result<(), ValidationError>;
     fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64>;
 }
 

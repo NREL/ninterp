@@ -5,16 +5,14 @@ use super::*;
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", Deserialize, Serialize)]
 pub struct Interp3D {
-    pub(super) x: Vec<f64>,
-    pub(super) y: Vec<f64>,
-    pub(super) z: Vec<f64>,
-    pub(super) f_xyz: Vec<Vec<Vec<f64>>>,
+    pub(crate) x: Vec<f64>,
+    pub(crate) y: Vec<f64>,
+    pub(crate) z: Vec<f64>,
+    pub(crate) f_xyz: Vec<Vec<Vec<f64>>>,
+    #[cfg_attr(feature = "serde", serde(default))]
     pub strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
-    /// Phantom private field to prevent direct instantiation in other modules
-    #[cfg_attr(feature = "serde", serde(skip))]
-    _phantom: PhantomData<()>,
 }
 
 impl Interp3D {
@@ -34,22 +32,21 @@ impl Interp3D {
             f_xyz,
             strategy,
             extrapolate,
-            _phantom: PhantomData,
         };
         interp.validate()?;
         Ok(interp)
     }
 
     pub fn linear(&self, point: &[f64]) -> anyhow::Result<f64> {
-        let x_l = find_nearest_index(&self.x, point[0])?;
+        let x_l = find_nearest_index(&self.x, point[0]);
         let x_u = x_l + 1;
         let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
 
-        let y_l = find_nearest_index(&self.y, point[1])?;
+        let y_l = find_nearest_index(&self.y, point[1]);
         let y_u = y_l + 1;
         let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
 
-        let z_l = find_nearest_index(&self.z, point[2])?;
+        let z_l = find_nearest_index(&self.z, point[2]);
         let z_u = z_l + 1;
         let z_diff = (point[2] - self.z[z_l]) / (self.z[z_u] - self.z[z_l]);
 
@@ -72,7 +69,7 @@ impl Interp3D {
     /// - `new_x`: updated `x` variable to replace the current `x` variable
     pub fn set_x(&mut self, new_x: Vec<f64>) -> anyhow::Result<()> {
         self.x = new_x;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set y variable from Interp3D
@@ -80,7 +77,7 @@ impl Interp3D {
     /// - `new_y`: updated `y` variable to replace the current `y` variable
     pub fn set_y(&mut self, new_y: Vec<f64>) -> anyhow::Result<()> {
         self.y = new_y;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set z variable from Interp3D
@@ -88,7 +85,7 @@ impl Interp3D {
     /// - `new_z`: updated `z` variable to replace the current `z` variable
     pub fn set_z(&mut self, new_z: Vec<f64>) -> anyhow::Result<()> {
         self.z = new_z;
-        self.validate()
+        Ok(self.validate()?)
     }
 
     /// Function to set f_xyz variable from Interp3D
@@ -96,46 +93,67 @@ impl Interp3D {
     /// - `new_f_xyz`: updated `f_xyz` variable to replace the current `f_xyz` variable
     pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> anyhow::Result<()> {
         self.f_xyz = new_f_xyz;
-        self.validate()
+        Ok(self.validate()?)
     }
 }
 
 impl InterpMethods for Interp3D {
-    fn validate(&self) -> anyhow::Result<()> {
-        let x_grid_len = self.x.len();
-        let y_grid_len = self.y.len();
-        let z_grid_len = self.z.len();
+    fn validate(&self) -> Result<(), ValidationError> {
+        // Check that interpolation strategy is applicable
+        if !matches!(self.strategy, Strategy::Linear) {
+            return Err(ValidationError::StrategySelection);
+        }
 
-        anyhow::ensure!(!matches!(self.extrapolate, Extrapolate::Extrapolate), "`Extrapolate` is not implemented for 3-D, use `Clamp` or `Error` extrapolation strategy instead");
+        // Check that extrapolation variant is applicable
+        if matches!(self.extrapolate, Extrapolate::Extrapolate) {
+            return Err(ValidationError::ExtrapolationSelection);
+        }
 
         // Check that each grid dimension has elements
-        anyhow::ensure!(
-            x_grid_len != 0 || y_grid_len != 0 || z_grid_len != 0,
-            "Supplied grid coordinates cannot be empty"
-        );
+        let x_grid_len = self.x.len();
+        if x_grid_len == 0 {
+            return Err(ValidationError::EmptyGrid("x".into()));
+        }
+        let y_grid_len = self.y.len();
+        if y_grid_len == 0 {
+            return Err(ValidationError::EmptyGrid("y".into()));
+        }
+        let z_grid_len = self.z.len();
+        if z_grid_len == 0 {
+            return Err(ValidationError::EmptyGrid("z".into()));
+        }
+
         // Check that grid points are monotonically increasing
-        anyhow::ensure!(
-            self.x.windows(2).all(|w| w[0] <= w[1])
-                && self.y.windows(2).all(|w| w[0] <= w[1])
-                && self.z.windows(2).all(|w| w[0] <= w[1]),
-            "Supplied coordinates must be sorted and non-repeating"
-        );
+        if !self.x.windows(2).all(|w| w[0] <= w[1]) {
+            return Err(ValidationError::Monotonicity("x".into()));
+        }
+        if !self.y.windows(2).all(|w| w[0] <= w[1]) {
+            return Err(ValidationError::Monotonicity("y".into()));
+        }
+        if !self.z.windows(2).all(|w| w[0] <= w[1]) {
+            return Err(ValidationError::Monotonicity("z".into()));
+        }
+
         // Check that grid and values are compatible shapes
-        let x_dim_ok = x_grid_len == self.f_xyz.len();
-        let y_dim_ok = self
+        if x_grid_len != self.f_xyz.len() {
+            return Err(ValidationError::IncompatibleShapes("x".into()));
+        }
+        if !self
             .f_xyz
             .iter()
             .map(|y_vals| y_vals.len())
-            .all(|y_val_len| y_val_len == y_grid_len);
-        let z_dim_ok = self
+            .all(|y_val_len| y_val_len == y_grid_len)
+        {
+            return Err(ValidationError::IncompatibleShapes("y".into()));
+        }
+        if !self
             .f_xyz
             .iter()
             .flat_map(|y_vals| y_vals.iter().map(|z_vals| z_vals.len()))
-            .all(|z_val_len| z_val_len == z_grid_len);
-        anyhow::ensure!(
-            x_dim_ok && y_dim_ok && z_dim_ok,
-            "Supplied grid and values are not compatible shapes"
-        );
+            .all(|z_val_len| z_val_len == z_grid_len)
+        {
+            return Err(ValidationError::IncompatibleShapes("z".into()));
+        }
 
         Ok(())
     }
@@ -143,10 +161,7 @@ impl InterpMethods for Interp3D {
     fn interpolate(&self, point: &[f64]) -> anyhow::Result<f64> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
-            _ => anyhow::bail!(
-                "Provided strategy {:?} is not applicable for 3-D interpolation",
-                self.strategy
-            ),
+            _ => unreachable!(),
         }
     }
 }
