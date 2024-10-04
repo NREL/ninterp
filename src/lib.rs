@@ -117,14 +117,18 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///     .unwrap(),
 /// );
 /// assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
-/// assert!(interp.interpolate(&[2.5, 2.5, 2.5]).is_err()); // out of bounds point with `Extrapolate::Error` fails
+/// // out of bounds point with `Extrapolate::Error` fails
+/// assert!(matches!(
+///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
+///     InterpolationError::ExtrapolationError(_)
+/// ));
 /// ```
 ///
 /// # N-D example (same as 3-D):
 /// ```
 /// #[cfg(feature = "nd")] {
-///    use ninterp::*;
-///    use ndarray::array;
+///     use ninterp::*;
+///     use ndarray::array;
 ///     let interp = Interpolator::InterpND(
 ///         // f(x) = 0.2 * x + 0.2 * y + 0.2 * z
 ///         InterpND::new(
@@ -149,7 +153,11 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///         .unwrap(),
 ///     );
 ///     assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
-///     assert!(interp.interpolate(&[2.5, 2.5, 2.5]).is_err()); // out of bounds point with `Extrapolate::Error` fails
+///     // out of bounds point with `Extrapolate::Error` fails
+///     assert!(matches!(
+///         interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
+///         InterpolationError::ExtrapolationError(_)
+///     ));
 /// }
 /// ```
 ///
@@ -185,8 +193,8 @@ impl Interpolator {
                     }
                     Extrapolate::Error => {
                         if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, grid = {:?}",
                                 interp.x
                             )));
                         }
@@ -206,14 +214,14 @@ impl Interpolator {
                     }
                     Extrapolate::Error => {
                         if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, x grid = {:?}",
                                 interp.x
                             )));
                         }
                         if !(interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, y grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, y grid = {:?}",
                                 interp.y
                             )));
                         }
@@ -234,20 +242,20 @@ impl Interpolator {
                     }
                     Extrapolate::Error => {
                         if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, x grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, x grid = {:?}",
                                 interp.x
                             )));
                         }
                         if !(interp.y[0] <= point[1] && &point[1] <= interp.y.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, y grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, y grid = {:?}",
                                 interp.y
                             )));
                         }
                         if !(interp.z[0] <= point[2] && &point[2] <= interp.z.last().unwrap()) {
-                            return Err(InterpolationError::Other(format!(
-                                "Attempted to interpolate at point beyond grid data: point = {point:?}, z grid = {:?}",
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, z grid = {:?}",
                                 interp.z
                             )));
                         }
@@ -274,8 +282,10 @@ impl Interpolator {
                             &interp.grid[dim][0] <= pt_dim
                                 && pt_dim <= interp.grid[dim].last().unwrap()
                         }) {
-                            return Err(InterpolationError::Other(format!("Attempted to interpolate at point beyond grid data: point = {point:?}, grid: {:?}",
-                        interp.grid,)));
+                            return Err(InterpolationError::ExtrapolationError(format!(
+                                "point = {point:?}, grid: {:?}",
+                                interp.grid,
+                            )));
                         }
                     }
                     _ => {}
@@ -579,6 +589,9 @@ mod tests {
         let expected = 0.5;
         let interp = Interpolator::Interp0D(expected);
         assert_eq!(interp.interpolate(&[]).unwrap(), expected);
-        assert!(interp.interpolate(&[0.]).is_err());
+        assert!(matches!(
+            interp.interpolate(&[0.]).unwrap_err(),
+            InterpolationError::InvalidPoint(_)
+        ));
     }
 }

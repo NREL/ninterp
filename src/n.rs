@@ -330,13 +330,16 @@ mod tests {
     #[test]
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
-        assert!(InterpND::new(
-            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Strategy::Linear,
-            Extrapolate::Enable,
-        )
-        .is_err());
+        assert!(matches!(
+            InterpND::new(
+                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+                ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+                Strategy::Linear,
+                Extrapolate::Enable,
+            )
+            .unwrap_err(),
+            ValidationError::ExtrapolationSelection
+        ));
         // Extrapolate::Error
         let interp = Interpolator::InterpND(
             InterpND::new(
@@ -347,8 +350,14 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(interp.interpolate(&[-1., -1., -1.]).is_err());
-        assert!(interp.interpolate(&[2., 2., 2.]).is_err());
+        assert!(matches!(
+            interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
+        assert!(matches!(
+            interp.interpolate(&[2., 2., 2.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
     }
 
     #[test]

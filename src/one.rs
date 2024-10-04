@@ -156,7 +156,7 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(interp.interpolate(&[]).is_err());
+        assert!(matches!(interp.interpolate(&[]).unwrap_err(), InterpolationError::InvalidPoint(_)));
         assert_eq!(interp.interpolate(&[1.0]).unwrap(), 0.4);
     }
 
@@ -228,14 +228,18 @@ mod tests {
 
     #[test]
     fn test_extrapolate_inputs() {
-        // Incorrect strategy
-        assert!(Interp1D::new(
-            vec![0., 1., 2., 3., 4.],
-            vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Nearest,
-            Extrapolate::Enable,
-        )
-        .is_err());
+        // Incorrect extrapolation selection
+        assert!(matches!(
+            Interp1D::new(
+                vec![0., 1., 2., 3., 4.],
+                vec![0.2, 0.4, 0.6, 0.8, 1.0],
+                Strategy::Nearest,
+                Extrapolate::Enable,
+            )
+            .unwrap_err(),
+            ValidationError::ExtrapolationSelection
+        ));
+
         // Extrapolate::Error
         let interp = Interpolator::Interp1D(
             Interp1D::new(
@@ -246,8 +250,16 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(interp.interpolate(&[-1.]).is_err());
-        assert!(interp.interpolate(&[5.]).is_err());
+        // Fail to extrapolate below lowest grid value
+        assert!(matches!(
+            interp.interpolate(&[-1.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
+        // Fail to extrapolate above highest grid value
+        assert!(matches!(
+            interp.interpolate(&[5.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
     }
 
     #[test]

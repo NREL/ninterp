@@ -257,18 +257,21 @@ mod tests {
     #[test]
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
-        assert!(Interp3D::new(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
-            Strategy::Linear,
-            Extrapolate::Enable,
-        )
-        .is_err());
+        assert!(matches!(
+            Interp3D::new(
+                vec![0., 1.],
+                vec![0., 1.],
+                vec![0., 1.],
+                vec![
+                    vec![vec![0., 1.], vec![2., 3.]],
+                    vec![vec![4., 5.], vec![6., 7.]],
+                ],
+                Strategy::Linear,
+                Extrapolate::Enable,
+            )
+            .unwrap_err(),
+            ValidationError::ExtrapolationSelection
+        ));
         // Extrapolate::Error
         let interp = Interpolator::Interp3D(
             Interp3D::new(
@@ -284,8 +287,14 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(interp.interpolate(&[-1., -1., -1.]).is_err());
-        assert!(interp.interpolate(&[2., 2., 2.]).is_err());
+        assert!(matches!(
+            interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
+        assert!(matches!(
+            interp.interpolate(&[2., 2., 2.]).unwrap_err(),
+            InterpolationError::ExtrapolationError(_)
+        ));
     }
 
     #[test]
