@@ -15,10 +15,10 @@ pub enum Error {
 /// Error types that occur from a `validate()` call, before calling interpolate()
 #[derive(Error, Debug)]
 pub enum ValidationError {
-    #[error("Selected `Strategy` variant is unimplemented for interpolator variant")]
-    StrategySelection,
-    #[error("Selected `Extrapolate` variant is unimplemented for interpolator variant")]
-    ExtrapolationSelection,
+    #[error("Selected `Strategy` variant ({0}) is unimplemented for interpolator variant")]
+    StrategySelection(String),
+    #[error("Selected `Extrapolate` variant ({0}) is unimplemented for interpolator variant")]
+    ExtrapolationSelection(String),
     #[error("Supplied grid coordinates cannot be empty: dim {0}")]
     EmptyGrid(String),
     #[error("Supplied coordinates must be sorted and non-repeating: dim {0}")]
@@ -33,8 +33,8 @@ pub enum ValidationError {
 pub enum InterpolationError {
     #[error("Attempted to interpolate at point beyond grid data: {0}")]
     ExtrapolationError(String),
-    #[error("Surrounding values cannot be NaN")]
-    NaNError,
+    #[error("Surrounding values cannot be NaN: {0}")]
+    NaNError(String),
     #[error("Supplied point is invalid for interpolator: {0}")]
     InvalidPoint(String),
     #[error("{0}")]

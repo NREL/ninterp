@@ -52,7 +52,7 @@ impl InterpND {
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
         let mut point = point.to_vec();
-        let mut grid = self.grid.to_vec();
+        let mut grid = self.grid.clone();
         let mut values_view = self.values.view();
         for dim in (0..n).rev() {
             // Range is reversed so that removal doesn't affect indexing
@@ -109,7 +109,10 @@ impl InterpND {
                 let u = index_permutations[next_idxs.len() + i].as_slice();
                 if dim == 0 {
                     if interp_vals[l].is_nan() || interp_vals[u].is_nan() {
-                        return Err(InterpolationError::NaNError);
+                        return Err(InterpolationError::NaNError(format!(
+                            "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
+                            self.values
+                        )));
                     }
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
@@ -189,12 +192,18 @@ impl InterpMethods for InterpND {
 
         // Check that interpolation strategy is applicable
         if !matches!(self.strategy, Strategy::Linear) {
-            return Err(ValidationError::StrategySelection);
+            return Err(ValidationError::StrategySelection(format!(
+                "{:?}",
+                self.strategy
+            )));
         }
 
         // Check that extrapolation variant is applicable
         if matches!(self.extrapolate, Extrapolate::Enable) {
-            return Err(ValidationError::ExtrapolationSelection);
+            return Err(ValidationError::ExtrapolationSelection(format!(
+                "{:?}",
+                self.extrapolate
+            )));
         }
 
         // Check that each grid dimension has elements
@@ -338,7 +347,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection
+            ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::InterpND(

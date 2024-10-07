@@ -80,12 +80,18 @@ impl InterpMethods for Interp2D {
     fn validate(&self) -> Result<(), ValidationError> {
         // Check that interpolation strategy is applicable
         if !matches!(self.strategy, Strategy::Linear) {
-            return Err(ValidationError::StrategySelection);
+            return Err(ValidationError::StrategySelection(format!(
+                "{:?}",
+                self.strategy
+            )));
         }
 
         // Check that extrapolation variant is applicable
         if matches!(self.extrapolate, Extrapolate::Enable) {
-            return Err(ValidationError::ExtrapolationSelection);
+            return Err(ValidationError::ExtrapolationSelection(format!(
+                "{:?}",
+                self.extrapolate
+            )));
         }
 
         // Check that each grid dimension has elements
@@ -181,7 +187,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection
+            ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::Interp2D(

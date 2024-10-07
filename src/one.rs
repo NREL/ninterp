@@ -104,7 +104,10 @@ impl InterpMethods for Interp1D {
         // Check that extrapolation variant is applicable
         if matches!(self.extrapolate, Extrapolate::Enable) {
             if !matches!(self.strategy, Strategy::Linear) {
-                return Err(ValidationError::ExtrapolationSelection);
+                return Err(ValidationError::ExtrapolationSelection(format!(
+                    "{:?}",
+                    self.extrapolate
+                )));
             }
             if x_grid_len < 2 {
                 return Err(ValidationError::Other(
@@ -156,7 +159,10 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(matches!(interp.interpolate(&[]).unwrap_err(), InterpolationError::InvalidPoint(_)));
+        assert!(matches!(
+            interp.interpolate(&[]).unwrap_err(),
+            InterpolationError::InvalidPoint(_)
+        ));
         assert_eq!(interp.interpolate(&[1.0]).unwrap(), 0.4);
     }
 
@@ -237,7 +243,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection
+            ValidationError::ExtrapolationSelection(_)
         ));
 
         // Extrapolate::Error
