@@ -324,11 +324,11 @@ impl Interpolator {
     }
 
     /// Function to get x variable from enum variants
-    pub fn x(&self) -> Result<Vec<f64>, Error> {
+    pub fn x(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(interp.x.to_vec()),
-            Interpolator::Interp2D(interp) => Ok(interp.x.to_vec()),
-            Interpolator::Interp3D(interp) => Ok(interp.x.to_vec()),
+            Interpolator::Interp1D(interp) => Ok(&interp.x),
+            Interpolator::Interp2D(interp) => Ok(&interp.x),
+            Interpolator::Interp3D(interp) => Ok(&interp.x),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -348,9 +348,9 @@ impl Interpolator {
     }
 
     /// Function to get f_x variable from enum variants
-    pub fn f_x(&self) -> Result<Vec<f64>, Error> {
+    pub fn f_x(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(interp.f_x.to_vec()),
+            Interpolator::Interp1D(interp) => Ok(&interp.f_x),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -366,13 +366,13 @@ impl Interpolator {
     }
 
     /// Function to get strategy variable from enum variants
-    pub fn strategy(&self) -> Result<Strategy, Error> {
+    pub fn strategy(&self) -> Result<&Strategy, Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(interp.strategy.to_owned()),
-            Interpolator::Interp2D(interp) => Ok(interp.strategy.to_owned()),
-            Interpolator::Interp3D(interp) => Ok(interp.strategy.to_owned()),
+            Interpolator::Interp1D(interp) => Ok(&interp.strategy),
+            Interpolator::Interp2D(interp) => Ok(&interp.strategy),
+            Interpolator::Interp3D(interp) => Ok(&interp.strategy),
             #[cfg(feature = "nd")]
-            Interpolator::InterpND(interp) => Ok(interp.strategy.to_owned()),
+            Interpolator::InterpND(interp) => Ok(&interp.strategy),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -393,13 +393,13 @@ impl Interpolator {
     }
 
     /// Function to get extrapolate variable from enum variants
-    pub fn extrapolate(&self) -> Result<Extrapolate, Error> {
+    pub fn extrapolate(&self) -> Result<&Extrapolate, Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(interp.extrapolate.to_owned()),
-            Interpolator::Interp2D(interp) => Ok(interp.extrapolate.to_owned()),
-            Interpolator::Interp3D(interp) => Ok(interp.extrapolate.to_owned()),
+            Interpolator::Interp1D(interp) => Ok(&interp.extrapolate),
+            Interpolator::Interp2D(interp) => Ok(&interp.extrapolate),
+            Interpolator::Interp3D(interp) => Ok(&interp.extrapolate),
             #[cfg(feature = "nd")]
-            Interpolator::InterpND(interp) => Ok(interp.extrapolate.to_owned()),
+            Interpolator::InterpND(interp) => Ok(&interp.extrapolate),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -420,10 +420,10 @@ impl Interpolator {
     }
 
     /// Function to get y variable from enum variants
-    pub fn y(&self) -> Result<Vec<f64>, Error> {
+    pub fn y(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp2D(interp) => Ok(interp.y.to_vec()),
-            Interpolator::Interp3D(interp) => Ok(interp.y.to_vec()),
+            Interpolator::Interp2D(interp) => Ok(&interp.y),
+            Interpolator::Interp3D(interp) => Ok(&interp.y),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -443,9 +443,9 @@ impl Interpolator {
     }
 
     /// Function to get f_xy variable from enum variants
-    pub fn f_xy(&self) -> Result<Vec<Vec<f64>>, Error> {
+    pub fn f_xy(&self) -> Result<&[Vec<f64>], Error> {
         match self {
-            Interpolator::Interp2D(interp) => Ok(interp.f_xy.to_vec()),
+            Interpolator::Interp2D(interp) => Ok(&interp.f_xy),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -461,9 +461,9 @@ impl Interpolator {
     }
 
     /// Function to get z variable from enum variants
-    pub fn z(&self) -> Result<Vec<f64>, Error> {
+    pub fn z(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp3D(interp) => Ok(interp.z.to_vec()),
+            Interpolator::Interp3D(interp) => Ok(&interp.z),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -481,9 +481,9 @@ impl Interpolator {
     }
 
     /// Function to get f_xyz variable from enum variants
-    pub fn f_xyz(&self) -> Result<Vec<Vec<Vec<f64>>>, Error> {
+    pub fn f_xyz(&self) -> Result<&[Vec<Vec<f64>>], Error> {
         match self {
-            Interpolator::Interp3D(interp) => Ok(interp.f_xyz.to_vec()),
+            Interpolator::Interp3D(interp) => Ok(&interp.f_xyz),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -500,9 +500,9 @@ impl Interpolator {
 
     /// Function to get grid variable from enum variants
     #[cfg(feature = "nd")]
-    pub fn grid(&self) -> Result<Vec<Vec<f64>>, Error> {
+    pub fn grid(&self) -> Result<&[Vec<f64>], Error> {
         match self {
-            Interpolator::InterpND(interp) => Ok(interp.grid.to_vec()),
+            Interpolator::InterpND(interp) => Ok(&interp.grid),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -577,6 +577,22 @@ pub trait InterpMethods {
     /// only via [Self::new], which calls this method.
     fn validate(&self) -> Result<(), ValidationError>;
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError>;
+}
+
+pub trait Linear {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError>;
+}
+
+pub trait LeftNearest {
+    fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError>;
+}
+
+pub trait RightNearest {
+    fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError>;
+}
+
+pub trait Nearest {
+    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError>;
 }
 
 #[cfg(test)]

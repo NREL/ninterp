@@ -44,7 +44,60 @@ impl InterpND {
         }
     }
 
-    pub fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn get_index_permutations(&self, shape: &[usize]) -> Vec<Vec<usize>> {
+        if shape.is_empty() {
+            return vec![vec![]];
+        }
+        shape
+            .iter()
+            .map(|&len| 0..len)
+            .multi_cartesian_product()
+            .collect()
+    }
+
+    /// Function to set grid variable from InterpND
+    /// # Arguments
+    /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
+    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
+        self.grid = new_grid;
+        self.validate()
+    }
+
+    /// Function to set grid x variable from InterpND
+    /// # Arguments
+    /// - `new_x`: updated `grid[0]` to replace the current `grid[0]`
+    pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> Result<(), ValidationError> {
+        self.grid[0] = new_grid_x;
+        self.validate()
+    }
+
+    /// Function to set grid y variable from InterpND
+    /// # Arguments
+    /// - `new_y`: updated `grid[1]` to replace the current `grid[1]`
+    pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> Result<(), ValidationError> {
+        self.grid[1] = new_grid_y;
+        self.validate()
+    }
+
+    /// Function to set grid z variable from InterpND
+    /// # Arguments
+    /// - `new_z`: updated `grid[2]` to replace the current `grid[2]`
+    pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> Result<(), ValidationError> {
+        self.grid[2] = new_grid_z;
+        self.validate()
+    }
+
+    /// Function to set values variable from InterpND
+    /// # Arguments
+    /// - `new_values`: updated `values` variable to replace the current `values` variable
+    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
+        self.values = new_values;
+        self.validate()
+    }
+}
+
+impl Linear for InterpND {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         // Dimensionality
         let mut n = self.values.ndim();
 
@@ -126,57 +179,6 @@ impl InterpND {
 
         // return the only value contained within the 0-dimensional array
         Ok(interp_vals.first().copied().unwrap())
-    }
-
-    fn get_index_permutations(&self, shape: &[usize]) -> Vec<Vec<usize>> {
-        if shape.is_empty() {
-            return vec![vec![]];
-        }
-        shape
-            .iter()
-            .map(|&len| 0..len)
-            .multi_cartesian_product()
-            .collect()
-    }
-
-    /// Function to set grid variable from InterpND
-    /// # Arguments
-    /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
-    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
-        self.grid = new_grid;
-        self.validate()
-    }
-
-    /// Function to set grid x variable from InterpND
-    /// # Arguments
-    /// - `new_x`: updated `grid[0]` to replace the current `grid[0]`
-    pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[0] = new_grid_x;
-        self.validate()
-    }
-
-    /// Function to set grid y variable from InterpND
-    /// # Arguments
-    /// - `new_y`: updated `grid[1]` to replace the current `grid[1]`
-    pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[1] = new_grid_y;
-        self.validate()
-    }
-
-    /// Function to set grid z variable from InterpND
-    /// # Arguments
-    /// - `new_z`: updated `grid[2]` to replace the current `grid[2]`
-    pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[2] = new_grid_z;
-        self.validate()
-    }
-
-    /// Function to set values variable from InterpND
-    /// # Arguments
-    /// - `new_values`: updated `values` variable to replace the current `values` variable
-    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
-        self.values = new_values;
-        self.validate()
     }
 }
 

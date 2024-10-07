@@ -37,33 +37,6 @@ impl Interp3D {
         Ok(interp)
     }
 
-    pub fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
-        let x_l = find_nearest_index(&self.x, point[0]);
-        let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
-
-        let y_l = find_nearest_index(&self.y, point[1]);
-        let y_u = y_l + 1;
-        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
-
-        let z_l = find_nearest_index(&self.z, point[2]);
-        let z_u = z_l + 1;
-        let z_diff = (point[2] - self.z[z_l]) / (self.z[z_u] - self.z[z_l]);
-
-        // interpolate in the x-direction
-        let c00 = self.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_l] * x_diff;
-        let c01 = self.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_u] * x_diff;
-        let c10 = self.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_l] * x_diff;
-        let c11 = self.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_u] * x_diff;
-
-        // interpolate in the y-direction
-        let c0 = c00 * (1.0 - y_diff) + c10 * y_diff;
-        let c1 = c01 * (1.0 - y_diff) + c11 * y_diff;
-
-        // interpolate in the z-direction
-        Ok(c0 * (1.0 - z_diff) + c1 * z_diff)
-    }
-
     /// Function to set x variable from Interp3D
     /// # Arguments
     /// - `new_x`: updated `x` variable to replace the current `x` variable
@@ -94,6 +67,35 @@ impl Interp3D {
     pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), ValidationError> {
         self.f_xyz = new_f_xyz;
         self.validate()
+    }
+}
+
+impl Linear for Interp3D {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_u = x_l + 1;
+        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+
+        let y_l = find_nearest_index(&self.y, point[1]);
+        let y_u = y_l + 1;
+        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
+
+        let z_l = find_nearest_index(&self.z, point[2]);
+        let z_u = z_l + 1;
+        let z_diff = (point[2] - self.z[z_l]) / (self.z[z_u] - self.z[z_l]);
+
+        // interpolate in the x-direction
+        let c00 = self.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_l] * x_diff;
+        let c01 = self.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_u] * x_diff;
+        let c10 = self.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_l] * x_diff;
+        let c11 = self.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_u] * x_diff;
+
+        // interpolate in the y-direction
+        let c0 = c00 * (1.0 - y_diff) + c10 * y_diff;
+        let c1 = c01 * (1.0 - y_diff) + c11 * y_diff;
+
+        // interpolate in the z-direction
+        Ok(c0 * (1.0 - z_diff) + c1 * z_diff)
     }
 }
 
