@@ -1,13 +1,11 @@
-#![cfg(feature = "nd")]
 //! N-dimensional interpolation
 
 use super::*;
-
 use itertools::Itertools;
 use ndarray;
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct InterpND {
     pub(crate) grid: Vec<Vec<f64>>,
     pub(crate) values: ndarray::ArrayD<f64>,

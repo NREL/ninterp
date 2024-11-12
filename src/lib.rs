@@ -8,13 +8,14 @@ pub use error::*;
 pub use one::*;
 pub use three::*;
 pub use two::*;
-
-#[cfg(feature = "nd")]
 pub use n::*;
 
+#[cfg(feature = "serde")]
+pub(crate) use serde::{Deserialize, Serialize};
+
 // This method contains code from RouteE Compass, another NREL-developed tool
-// https://www.nrel.gov/transportation/route-energy-prediction-model.html
-// https://github.com/NREL/routee-compass/
+// <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
+// <https://github.com/NREL/routee-compass/>
 fn find_nearest_index(arr: &[f64], target: f64) -> usize {
     if &target == arr.last().unwrap() {
         return arr.len() - 2;
@@ -126,43 +127,41 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///
 /// # N-D example (same as 3-D):
 /// ```
-/// #[cfg(feature = "nd")] {
-///     use ninterp::*;
-///     use ndarray::array;
-///     let interp = Interpolator::InterpND(
-///         // f(x) = 0.2 * x + 0.2 * y + 0.2 * z
-///         InterpND::new(
-///             vec![
-///                 vec![1., 2.], // x0, x1
-///                 vec![1., 2.], // y0, y1
-///                 vec![1., 2.], // z0, z1
-///             ], // grid coordinates
-///             array![
-///                 [
-///                     [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
-///                     [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
-///                 ],
-///                 [
-///                     [0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
-///                     [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
-///                 ],
-///             ].into_dyn(), // values
-///             Strategy::Linear,
-///             Extrapolate::Error, // return an error when point is out of bounds
-///         )
-///         .unwrap(),
-///     );
-///     assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
-///     // out of bounds point with `Extrapolate::Error` fails
-///     assert!(matches!(
-///         interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
-///         InterpolationError::ExtrapolationError(_)
-///     ));
-/// }
+/// use ninterp::*;
+/// use ndarray::array;
+/// let interp = Interpolator::InterpND(
+///     // f(x) = 0.2 * x + 0.2 * y + 0.2 * z
+///     InterpND::new(
+///         vec![
+///             vec![1., 2.], // x0, x1
+///             vec![1., 2.], // y0, y1
+///             vec![1., 2.], // z0, z1
+///         ], // grid coordinates
+///         array![
+///             [
+///                 [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
+///                 [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
+///             ],
+///             [
+///                 [0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
+///                 [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
+///             ],
+///         ].into_dyn(), // values
+///         Strategy::Linear,
+///         Extrapolate::Error, // return an error when point is out of bounds
+///     )
+///     .unwrap(),
+/// );
+/// assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
+/// // out of bounds point with `Extrapolate::Error` fails
+/// assert!(matches!(
+///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
+///     InterpolationError::ExtrapolationError(_)
+/// ));
 /// ```
 ///
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Interpolator {
     /// 0-dimensional (constant value) interpolation
     Interp0D(f64),
@@ -173,7 +172,7 @@ pub enum Interpolator {
     /// 3-dimensional interpolation
     Interp3D(Interp3D),
     /// N-dimensional interpolation
-    #[cfg(feature = "nd")]
+    
     InterpND(InterpND),
 }
 
@@ -264,7 +263,7 @@ impl Interpolator {
                 };
                 interp.interpolate(point)
             }
-            #[cfg(feature = "nd")]
+            
             Self::InterpND(interp) => {
                 match interp.extrapolate {
                     Extrapolate::Clamp => {
@@ -318,7 +317,7 @@ impl Interpolator {
             Self::Interp1D(_) => 1,
             Self::Interp2D(_) => 2,
             Self::Interp3D(_) => 3,
-            #[cfg(feature = "nd")]
+            
             Self::InterpND(interp) => interp.ndim(),
         }
     }
@@ -341,7 +340,7 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(interp.set_x(new_x)?),
             Interpolator::Interp2D(interp) => Ok(interp.set_x(new_x)?),
             Interpolator::Interp3D(interp) => Ok(interp.set_x(new_x)?),
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => Ok(interp.set_grid_x(new_x)?),
             _ => Err(Error::NoSuchField),
         }
@@ -371,7 +370,7 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(&interp.strategy),
             Interpolator::Interp2D(interp) => Ok(&interp.strategy),
             Interpolator::Interp3D(interp) => Ok(&interp.strategy),
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => Ok(&interp.strategy),
             _ => Err(Error::NoSuchField),
         }
@@ -385,7 +384,7 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp2D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp3D(interp) => interp.strategy = new_strategy,
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => interp.strategy = new_strategy,
             _ => return Err(Error::NoSuchField),
         }
@@ -398,7 +397,7 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(&interp.extrapolate),
             Interpolator::Interp2D(interp) => Ok(&interp.extrapolate),
             Interpolator::Interp3D(interp) => Ok(&interp.extrapolate),
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => Ok(&interp.extrapolate),
             _ => Err(Error::NoSuchField),
         }
@@ -412,7 +411,7 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp2D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp3D(interp) => interp.extrapolate = new_extrapolate,
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => interp.extrapolate = new_extrapolate,
             _ => return Err(Error::NoSuchField),
         }
@@ -435,7 +434,7 @@ impl Interpolator {
         match self {
             Interpolator::Interp2D(interp) => interp.set_y(new_y)?,
             Interpolator::Interp3D(interp) => interp.set_y(new_y)?,
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => interp.set_grid_y(new_y)?,
             _ => return Err(Error::NoSuchField),
         }
@@ -474,7 +473,7 @@ impl Interpolator {
     pub fn set_z(&mut self, new_z: Vec<f64>) -> Result<(), Error> {
         match self {
             Interpolator::Interp3D(interp) => Ok(interp.set_z(new_z)?),
-            #[cfg(feature = "nd")]
+            
             Interpolator::InterpND(interp) => Ok(interp.set_grid_z(new_z)?),
             _ => Err(Error::NoSuchField),
         }
@@ -499,7 +498,7 @@ impl Interpolator {
     }
 
     /// Function to get grid variable from enum variants
-    #[cfg(feature = "nd")]
+    
     pub fn grid(&self) -> Result<&[Vec<f64>], Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(&interp.grid),
@@ -510,7 +509,7 @@ impl Interpolator {
     /// Function to set grid variable from enum variants
     /// # Arguments
     /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
-    #[cfg(feature = "nd")]
+    
     pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(interp.set_grid(new_grid)?),
@@ -519,7 +518,7 @@ impl Interpolator {
     }
 
     /// Function to get values variable from enum variants
-    #[cfg(feature = "nd")]
+    
     pub fn values(&self) -> Result<&ndarray::ArrayD<f64>, Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(&interp.values),
@@ -530,7 +529,7 @@ impl Interpolator {
     /// Function to set values variable from enum variants
     /// # Arguments
     /// - `new_values`: updated `values` variable to replace the current `values` variable
-    #[cfg(feature = "nd")]
+    
     pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(interp.set_values(new_values)?),
@@ -541,16 +540,16 @@ impl Interpolator {
 
 /// Interpolation strategy.
 #[derive(Clone, Debug, PartialEq, Default)]
-#[cfg_attr(feature = "serde", Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Strategy {
-    /// Linear interpolation: https://en.wikipedia.org/wiki/Linear_interpolation
+    /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
     #[default]
     Linear,
-    /// Left-nearest (previous value) interpolation: https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation
+    /// Left-nearest (previous value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
     LeftNearest,
-    /// Right-nearest (next value) interpolation: https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation
+    /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
     RightNearest,
-    /// Nearest value (left or right) interpolation: https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation
+    /// Nearest value (left or right) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
     Nearest,
 }
 
@@ -559,7 +558,7 @@ pub enum Strategy {
 /// Controls what happens if supplied interpolant point
 /// is outside the bounds of the interpolation grid.
 #[derive(Clone, Debug, PartialEq, Default)]
-#[cfg_attr(feature = "serde", Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate {
     /// If interpolant point is beyond the limits of the interpolation grid,
     /// find result via extrapolation using slope of nearby points.  

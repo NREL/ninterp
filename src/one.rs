@@ -3,7 +3,7 @@
 use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp1D {
     pub(crate) x: Vec<f64>,
     pub(crate) f_x: Vec<f64>,
