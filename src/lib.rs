@@ -5,13 +5,13 @@ pub mod three;
 pub mod two;
 
 pub use error::*;
+pub use n::*;
 pub use one::*;
 pub use three::*;
 pub use two::*;
-pub use n::*;
 
 #[cfg(feature = "serde")]
-pub(crate) use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 // This method contains code from RouteE Compass, another NREL-developed tool
 // <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
@@ -172,7 +172,6 @@ pub enum Interpolator {
     /// 3-dimensional interpolation
     Interp3D(Interp3D),
     /// N-dimensional interpolation
-    
     InterpND(InterpND),
 }
 
@@ -263,7 +262,6 @@ impl Interpolator {
                 };
                 interp.interpolate(point)
             }
-            
             Self::InterpND(interp) => {
                 match interp.extrapolate {
                     Extrapolate::Clamp => {
@@ -317,7 +315,6 @@ impl Interpolator {
             Self::Interp1D(_) => 1,
             Self::Interp2D(_) => 2,
             Self::Interp3D(_) => 3,
-            
             Self::InterpND(interp) => interp.ndim(),
         }
     }
@@ -340,7 +337,6 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(interp.set_x(new_x)?),
             Interpolator::Interp2D(interp) => Ok(interp.set_x(new_x)?),
             Interpolator::Interp3D(interp) => Ok(interp.set_x(new_x)?),
-            
             Interpolator::InterpND(interp) => Ok(interp.set_grid_x(new_x)?),
             _ => Err(Error::NoSuchField),
         }
@@ -370,7 +366,6 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(&interp.strategy),
             Interpolator::Interp2D(interp) => Ok(&interp.strategy),
             Interpolator::Interp3D(interp) => Ok(&interp.strategy),
-            
             Interpolator::InterpND(interp) => Ok(&interp.strategy),
             _ => Err(Error::NoSuchField),
         }
@@ -384,7 +379,6 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp2D(interp) => interp.strategy = new_strategy,
             Interpolator::Interp3D(interp) => interp.strategy = new_strategy,
-            
             Interpolator::InterpND(interp) => interp.strategy = new_strategy,
             _ => return Err(Error::NoSuchField),
         }
@@ -397,7 +391,6 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => Ok(&interp.extrapolate),
             Interpolator::Interp2D(interp) => Ok(&interp.extrapolate),
             Interpolator::Interp3D(interp) => Ok(&interp.extrapolate),
-            
             Interpolator::InterpND(interp) => Ok(&interp.extrapolate),
             _ => Err(Error::NoSuchField),
         }
@@ -411,7 +404,6 @@ impl Interpolator {
             Interpolator::Interp1D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp2D(interp) => interp.extrapolate = new_extrapolate,
             Interpolator::Interp3D(interp) => interp.extrapolate = new_extrapolate,
-            
             Interpolator::InterpND(interp) => interp.extrapolate = new_extrapolate,
             _ => return Err(Error::NoSuchField),
         }
@@ -434,7 +426,6 @@ impl Interpolator {
         match self {
             Interpolator::Interp2D(interp) => interp.set_y(new_y)?,
             Interpolator::Interp3D(interp) => interp.set_y(new_y)?,
-            
             Interpolator::InterpND(interp) => interp.set_grid_y(new_y)?,
             _ => return Err(Error::NoSuchField),
         }
@@ -473,7 +464,6 @@ impl Interpolator {
     pub fn set_z(&mut self, new_z: Vec<f64>) -> Result<(), Error> {
         match self {
             Interpolator::Interp3D(interp) => Ok(interp.set_z(new_z)?),
-            
             Interpolator::InterpND(interp) => Ok(interp.set_grid_z(new_z)?),
             _ => Err(Error::NoSuchField),
         }
@@ -498,7 +488,6 @@ impl Interpolator {
     }
 
     /// Function to get grid variable from enum variants
-    
     pub fn grid(&self) -> Result<&[Vec<f64>], Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(&interp.grid),
@@ -509,7 +498,6 @@ impl Interpolator {
     /// Function to set grid variable from enum variants
     /// # Arguments
     /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
-    
     pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(interp.set_grid(new_grid)?),
@@ -518,7 +506,6 @@ impl Interpolator {
     }
 
     /// Function to get values variable from enum variants
-    
     pub fn values(&self) -> Result<&ndarray::ArrayD<f64>, Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(&interp.values),
@@ -529,7 +516,6 @@ impl Interpolator {
     /// Function to set values variable from enum variants
     /// # Arguments
     /// - `new_values`: updated `values` variable to replace the current `values` variable
-    
     pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), Error> {
         match self {
             Interpolator::InterpND(interp) => Ok(interp.set_values(new_values)?),
