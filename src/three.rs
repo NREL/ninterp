@@ -10,9 +10,9 @@ pub struct Interp3D {
     pub(crate) z: Vec<f64>,
     pub(crate) f_xyz: Vec<Vec<Vec<f64>>>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub strategy: Strategy,
+    pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    pub(crate) extrapolate: Extrapolate,
 }
 
 impl Interp3D {
@@ -35,38 +35,6 @@ impl Interp3D {
         };
         interp.validate()?;
         Ok(interp)
-    }
-
-    /// Function to set x variable from Interp3D
-    /// # Arguments
-    /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.x = new_x;
-        self.validate()
-    }
-
-    /// Function to set y variable from Interp3D
-    /// # Arguments
-    /// - `new_y`: updated `y` variable to replace the current `y` variable
-    pub fn set_y(&mut self, new_y: Vec<f64>) -> Result<(), ValidationError> {
-        self.y = new_y;
-        self.validate()
-    }
-
-    /// Function to set z variable from Interp3D
-    /// # Arguments
-    /// - `new_z`: updated `z` variable to replace the current `z` variable
-    pub fn set_z(&mut self, new_z: Vec<f64>) -> Result<(), ValidationError> {
-        self.z = new_z;
-        self.validate()
-    }
-
-    /// Function to set f_xyz variable from Interp3D
-    /// # Arguments
-    /// - `new_f_xyz`: updated `f_xyz` variable to replace the current `f_xyz` variable
-    pub fn set_f_xyz(&mut self, new_f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), ValidationError> {
-        self.f_xyz = new_f_xyz;
-        self.validate()
     }
 }
 
@@ -171,6 +139,75 @@ impl InterpMethods for Interp3D {
             Strategy::Linear => self.linear(point),
             _ => unreachable!(),
         }
+    }
+}
+
+// Getters and setters
+impl Interp3D {
+    /// Get `strategy` field
+    pub fn strategy(&self) -> &Strategy {
+        &self.strategy
+    }
+
+    /// Set `strategy` field
+    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
+        self.strategy = strategy;
+        self.validate()
+    }
+
+    /// Get `extrapolate` field
+    pub fn extrapolate(&self) -> &Extrapolate {
+        &self.extrapolate
+    }
+
+    /// Set `extrapolate` field
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
+        self.extrapolate = extrapolate;
+        self.validate()
+    }
+
+    /// Get `x` field
+    pub fn x(&self) -> &[f64] {
+        &self.x
+    }
+
+    /// Set `x` field
+    pub fn set_x(&mut self, x: Vec<f64>) -> Result<(), ValidationError> {
+        self.x = x;
+        self.validate()
+    }
+
+    /// Get `y` field
+    pub fn y(&self) -> &[f64] {
+        &self.y
+    }
+
+    /// Set `y` field
+    pub fn set_y(&mut self, y: Vec<f64>) -> Result<(), ValidationError> {
+        self.y = y;
+        self.validate()
+    }
+
+    /// Get `z` field
+    pub fn z(&self) -> &[f64] {
+        &self.z
+    }
+
+    /// Set `z` field
+    pub fn set_z(&mut self, z: Vec<f64>) -> Result<(), ValidationError> {
+        self.z = z;
+        self.validate()
+    }
+
+    /// Get `f_xyz` field
+    pub fn f_xyz(&self) -> &[Vec<Vec<f64>>] {
+        &self.f_xyz
+    }
+
+    /// Set `f_xyz` field
+    pub fn set_f_xyz(&mut self, f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), ValidationError> {
+        self.f_xyz = f_xyz;
+        self.validate()
     }
 }
 

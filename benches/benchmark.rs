@@ -3,8 +3,8 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use ninterp::*;
 use ndarray::prelude::*;
+use ninterp::*;
 use rand::{self, rngs::StdRng, Rng, SeedableRng};
 
 #[allow(non_snake_case)]

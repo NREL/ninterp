@@ -4,15 +4,16 @@ use super::*;
 use itertools::Itertools;
 use ndarray;
 
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct InterpND {
     pub(crate) grid: Vec<Vec<f64>>,
     pub(crate) values: ndarray::ArrayD<f64>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub strategy: Strategy,
+    pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    pub(crate) extrapolate: Extrapolate,
 }
 
 impl InterpND {
@@ -51,46 +52,6 @@ impl InterpND {
             .map(|&len| 0..len)
             .multi_cartesian_product()
             .collect()
-    }
-
-    /// Function to set grid variable from InterpND
-    /// # Arguments
-    /// - `new_grid`: updated `grid` variable to replace the current `grid` variable
-    pub fn set_grid(&mut self, new_grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
-        self.grid = new_grid;
-        self.validate()
-    }
-
-    /// Function to set grid x variable from InterpND
-    /// # Arguments
-    /// - `new_x`: updated `grid[0]` to replace the current `grid[0]`
-    pub fn set_grid_x(&mut self, new_grid_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[0] = new_grid_x;
-        self.validate()
-    }
-
-    /// Function to set grid y variable from InterpND
-    /// # Arguments
-    /// - `new_y`: updated `grid[1]` to replace the current `grid[1]`
-    pub fn set_grid_y(&mut self, new_grid_y: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[1] = new_grid_y;
-        self.validate()
-    }
-
-    /// Function to set grid z variable from InterpND
-    /// # Arguments
-    /// - `new_z`: updated `grid[2]` to replace the current `grid[2]`
-    pub fn set_grid_z(&mut self, new_grid_z: Vec<f64>) -> Result<(), ValidationError> {
-        self.grid[2] = new_grid_z;
-        self.validate()
-    }
-
-    /// Function to set values variable from InterpND
-    /// # Arguments
-    /// - `new_values`: updated `values` variable to replace the current `values` variable
-    pub fn set_values(&mut self, new_values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
-        self.values = new_values;
-        self.validate()
     }
 }
 
@@ -184,12 +145,6 @@ impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidationError> {
         let n = self.ndim();
 
-        // Warn user if there is a hardcoded interpolator alternative
-        #[cfg(feature = "logging")]
-        if n <= 3 {
-            log::warn!("Using N-D interpolator for {n}-D interpolation, use hardcoded {n}-D interpolator for better performance");
-        }
-
         // Check that interpolation strategy is applicable
         if !matches!(self.strategy, Strategy::Linear) {
             return Err(ValidationError::StrategySelection(format!(
@@ -252,6 +207,52 @@ impl InterpMethods for InterpND {
     }
 }
 
+// Getters and setters
+impl InterpND {
+    /// Get `strategy` field
+    pub fn strategy(&self) -> &Strategy {
+        &self.strategy
+    }
+
+    /// Set `strategy` field
+    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
+        self.strategy = strategy;
+        self.validate()
+    }
+
+    /// Get `extrapolate` field
+    pub fn extrapolate(&self) -> &Extrapolate {
+        &self.extrapolate
+    }
+
+    /// Set `extrapolate` field
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
+        self.extrapolate = extrapolate;
+        self.validate()
+    }
+
+    /// Get `grid` field
+    pub fn grid(&self) -> &[Vec<f64>] {
+        &self.grid
+    }
+
+    /// Set `grid` field
+    pub fn set_grid(&mut self, grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
+        self.grid = grid;
+        self.validate()
+    }
+
+    /// Get `values` field
+    pub fn values(&self) -> &ndarray::ArrayD<f64> {
+        &self.values
+    }
+
+    /// Set `values` field
+    pub fn set_values(&mut self, values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
+        self.values = values;
+        self.validate()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -8,9 +8,9 @@ pub struct Interp1D {
     pub(crate) x: Vec<f64>,
     pub(crate) f_x: Vec<f64>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub strategy: Strategy,
+    pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    pub(crate) extrapolate: Extrapolate,
 }
 
 impl Interp1D {
@@ -29,22 +29,6 @@ impl Interp1D {
         };
         interp.validate()?;
         Ok(interp)
-    }
-
-    /// Function to set x variable from Interp1D
-    /// # Arguments
-    /// - `new_x`: updated `x` variable to replace the current `x` variable
-    pub fn set_x(&mut self, new_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.x = new_x;
-        self.validate()
-    }
-
-    /// Function to set f_x variable from Interp1D
-    /// # Arguments
-    /// - `new_f_x`: updated `f_x` variable to replace the current `f_x` variable
-    pub fn set_f_x(&mut self, new_f_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.f_x = new_f_x;
-        self.validate()
     }
 }
 
@@ -121,7 +105,7 @@ impl InterpMethods for Interp1D {
             }
             if x_grid_len < 2 {
                 return Err(ValidationError::Other(
-                    "At least 2 data points are required for extrapolation".into(),
+                    "at least 2 data points are required for extrapolation".into(),
                 ));
             }
         }
@@ -151,6 +135,53 @@ impl InterpMethods for Interp1D {
             Strategy::RightNearest => self.right_nearest(point),
             Strategy::Nearest => self.nearest(point),
         }
+    }
+}
+
+// Getters and setterss
+impl Interp1D {
+    /// Get `strategy` field
+    pub fn strategy(&self) -> &Strategy {
+        &self.strategy
+    }
+
+    /// Set `strategy` field
+    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
+        self.strategy = strategy;
+        self.validate()
+    }
+
+    /// Get `extrapolate` field
+    pub fn extrapolate(&self) -> &Extrapolate {
+        &self.extrapolate
+    }
+
+    /// Set `extrapolate` field
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
+        self.extrapolate = extrapolate;
+        self.validate()
+    }
+
+    /// Get `x` field
+    pub fn x(&self) -> &[f64] {
+        &self.x
+    }
+
+    /// Set `x` field
+    pub fn set_x(&mut self, x: Vec<f64>) -> Result<(), ValidationError> {
+        self.x = x;
+        self.validate()
+    }
+
+    /// Get `f_x` field
+    pub fn f_x(&self) -> &[f64] {
+        &self.f_x
+    }
+
+    /// Set `f_x` field
+    pub fn set_f_x(&mut self, f_x: Vec<f64>) -> Result<(), ValidationError> {
+        self.f_x = f_x;
+        self.validate()
     }
 }
 
