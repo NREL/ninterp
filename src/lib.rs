@@ -130,7 +130,7 @@ pub enum Interpolator {
     /// ```
     /// use ninterp::*;
     /// let interp = Interpolator::Interp2D(
-    ///     // f(x) = 0.2 * x + 0.4 * y
+    ///     // f(x, y) = 0.2 * x + 0.4 * y
     ///     Interp2D::new(
     ///         vec![0., 1., 2.], // x0, x1, x2
     ///         vec![0., 1., 2.], // y0, y1, y2
@@ -161,7 +161,7 @@ pub enum Interpolator {
     /// ```
     /// use ninterp::*;
     /// let interp = Interpolator::Interp3D(
-    ///     // f(x) = 0.2 * x + 0.2 * y + 0.2 * z
+    ///     // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     ///     Interp3D::new(
     ///         vec![1., 2.], // x0, x1
     ///         vec![1., 2.], // y0, y1
@@ -200,7 +200,7 @@ pub enum Interpolator {
     /// use ninterp::*;
     /// use ndarray::array;
     /// let interp = Interpolator::InterpND(
-    ///     // f(x) = 0.2 * x + 0.2 * y + 0.2 * z
+    ///     // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     ///     InterpND::new(
     ///         vec![
     ///             vec![1., 2.], // x0, x1
