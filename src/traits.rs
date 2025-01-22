@@ -2,10 +2,9 @@ use super::*;
 
 /// Methods applicable to all interpolators
 pub trait InterpMethods {
-    /// Validate data stored in [Self]. By design, [Self] can be instantiatated
-    /// only via the `new` method, which calls `validate`.
+    /// Validate data stored in [Self]
     fn validate(&self) -> Result<(), ValidationError>;
-    /// Interpolate at given point
+    /// Interpolate at supplied point
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError>;
 }
 

@@ -18,7 +18,7 @@ pub(crate) struct InterpND {
 
 impl InterpND {
     /// Interpolator dimensionality
-    pub fn ndim(&self) -> usize {
+    pub(crate) fn ndim(&self) -> usize {
         if self.values.len() == 1 {
             0
         } else {

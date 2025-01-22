@@ -18,18 +18,18 @@
 //! See the [`Interpolator`] enum documentation for examples and notes on usage.
 //!
 
-pub mod error;
-pub mod n;
-pub mod one;
-pub mod three;
-pub mod two;
-pub mod traits;
+mod error;
+mod n;
+mod one;
+mod three;
+mod two;
+mod traits;
 
 pub use error::*;
-pub use n::*;
-pub use one::*;
-pub use three::*;
-pub use two::*;
+pub(crate) use n::*;
+pub(crate) use one::*;
+pub(crate) use three::*;
+pub(crate) use two::*;
 pub use traits::*;
 
 #[cfg(feature = "serde")]
