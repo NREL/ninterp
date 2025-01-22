@@ -320,6 +320,16 @@ impl Interpolator {
         Ok(Self::InterpND(interp))
     }
 
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        match self {
+            Self::Interp0D(_) => Ok(()),
+            Self::Interp1D(interp) => interp.validate(),
+            Self::Interp2D(interp) => interp.validate(),
+            Self::Interp3D(interp) => interp.validate(),
+            Self::InterpND(interp) => interp.validate(),
+        }
+    }
+
     /// Interpolate at supplied point, after checking point validity.
     /// Length of supplied point must match interpolator dimensionality.
     pub fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
