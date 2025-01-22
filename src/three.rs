@@ -4,7 +4,7 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp3D {
+pub(crate) struct Interp3D {
     pub(crate) x: Vec<f64>,
     pub(crate) y: Vec<f64>,
     pub(crate) z: Vec<f64>,
@@ -13,29 +13,6 @@ pub struct Interp3D {
     pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) extrapolate: Extrapolate,
-}
-
-impl Interp3D {
-    /// Create and validate 3-D interpolator
-    pub fn new(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        z: Vec<f64>,
-        f_xyz: Vec<Vec<Vec<f64>>>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Self {
-            x,
-            y,
-            z,
-            f_xyz,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(interp)
-    }
 }
 
 impl Linear for Interp3D {
@@ -229,17 +206,15 @@ mod tests {
                 vec![24., 25., 26.],
             ],
         ];
-        let interp = Interpolator::Interp3D(
-            Interp3D::new(
-                x.clone(),
-                y.clone(),
-                z.clone(),
-                f_xyz.clone(),
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_3d(
+            x.clone(),
+            y.clone(),
+            z.clone(),
+            f_xyz.clone(),
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             for (j, y_j) in y.iter().enumerate() {
@@ -279,20 +254,18 @@ mod tests {
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::Interp3D(
-            Interp3D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![
-                    vec![vec![0., 1.], vec![2., 3.]],
-                    vec![vec![4., 5.], vec![6., 7.]],
-                ],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_3d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![
+                vec![vec![0., 1.], vec![2., 3.]],
+                vec![vec![4., 5.], vec![6., 7.]],
+            ],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(
             interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
             3.1999999999999997
@@ -303,35 +276,34 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interp3D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![
+            Interp3D {
+                x: vec![0., 1.],
+                y: vec![0., 1.],
+                z: vec![0., 1.],
+                f_xyz: vec![
                     vec![vec![0., 1.], vec![2., 3.]],
                     vec![vec![4., 5.], vec![6., 7.]],
                 ],
-                Strategy::Linear,
-                Extrapolate::Enable,
-            )
+                strategy: Strategy::Linear,
+                extrapolate: Extrapolate::Enable,
+            }
+            .validate()
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::Interp3D(
-            Interp3D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![
-                    vec![vec![0., 1.], vec![2., 3.]],
-                    vec![vec![4., 5.], vec![6., 7.]],
-                ],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_3d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![
+                vec![vec![0., 1.], vec![2., 3.]],
+                vec![vec![4., 5.], vec![6., 7.]],
+            ],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
             InterpolationError::ExtrapolationError(_)
@@ -344,20 +316,18 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::Interp3D(
-            Interp3D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![
-                    vec![vec![0., 1.], vec![2., 3.]],
-                    vec![vec![4., 5.], vec![6., 7.]],
-                ],
-                Strategy::Linear,
-                Extrapolate::Clamp,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_3d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![
+                vec![vec![0., 1.], vec![2., 3.]],
+                vec![vec![4., 5.], vec![6., 7.]],
+            ],
+            Strategy::Linear,
+            Extrapolate::Clamp,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
     }

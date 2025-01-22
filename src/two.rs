@@ -4,7 +4,7 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp2D {
+pub(crate) struct Interp2D {
     pub(crate) x: Vec<f64>,
     pub(crate) y: Vec<f64>,
     pub(crate) f_xy: Vec<Vec<f64>>,
@@ -12,27 +12,6 @@ pub struct Interp2D {
     pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) extrapolate: Extrapolate,
-}
-
-impl Interp2D {
-    /// Create and validate 2-D interpolator
-    pub fn new(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        f_xy: Vec<Vec<f64>>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Self {
-            x,
-            y,
-            f_xy,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(interp)
-    }
 }
 
 impl Linear for Interp2D {
@@ -181,32 +160,28 @@ mod tests {
         let x = vec![0.05, 0.10, 0.15];
         let y = vec![0.10, 0.20, 0.30];
         let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
-        let interp = Interpolator::Interp2D(
-            Interp2D::new(
-                x.clone(),
-                y.clone(),
-                f_xy.clone(),
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_2d(
+            x.clone(),
+            y.clone(),
+            f_xy.clone(),
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), 7.);
         assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), 7.);
     }
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::Interp2D(
-            Interp2D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![vec![0., 1.], vec![2., 3.]],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_2d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         let interp_res = interp.interpolate(&[0.25, 0.65]).unwrap();
         assert_eq!(interp_res, 1.1500000000000001) // 1.15
     }
@@ -215,27 +190,26 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interp2D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![vec![0., 1.], vec![2., 3.]],
-                Strategy::Linear,
-                Extrapolate::Enable,
-            )
+            Interp2D {
+                x: vec![0., 1.],
+                y: vec![0., 1.],
+                f_xy: vec![vec![0., 1.], vec![2., 3.]],
+                strategy: Strategy::Linear,
+                extrapolate: Extrapolate::Enable,
+            }
+            .validate()
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::Interp2D(
-            Interp2D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![vec![0., 1.], vec![2., 3.]],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_2d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1.]).unwrap_err(),
             InterpolationError::ExtrapolationError(_)
@@ -248,16 +222,14 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::Interp2D(
-            Interp2D::new(
-                vec![0., 1.],
-                vec![0., 1.],
-                vec![vec![0., 1.], vec![2., 3.]],
-                Strategy::Linear,
-                Extrapolate::Clamp,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_2d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Strategy::Linear,
+            Extrapolate::Clamp,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[-1., -1.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[2., 2.]).unwrap(), 3.);
     }

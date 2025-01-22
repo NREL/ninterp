@@ -7,7 +7,7 @@ use ndarray;
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpND {
+pub(crate) struct InterpND {
     pub(crate) grid: Vec<Vec<f64>>,
     pub(crate) values: ndarray::ArrayD<f64>,
     #[cfg_attr(feature = "serde", serde(default))]
@@ -17,23 +17,6 @@ pub struct InterpND {
 }
 
 impl InterpND {
-    /// Create and validate 2-D interpolator
-    pub fn new(
-        grid: Vec<Vec<f64>>,
-        values: ndarray::ArrayD<f64>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Self {
-            grid,
-            values,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(interp)
-    }
-
     /// Interpolator dimensionality
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
@@ -270,15 +253,13 @@ mod tests {
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
         ]
         .into_dyn();
-        let interp = Interpolator::InterpND(
-            InterpND::new(
+        let interp = Interpolator::new_nd(
                 grid.clone(),
                 f_xyz.clone(),
                 Strategy::Linear,
                 Extrapolate::Error,
             )
-            .unwrap(),
-        );
+            .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {
@@ -322,15 +303,13 @@ mod tests {
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::InterpND(
-            InterpND::new(
+        let interp = Interpolator::new_nd(
                 vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 Strategy::Linear,
                 Extrapolate::Error,
             )
-            .unwrap(),
-        );
+            .unwrap();
         assert_eq!(
             interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
             3.1999999999999997
@@ -341,25 +320,24 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            InterpND::new(
-                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                Strategy::Linear,
-                Extrapolate::Enable,
-            )
+            InterpND {
+                grid: vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+                values: ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+                strategy: Strategy::Linear,
+                extrapolate: Extrapolate::Enable,
+            }
+            .validate()
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::InterpND(
-            InterpND::new(
+        let interp = Interpolator::new_nd(
                 vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 Strategy::Linear,
                 Extrapolate::Error,
             )
-            .unwrap(),
-        );
+            .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
             InterpolationError::ExtrapolationError(_)
@@ -372,15 +350,13 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::InterpND(
-            InterpND::new(
+        let interp = Interpolator::new_nd(
                 vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 Strategy::Linear,
                 Extrapolate::Clamp,
             )
-            .unwrap(),
-        );
+            .unwrap();
         assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
     }

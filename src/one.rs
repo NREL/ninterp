@@ -4,32 +4,13 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp1D {
+pub(crate) struct Interp1D {
     pub(crate) x: Vec<f64>,
     pub(crate) f_x: Vec<f64>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) extrapolate: Extrapolate,
-}
-
-impl Interp1D {
-    /// Create and validate 1-D interpolator
-    pub fn new(
-        x: Vec<f64>,
-        f_x: Vec<f64>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Self {
-            x,
-            f_x,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(interp)
-    }
 }
 
 impl Linear for Interp1D {
@@ -138,7 +119,7 @@ impl InterpMethods for Interp1D {
     }
 }
 
-// Getters and setterss
+// Getters and setters
 impl Interp1D {
     /// Get `strategy` field
     pub fn strategy(&self) -> &Strategy {
@@ -191,15 +172,13 @@ mod tests {
 
     #[test]
     fn test_invalid_args() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert!(matches!(
             interp.interpolate(&[]).unwrap_err(),
             InterpolationError::InvalidPoint(_)
@@ -209,15 +188,13 @@ mod tests {
 
     #[test]
     fn test_linear() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[3.00]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[3.75]).unwrap(), 0.95);
         assert_eq!(interp.interpolate(&[4.00]).unwrap(), 1.0);
@@ -225,15 +202,13 @@ mod tests {
 
     #[test]
     fn test_left_nearest() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::LeftNearest,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::LeftNearest,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[3.00]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[3.75]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[4.00]).unwrap(), 1.0);
@@ -241,15 +216,13 @@ mod tests {
 
     #[test]
     fn test_right_nearest() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::RightNearest,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::RightNearest,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[3.00]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[3.25]).unwrap(), 1.0);
         assert_eq!(interp.interpolate(&[4.00]).unwrap(), 1.0);
@@ -257,15 +230,13 @@ mod tests {
 
     #[test]
     fn test_nearest() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Nearest,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Nearest,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[3.00]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[3.25]).unwrap(), 0.8);
         assert_eq!(interp.interpolate(&[3.50]).unwrap(), 1.0);
@@ -277,26 +248,25 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Incorrect extrapolation selection
         assert!(matches!(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Nearest,
-                Extrapolate::Enable,
-            )
+            Interp1D {
+                x: vec![0., 1., 2., 3., 4.],
+                f_x: vec![0.2, 0.4, 0.6, 0.8, 1.0],
+                strategy: Strategy::Nearest,
+                extrapolate: Extrapolate::Enable,
+            }
+            .validate()
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
 
         // Extrapolate::Error
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         // Fail to extrapolate below lowest grid value
         assert!(matches!(
             interp.interpolate(&[-1.]).unwrap_err(),
@@ -311,30 +281,26 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Linear,
-                Extrapolate::Clamp,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::Clamp,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[-1.]).unwrap(), 0.2);
         assert_eq!(interp.interpolate(&[5.]).unwrap(), 1.0);
     }
 
     #[test]
     fn test_extrapolate() {
-        let interp = Interpolator::Interp1D(
-            Interp1D::new(
-                vec![0., 1., 2., 3., 4.],
-                vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Linear,
-                Extrapolate::Enable,
-            )
-            .unwrap(),
-        );
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[-1.]).unwrap(), 0.0);
         assert_eq!(interp.interpolate(&[5.]).unwrap(), 1.2);
     }
