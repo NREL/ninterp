@@ -119,53 +119,6 @@ impl InterpMethods for Interp1D {
     }
 }
 
-// Getters and setters
-impl Interp1D {
-    /// Get `strategy` field
-    pub fn strategy(&self) -> &Strategy {
-        &self.strategy
-    }
-
-    /// Set `strategy` field
-    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
-        self.strategy = strategy;
-        self.validate()
-    }
-
-    /// Get `extrapolate` field
-    pub fn extrapolate(&self) -> &Extrapolate {
-        &self.extrapolate
-    }
-
-    /// Set `extrapolate` field
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
-        self.extrapolate = extrapolate;
-        self.validate()
-    }
-
-    /// Get `x` field
-    pub fn x(&self) -> &[f64] {
-        &self.x
-    }
-
-    /// Set `x` field
-    pub fn set_x(&mut self, x: Vec<f64>) -> Result<(), ValidationError> {
-        self.x = x;
-        self.validate()
-    }
-
-    /// Get `f_x` field
-    pub fn f_x(&self) -> &[f64] {
-        &self.f_x
-    }
-
-    /// Set `f_x` field
-    pub fn set_f_x(&mut self, f_x: Vec<f64>) -> Result<(), ValidationError> {
-        self.f_x = f_x;
-        self.validate()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

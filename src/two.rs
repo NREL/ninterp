@@ -93,64 +93,6 @@ impl InterpMethods for Interp2D {
     }
 }
 
-// Getters and setters
-impl Interp2D {
-    /// Get `strategy` field
-    pub fn strategy(&self) -> &Strategy {
-        &self.strategy
-    }
-
-    /// Set `strategy` field
-    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
-        self.strategy = strategy;
-        self.validate()
-    }
-
-    /// Get `extrapolate` field
-    pub fn extrapolate(&self) -> &Extrapolate {
-        &self.extrapolate
-    }
-
-    /// Set `extrapolate` field
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
-        self.extrapolate = extrapolate;
-        self.validate()
-    }
-
-    /// Get `x` field
-    pub fn x(&self) -> &[f64] {
-        &self.x
-    }
-
-    /// Set `x` field
-    pub fn set_x(&mut self, x: Vec<f64>) -> Result<(), ValidationError> {
-        self.x = x;
-        self.validate()
-    }
-
-    /// Get `y` field
-    pub fn y(&self) -> &[f64] {
-        &self.y
-    }
-
-    /// Set `y` field
-    pub fn set_y(&mut self, y: Vec<f64>) -> Result<(), ValidationError> {
-        self.y = y;
-        self.validate()
-    }
-
-    /// Get `f_xy` field
-    pub fn f_xy(&self) -> &[Vec<f64>] {
-        &self.f_xy
-    }
-
-    /// Set `f_xy` field
-    pub fn set_f_xy(&mut self, f_xy: Vec<Vec<f64>>) -> Result<(), ValidationError> {
-        self.f_xy = f_xy;
-        self.validate()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

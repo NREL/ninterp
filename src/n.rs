@@ -190,52 +190,6 @@ impl InterpMethods for InterpND {
     }
 }
 
-// Getters and setters
-impl InterpND {
-    /// Get `strategy` field
-    pub fn strategy(&self) -> &Strategy {
-        &self.strategy
-    }
-
-    /// Set `strategy` field
-    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), ValidationError> {
-        self.strategy = strategy;
-        self.validate()
-    }
-
-    /// Get `extrapolate` field
-    pub fn extrapolate(&self) -> &Extrapolate {
-        &self.extrapolate
-    }
-
-    /// Set `extrapolate` field
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidationError> {
-        self.extrapolate = extrapolate;
-        self.validate()
-    }
-
-    /// Get `grid` field
-    pub fn grid(&self) -> &[Vec<f64>] {
-        &self.grid
-    }
-
-    /// Set `grid` field
-    pub fn set_grid(&mut self, grid: Vec<Vec<f64>>) -> Result<(), ValidationError> {
-        self.grid = grid;
-        self.validate()
-    }
-
-    /// Get `values` field
-    pub fn values(&self) -> &ndarray::ArrayD<f64> {
-        &self.values
-    }
-
-    /// Set `values` field
-    pub fn set_values(&mut self, values: ndarray::ArrayD<f64>) -> Result<(), ValidationError> {
-        self.values = values;
-        self.validate()
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
