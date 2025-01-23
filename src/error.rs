@@ -33,7 +33,7 @@ pub enum ValidationError {
 
 #[derive(Error, Debug)]
 pub enum InterpolationError {
-    #[error("sttempted to interpolate at point beyond grid data: {0}")]
+    #[error("attempted to interpolate at point beyond grid data: {0}")]
     ExtrapolationError(String),
     #[error("surrounding values cannot be NaN: {0}")]
     NaNError(String),
