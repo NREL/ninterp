@@ -67,18 +67,22 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///
 /// Interpolation is executed by calling [`Interpolator::interpolate`].
 /// The length of the supplied point slice must be equal to the intepolator dimensionality.
+/// The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
 ///
 /// # Note
-/// With interpolators of dimensionality N ≥ 1:
-/// - By design, instantiation must be done via the interpolator structs `new` method.
-/// This ensures that a validation check is performed to catch any potential errors early.
-///   - To set or get field values, use the corresponding named methods.
+/// For interpolators of dimensionality N ≥ 1:
+/// - By design, instantiation must be done via the Interpolator enum's `new_*` methods (`new_1d`, `new_2d`, `new_3d`, `new_nd`).
+/// These run a validation step that catches any potential errors early.
+///   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
 /// - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
 /// Not all interpolation strategies are implemented for every dimensionality.
 /// [`Strategy::Linear`] is implemented for all dimensionalities.
 /// - An [`Extrapolate`] setting must be specified.
 /// This controls what happens when a point is beyond the range of supplied coordinates.
 /// If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
+/// 
+/// For 0D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
+/// 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Interpolator {

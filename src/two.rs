@@ -110,8 +110,8 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), 7.);
-        assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), 7.);
+        assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), f_xy[2][1]);
+        assert_eq!(interp.interpolate(&[0.075, 0.25]).unwrap(), 3.);
     }
 
     #[test]
@@ -124,8 +124,10 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
-        let interp_res = interp.interpolate(&[0.25, 0.65]).unwrap();
-        assert_eq!(interp_res, 1.1500000000000001) // 1.15
+        assert_eq!(
+            interp.interpolate(&[0.25, 0.65]).unwrap(),
+            1.1500000000000001 // 1.15
+        )
     }
 
     #[test]
