@@ -208,12 +208,12 @@ mod tests {
         ]
         .into_dyn();
         let interp = Interpolator::new_nd(
-                grid.clone(),
-                f_xyz.clone(),
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap();
+            grid.clone(),
+            f_xyz.clone(),
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {
@@ -258,12 +258,12 @@ mod tests {
     #[test]
     fn test_linear_offset() {
         let interp = Interpolator::new_nd(
-                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap();
+            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert_eq!(
             interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
             3.1999999999999997
@@ -286,12 +286,12 @@ mod tests {
         ));
         // Extrapolate::Error
         let interp = Interpolator::new_nd(
-                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                Strategy::Linear,
-                Extrapolate::Error,
-            )
-            .unwrap();
+            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Strategy::Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
             InterpolationError::ExtrapolationError(_)
@@ -305,12 +305,12 @@ mod tests {
     #[test]
     fn test_extrapolate_clamp() {
         let interp = Interpolator::new_nd(
-                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                Strategy::Linear,
-                Extrapolate::Clamp,
-            )
-            .unwrap();
+            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Strategy::Linear,
+            Extrapolate::Clamp,
+        )
+        .unwrap();
         assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
     }
