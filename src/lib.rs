@@ -83,6 +83,7 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 ///
 /// For 0D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
 ///
+#[allow(private_interfaces)]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Interpolator {
