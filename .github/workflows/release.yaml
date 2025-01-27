@@ -1,0 +1,30 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: cargo build --verbose
+    - run: cargo test --verbose
+    - run: cargo test --no-default-features --verbose
+    - run: cargo test --all-features --verbose
+
+  release:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: cargo publish --dry-run
+    - run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
