@@ -4,7 +4,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use ndarray::prelude::*;
-use ninterp::*;
+use ninterp::prelude::*;
 use rand::{self, rngs::StdRng, Rng, SeedableRng};
 
 #[allow(non_snake_case)]

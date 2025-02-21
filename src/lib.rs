@@ -18,14 +18,18 @@
 //! See the [`Interpolator`] enum documentation for examples and notes on usage.
 //!
 
-mod error;
+pub mod prelude {
+    pub use crate::{Interpolator, Strategy, Extrapolate, InterpMethods};
+}
+
+pub mod error;
 mod n;
 mod one;
 mod three;
 mod traits;
 mod two;
 
-pub use error::*;
+pub(crate) use error::*;
 pub(crate) use n::*;
 pub(crate) use one::*;
 pub(crate) use three::*;
@@ -116,7 +120,7 @@ pub enum Interpolator {
     ///
     /// # Example (linear, using [`Extrapolate::Enable`]):
     /// ```
-    /// use ninterp::*;
+    /// use ninterp::prelude::*;
     /// // f(x) = 0.2 * x + 0.2
     /// let interp = Interpolator::new_1d(
     ///     // x
@@ -143,7 +147,7 @@ pub enum Interpolator {
     ///
     /// # Example (using [`Extrapolate::Clamp`]):
     /// ```
-    /// use ninterp::*;
+    /// use ninterp::prelude::*;
     /// // f(x, y) = 0.2 * x + 0.4 * y
     /// let interp = Interpolator::new_2d(
     ///     // x
@@ -178,7 +182,7 @@ pub enum Interpolator {
     ///
     /// # Example (using [`Extrapolate::Error`]):
     /// ```
-    /// use ninterp::*;
+    /// use ninterp::prelude::*;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     /// let interp = Interpolator::new_3d(
     ///     // x
@@ -206,7 +210,7 @@ pub enum Interpolator {
     /// // out of bounds point with `Extrapolate::Error` fails
     /// assert!(matches!(
     ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
-    ///     InterpolationError::ExtrapolationError(_)
+    ///     ninterp::error::InterpolationError::ExtrapolationError(_)
     /// ));
     /// ```
     Interp3D(Interp3D),
@@ -221,7 +225,7 @@ pub enum Interpolator {
     ///
     /// # Example (using [`Extrapolate::Error`]):
     /// ```
-    /// use ninterp::*;
+    /// use ninterp::prelude::*;
     /// use ndarray::array;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     /// let interp = Interpolator::new_nd(
@@ -250,7 +254,7 @@ pub enum Interpolator {
     /// // out of bounds point with `Extrapolate::Error` fails
     /// assert!(matches!(
     ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
-    ///     InterpolationError::ExtrapolationError(_)
+    ///     ninterp::error::InterpolationError::ExtrapolationError(_)
     /// ));
     /// ```
     InterpND(InterpND),
