@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum Error {
     #[error(transparent)]
     ValidationError(#[from] ValidationError),
@@ -15,7 +15,7 @@ pub enum Error {
 }
 
 /// Error types that occur from a `validate()` call, before calling interpolate()
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum ValidationError {
     #[error("selected `Strategy` variant ({0}) is unimplemented for interpolator variant")]
     StrategySelection(String),
@@ -31,7 +31,7 @@ pub enum ValidationError {
     Other(String),
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum InterpolationError {
     #[error("attempted to interpolate at point beyond grid data: {0}")]
     ExtrapolationError(String),
