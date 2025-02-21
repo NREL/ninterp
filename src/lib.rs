@@ -262,7 +262,7 @@ impl Interpolator {
         f_x: Vec<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, Error> {
         let interp = Interp1D {
             x,
             f_x,
@@ -279,7 +279,7 @@ impl Interpolator {
         f_xy: Vec<Vec<f64>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, Error> {
         let interp = Interp2D {
             x,
             y,
@@ -298,7 +298,7 @@ impl Interpolator {
         f_xyz: Vec<Vec<Vec<f64>>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, Error> {
         let interp = Interp3D {
             x,
             y,
@@ -316,7 +316,7 @@ impl Interpolator {
         values: ndarray::ArrayD<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, Error> {
         let interp = InterpND {
             grid,
             values,
