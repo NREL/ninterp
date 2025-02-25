@@ -364,10 +364,10 @@ impl Interpolator {
     /// Get `strategy` field from any interpolator.
     pub fn strategy(&self) -> Result<&Strategy, Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(&interp.strategy),
-            Interpolator::Interp2D(interp) => Ok(&interp.strategy),
-            Interpolator::Interp3D(interp) => Ok(&interp.strategy),
-            Interpolator::InterpND(interp) => Ok(&interp.strategy),
+            Self::Interp1D(interp) => Ok(&interp.strategy),
+            Self::Interp2D(interp) => Ok(&interp.strategy),
+            Self::Interp3D(interp) => Ok(&interp.strategy),
+            Self::InterpND(interp) => Ok(&interp.strategy),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -375,33 +375,33 @@ impl Interpolator {
     /// Set `strategy` field on any interpolator.
     pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => {
+            Self::Interp1D(interp) => {
                 interp.strategy = strategy;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp2D(interp) => {
+            Self::Interp2D(interp) => {
                 interp.strategy = strategy;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.strategy = strategy;
                 Ok(interp.validate()?)
             }
-            Interpolator::InterpND(interp) => {
+            Self::InterpND(interp) => {
                 interp.strategy = strategy;
                 Ok(interp.validate()?)
             }
-            _ => return Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Get `extrapolate` field from any interpolator.
     pub fn extrapolate(&self) -> Result<&Extrapolate, Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(&interp.extrapolate),
-            Interpolator::Interp2D(interp) => Ok(&interp.extrapolate),
-            Interpolator::Interp3D(interp) => Ok(&interp.extrapolate),
-            Interpolator::InterpND(interp) => Ok(&interp.extrapolate),
+            Self::Interp1D(interp) => Ok(&interp.extrapolate),
+            Self::Interp2D(interp) => Ok(&interp.extrapolate),
+            Self::Interp3D(interp) => Ok(&interp.extrapolate),
+            Self::InterpND(interp) => Ok(&interp.extrapolate),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -409,32 +409,32 @@ impl Interpolator {
     /// Set `extrapolate` field on any interpolator.
     pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => {
+            Self::Interp1D(interp) => {
                 interp.extrapolate = extrapolate;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp2D(interp) => {
+            Self::Interp2D(interp) => {
                 interp.extrapolate = extrapolate;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.extrapolate = extrapolate;
                 Ok(interp.validate()?)
             }
-            Interpolator::InterpND(interp) => {
+            Self::InterpND(interp) => {
                 interp.extrapolate = extrapolate;
                 Ok(interp.validate()?)
             }
-            _ => return Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Get `x` field from 1D/2D/3D interpolator.
     pub fn x(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(&interp.x),
-            Interpolator::Interp2D(interp) => Ok(&interp.x),
-            Interpolator::Interp3D(interp) => Ok(&interp.x),
+            Self::Interp1D(interp) => Ok(&interp.x),
+            Self::Interp2D(interp) => Ok(&interp.x),
+            Self::Interp3D(interp) => Ok(&interp.x),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -442,15 +442,15 @@ impl Interpolator {
     /// Set `x` field on 1D/2D/3D interpolator.
     pub fn set_x(&mut self, x: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => {
+            Self::Interp1D(interp) => {
                 interp.x = x;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp2D(interp) => {
+            Self::Interp2D(interp) => {
                 interp.x = x;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.x = x;
                 Ok(interp.validate()?)
             }
@@ -461,8 +461,8 @@ impl Interpolator {
     /// Get `y` field from 2D/3D interpolator.
     pub fn y(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp2D(interp) => Ok(&interp.y),
-            Interpolator::Interp3D(interp) => Ok(&interp.y),
+            Self::Interp2D(interp) => Ok(&interp.y),
+            Self::Interp3D(interp) => Ok(&interp.y),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -470,22 +470,22 @@ impl Interpolator {
     /// Set `y` field on 2D/3D interpolator.
     pub fn set_y(&mut self, y: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp2D(interp) => {
+            Self::Interp2D(interp) => {
                 interp.y = y;
                 Ok(interp.validate()?)
             }
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.y = y;
                 Ok(interp.validate()?)
             }
-            _ => return Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField),
         }
     }
 
     /// Get `z` field from 3D interpolator.
     pub fn z(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp3D(interp) => Ok(&interp.z),
+            Self::Interp3D(interp) => Ok(&interp.z),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -493,7 +493,7 @@ impl Interpolator {
     /// Set `z` field on 3D interpolator.
     pub fn set_z(&mut self, z: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.z = z;
                 Ok(interp.validate()?)
             }
@@ -504,7 +504,7 @@ impl Interpolator {
     /// Get `f_x` field from 1D interpolator.
     pub fn f_x(&self) -> Result<&[f64], Error> {
         match self {
-            Interpolator::Interp1D(interp) => Ok(&interp.f_x),
+            Self::Interp1D(interp) => Ok(&interp.f_x),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -512,7 +512,7 @@ impl Interpolator {
     /// Set `f_x` field on 1D interpolator.
     pub fn set_f_x(&mut self, f_x: Vec<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp1D(interp) => {
+            Self::Interp1D(interp) => {
                 interp.f_x = f_x;
                 Ok(interp.validate()?)
             }
@@ -523,7 +523,7 @@ impl Interpolator {
     /// Get `f_xy` field from 2D interpolator.
     pub fn f_xy(&self) -> Result<&[Vec<f64>], Error> {
         match self {
-            Interpolator::Interp2D(interp) => Ok(&interp.f_xy),
+            Self::Interp2D(interp) => Ok(&interp.f_xy),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -531,7 +531,7 @@ impl Interpolator {
     /// Set `f_xy` field on 2D interpolator.
     pub fn set_f_xy(&mut self, f_xy: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp2D(interp) => {
+            Self::Interp2D(interp) => {
                 interp.f_xy = f_xy;
                 Ok(interp.validate()?)
             }
@@ -542,7 +542,7 @@ impl Interpolator {
     /// Get `f_xyz` field from 3D interpolator.
     pub fn f_xyz(&self) -> Result<&[Vec<Vec<f64>>], Error> {
         match self {
-            Interpolator::Interp3D(interp) => Ok(&interp.f_xyz),
+            Self::Interp3D(interp) => Ok(&interp.f_xyz),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -550,7 +550,7 @@ impl Interpolator {
     /// Set `f_xyz` field on 3D interpolator.
     pub fn set_f_xyz(&mut self, f_xyz: Vec<Vec<Vec<f64>>>) -> Result<(), Error> {
         match self {
-            Interpolator::Interp3D(interp) => {
+            Self::Interp3D(interp) => {
                 interp.f_xyz = f_xyz;
                 Ok(interp.validate()?)
             }
@@ -561,7 +561,7 @@ impl Interpolator {
     /// Get `grid` field from ND interpolator.
     pub fn grid(&self) -> Result<&[Vec<f64>], Error> {
         match self {
-            Interpolator::InterpND(interp) => Ok(&interp.grid),
+            Self::InterpND(interp) => Ok(&interp.grid),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -569,7 +569,7 @@ impl Interpolator {
     /// Set `grid` field on ND interpolator.
     pub fn set_grid(&mut self, grid: Vec<Vec<f64>>) -> Result<(), Error> {
         match self {
-            Interpolator::InterpND(interp) => {
+            Self::InterpND(interp) => {
                 interp.grid = grid;
                 Ok(interp.validate()?)
             }
@@ -580,7 +580,7 @@ impl Interpolator {
     /// Get `values` field from ND interpolator.
     pub fn values(&self) -> Result<&ndarray::ArrayD<f64>, Error> {
         match self {
-            Interpolator::InterpND(interp) => Ok(&interp.values),
+            Self::InterpND(interp) => Ok(&interp.values),
             _ => Err(Error::NoSuchField),
         }
     }
@@ -588,7 +588,7 @@ impl Interpolator {
     /// Set `values` field on ND interpolator.
     pub fn set_values(&mut self, values: ndarray::ArrayD<f64>) -> Result<(), Error> {
         match self {
-            Interpolator::InterpND(interp) => {
+            Self::InterpND(interp) => {
                 interp.values = values;
                 Ok(interp.validate()?)
             }
