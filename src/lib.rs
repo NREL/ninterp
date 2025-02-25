@@ -17,9 +17,9 @@
 //! # Getting Started
 //! A prelude module has been defined: `use ninterp::prelude::*`.
 //! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], [`Extrapolate`], and the trait [`InterpMethods`].
-//! 
+//!
 //! All interpolation is handled through instances of the [`Interpolator`] enum.
-//! 
+//!
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
@@ -37,7 +37,7 @@
 //! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
 //!
 //! For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
-//! 
+//!
 //! ## Examples
 //! - [`Interpolator::Interp0D`]
 //! - [`Interpolator::new_1d`]
@@ -47,7 +47,7 @@
 //!
 
 pub mod prelude {
-    pub use crate::{Interpolator, Strategy, Extrapolate, InterpMethods};
+    pub use crate::{Extrapolate, InterpMethods, Interpolator, Strategy};
 }
 
 pub mod error;
@@ -115,7 +115,7 @@ pub enum Interpolator {
     /// ```
     Interp0D(f64),
     /// Interpolates in one dimension.
-    /// 
+    ///
     /// See [`Interpolator::new_1d`] documentation for example usage.
     Interp1D(Interp1D),
     /// Interpolates in two dimensions.
@@ -133,10 +133,8 @@ pub enum Interpolator {
 }
 
 impl Interpolator {
-    #[deprecated(note="instantiate directly via `Interpolator::Interp0D(value)` instead")]
-    pub fn new_0d(
-        value: f64,
-    ) -> Result<Self, ValidationError> {
+    #[deprecated(note = "instantiate directly via `Interpolator::Interp0D(value)` instead")]
+    pub fn new_0d(value: f64) -> Result<Self, ValidationError> {
         Ok(Self::Interp0D(value))
     }
 
