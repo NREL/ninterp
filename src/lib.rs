@@ -15,7 +15,35 @@
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
 //!
 //! # Getting Started
-//! See the [`Interpolator`] enum documentation for examples and notes on usage.
+//! A prelude module has been defined: `use ninterp::prelude::*`.
+//! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], [`Extrapolate`], and the trait [`InterpMethods`].
+//! 
+//! All interpolation is handled through instances of the [`Interpolator`] enum.
+//! 
+//! Interpolation is executed by calling [`Interpolator::interpolate`].
+//! The length of the supplied point slice must be equal to the interpolator dimensionality.
+//! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
+//!
+//! ## Note
+//! For interpolators of dimensionality N ≥ 1:
+//! - Instantiation is done via the Interpolator enum's `new_*` methods (`new_1d`, `new_2d`, `new_3d`, `new_nd`).
+//! These methods run a validation step that catches any potential errors early, preventing runtime panics.
+//!   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
+//! - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
+//! Not all interpolation strategies are implemented for every dimensionality.
+//! [`Strategy::Linear`] is implemented for all dimensionalities.
+//! - An [`Extrapolate`] setting must be specified.
+//! This controls what happens when a point is beyond the range of supplied coordinates.
+//! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
+//!
+//! For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
+//! 
+//! ## Examples
+//! - [`Interpolator::Interp0D`]
+//! - [`Interpolator::new_1d`]
+//! - [`Interpolator::new_2d`]
+//! - [`Interpolator::new_3d`]
+//! - [`Interpolator::new_nd`]
 //!
 
 pub mod prelude {
@@ -68,34 +96,15 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 }
 
 /// An interpolator, with different functionality depending on variant.
-///
-/// Interpolation is executed by calling [`Interpolator::interpolate`].
-/// The length of the supplied point slice must be equal to the intepolator dimensionality.
-/// The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
-///
-/// # Note
-/// For interpolators of dimensionality N ≥ 1:
-/// - By design, instantiation must be done via the Interpolator enum's `new_*` methods (`new_1d`, `new_2d`, `new_3d`, `new_nd`).
-/// These run a validation step that catches any potential errors early.
-///   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
-/// - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
-/// Not all interpolation strategies are implemented for every dimensionality.
-/// [`Strategy::Linear`] is implemented for all dimensionalities.
-/// - An [`Extrapolate`] setting must be specified.
-/// This controls what happens when a point is beyond the range of supplied coordinates.
-/// If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
-///
-/// For 0D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
-///
 #[allow(private_interfaces)]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Interpolator {
-    /// Useful for returning a constant-value result from an interpolator.
+    /// Returns a constant value.
     ///
     /// # Example:
     /// ```
-    /// use ninterp::*;
+    /// use ninterp::prelude::*;
     /// // 0-D is unique, the value is directly provided in the variant
     /// let const_value = 0.5;
     /// let interp = Interpolator::Interp0D(const_value);
@@ -106,37 +115,32 @@ pub enum Interpolator {
     /// ```
     Interp0D(f64),
     /// Interpolates in one dimension.
-    ///
-    /// Applicable interpolation strategies:
-    /// - [`Strategy::Linear`]
-    /// - [`Strategy::LeftNearest`]
-    /// - [`Strategy::RightNearest`]
-    /// - [`Strategy::Nearest`]
-    ///
-    /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`]
-    /// - [`Extrapolate::Clamp`]
-    /// - [`Extrapolate::Error`]
-    ///
-    /// # Example (linear, using [`Extrapolate::Enable`]):
-    /// ```
-    /// use ninterp::prelude::*;
-    /// // f(x) = 0.2 * x + 0.2
-    /// let interp = Interpolator::new_1d(
-    ///     // x
-    ///     vec![0., 1., 2.], // x0, x1, x2
-    ///     // f(x)
-    ///     vec![0.2, 0.4, 0.6], // f(x0), f(x1), f(x2)
-    ///     Strategy::Linear, // linear interpolation
-    ///     Extrapolate::Enable, // linearly extrapolate when point is out of bounds
-    /// )
-    /// .unwrap(); // handle data validation results
-    /// assert_eq!(interp.interpolate(&[1.5]).unwrap(), 0.5);
-    /// assert_eq!(interp.interpolate(&[-1.]).unwrap(), 0.); // extrapolation below grid
-    /// assert_eq!(interp.interpolate(&[2.2]).unwrap(), 0.64); // extrapolation above grid
-    /// ```
+    /// 
+    /// See [`Interpolator::new_1d`] documentation for example usage.
     Interp1D(Interp1D),
     /// Interpolates in two dimensions.
+    ///
+    /// See [`Interpolator::new_2d`] documentation for example usage.
+    Interp2D(Interp2D),
+    /// Interpolates in three dimensions.
+    ///
+    /// See [`Interpolator::new_3d`] documentation for example usage.
+    Interp3D(Interp3D),
+    /// Interpolates with any dimensionality.
+    ///
+    /// See [`Interpolator::new_nd`] documentation for example usage.
+    InterpND(InterpND),
+}
+
+impl Interpolator {
+    #[deprecated(note="instantiate directly via `Interpolator::Interp0D(value)` instead")]
+    pub fn new_0d(
+        value: f64,
+    ) -> Result<Self, ValidationError> {
+        Ok(Self::Interp0D(value))
+    }
+
+    /// Instantiate one-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
@@ -170,8 +174,75 @@ pub enum Interpolator {
     ///     interp.interpolate(&[0., 2.]).unwrap()
     /// ); // point is restricted to within grid bounds
     /// ```
-    Interp2D(Interp2D),
-    /// Interpolates in three dimensions.
+    pub fn new_1d(
+        x: Vec<f64>,
+        f_x: Vec<f64>,
+        strategy: Strategy,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidationError> {
+        let interp = Interp1D {
+            x,
+            f_x,
+            strategy,
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(Self::Interp1D(interp))
+    }
+
+    /// Instantiate two-dimensional interpolator.
+    ///
+    /// Applicable interpolation strategies:
+    /// - [`Strategy::Linear`]
+    ///
+    /// Applicable extrapolation strategies:
+    /// - [`Extrapolate::Clamp`]
+    /// - [`Extrapolate::Error`]
+    ///
+    /// # Example (using [`Extrapolate::Clamp`]):
+    /// ```
+    /// use ninterp::prelude::*;
+    /// // f(x, y) = 0.2 * x + 0.4 * y
+    /// let interp = Interpolator::new_2d(
+    ///     // x
+    ///     vec![0., 1., 2.], // x0, x1, x2
+    ///     // y
+    ///     vec![0., 1., 2.], // y0, y1, y2
+    ///     // f(x, y)
+    ///     vec![
+    ///         vec![0.0, 0.4, 0.8], // f(x0, y0), f(x0, y1), f(x0, y2)
+    ///         vec![0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
+    ///         vec![0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
+    ///     ],
+    ///     Strategy::Linear,
+    ///     Extrapolate::Clamp, // restrict point within grid bounds
+    /// )
+    /// .unwrap();
+    /// assert_eq!(interp.interpolate(&[1.5, 1.5]).unwrap(), 0.9);
+    /// assert_eq!(
+    ///     interp.interpolate(&[-1., 2.5]).unwrap(),
+    ///     interp.interpolate(&[0., 2.]).unwrap()
+    /// ); // point is restricted to within grid bounds
+    /// ```
+    pub fn new_2d(
+        x: Vec<f64>,
+        y: Vec<f64>,
+        f_xy: Vec<Vec<f64>>,
+        strategy: Strategy,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidationError> {
+        let interp = Interp2D {
+            x,
+            y,
+            f_xy,
+            strategy,
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(Self::Interp2D(interp))
+    }
+
+    /// Instantiate three-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
@@ -213,8 +284,27 @@ pub enum Interpolator {
     ///     ninterp::error::InterpolationError::ExtrapolationError(_)
     /// ));
     /// ```
-    Interp3D(Interp3D),
-    /// Interpolates with any dimensionality.
+    pub fn new_3d(
+        x: Vec<f64>,
+        y: Vec<f64>,
+        z: Vec<f64>,
+        f_xyz: Vec<Vec<Vec<f64>>>,
+        strategy: Strategy,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidationError> {
+        let interp = Interp3D {
+            x,
+            y,
+            z,
+            f_xyz,
+            strategy,
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(Self::Interp3D(interp))
+    }
+
+    /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
@@ -257,64 +347,6 @@ pub enum Interpolator {
     ///     ninterp::error::InterpolationError::ExtrapolationError(_)
     /// ));
     /// ```
-    InterpND(InterpND),
-}
-
-impl Interpolator {
-    pub fn new_1d(
-        x: Vec<f64>,
-        f_x: Vec<f64>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Interp1D {
-            x,
-            f_x,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(Self::Interp1D(interp))
-    }
-
-    pub fn new_2d(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        f_xy: Vec<Vec<f64>>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Interp2D {
-            x,
-            y,
-            f_xy,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(Self::Interp2D(interp))
-    }
-
-    pub fn new_3d(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        z: Vec<f64>,
-        f_xyz: Vec<Vec<Vec<f64>>>,
-        strategy: Strategy,
-        extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
-        let interp = Interp3D {
-            x,
-            y,
-            z,
-            f_xyz,
-            strategy,
-            extrapolate,
-        };
-        interp.validate()?;
-        Ok(Self::Interp3D(interp))
-    }
-
     pub fn new_nd(
         grid: Vec<Vec<f64>>,
         values: ndarray::ArrayD<f64>,
@@ -331,7 +363,7 @@ impl Interpolator {
         Ok(Self::InterpND(interp))
     }
 
-    /// Ensure supplied point is valid for the given interpolator
+    /// Ensure supplied point is valid for the given interpolator.
     fn validate_point(&self, point: &[f64]) -> Result<(), InterpolationError> {
         let n = self.ndim();
         // Check supplied point dimensionality
@@ -347,7 +379,7 @@ impl Interpolator {
         Ok(())
     }
 
-    /// Interpolator dimensionality
+    /// Retrieve interpolator dimensionality.
     pub fn ndim(&self) -> usize {
         match self {
             Self::Interp0D(_) => 0,
