@@ -15,9 +15,6 @@ pub(crate) struct Interp1D {
 
 impl Linear for Interp1D {
     fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
         // Extrapolate, if applicable
         if matches!(self.extrapolate, Extrapolate::Enable) {
             if point[0] < self.x[0] {
@@ -29,52 +26,51 @@ impl Linear for Interp1D {
                 return Ok(slope * (point[0] - self.x.last().unwrap()) + self.f_x.last().unwrap());
             }
         }
-        let lower_index = find_nearest_index(&self.x, point[0]);
-        let diff =
-            (point[0] - self.x[lower_index]) / (self.x[lower_index + 1] - self.x[lower_index]);
-        Ok(self.f_x[lower_index] * (1.0 - diff) + self.f_x[lower_index + 1] * diff)
+        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_u = x_l + 1;
+        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        Ok(self.f_x[x_l] * (1.0 - x_diff) + self.f_x[x_u] * x_diff)
     }
 }
 
 impl LeftNearest for Interp1D {
     fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
-        let lower_index = find_nearest_index(&self.x, point[0]);
-        Ok(self.f_x[lower_index])
+        let x_l = find_nearest_index(&self.x, point[0]);
+        Ok(self.f_x[x_l])
     }
 }
 
 impl RightNearest for Interp1D {
     fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
-        let lower_index = find_nearest_index(&self.x, point[0]);
-        Ok(self.f_x[lower_index + 1])
+        let x_u = find_nearest_index(&self.x, point[0]) + 1;
+        Ok(self.f_x[x_u])
     }
 }
 
 impl Nearest for Interp1D {
     fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
-        let lower_index = find_nearest_index(&self.x, point[0]);
-        let diff =
-            (point[0] - self.x[lower_index]) / (self.x[lower_index + 1] - self.x[lower_index]);
-        Ok(if diff < 0.5 {
-            self.f_x[lower_index]
-        } else {
-            self.f_x[lower_index + 1]
-        })
+        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_u = x_l + 1;
+        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        let i = if x_diff < 0.5 { x_l } else { x_u };
+        Ok(self.f_x[i])
     }
 }
 
 impl InterpMethods for Interp1D {
     fn validate(&self) -> Result<(), ValidationError> {
         let x_grid_len = self.x.len();
+
+        // Check that interpolation strategy is applicable
+        if !matches!(
+            self.strategy,
+            Strategy::Linear | Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest
+        ) {
+            return Err(ValidationError::StrategySelection(format!(
+                "{:?}",
+                self.strategy
+            )));
+        }
 
         // Check that extrapolation variant is applicable
         if matches!(self.extrapolate, Extrapolate::Enable) {

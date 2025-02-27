@@ -16,27 +16,43 @@ pub(crate) struct Interp2D {
 
 impl Linear for Interp2D {
     fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        // x
         let x_l = find_nearest_index(&self.x, point[0]);
         let x_u = x_l + 1;
         let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
-
+        // y
         let y_l = find_nearest_index(&self.y, point[1]);
         let y_u = y_l + 1;
         let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
-
         // interpolate in the x-direction
         let c0 = self.f_xy[x_l][y_l] * (1.0 - x_diff) + self.f_xy[x_u][y_l] * x_diff;
         let c1 = self.f_xy[x_l][y_u] * (1.0 - x_diff) + self.f_xy[x_u][y_u] * x_diff;
-
         // interpolate in the y-direction
         Ok(c0 * (1.0 - y_diff) + c1 * y_diff)
+    }
+}
+
+impl Nearest for Interp2D {
+    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        // x
+        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_u = x_l + 1;
+        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        let i = if x_diff < 0.5 { x_l } else { x_u };
+        // y
+        let y_l = find_nearest_index(&self.y, point[1]);
+        let y_u = y_l + 1;
+        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
+        let j = if y_diff < 0.5 { y_l } else { y_u };
+
+        Ok(self.f_xy[i][j])
     }
 }
 
 impl InterpMethods for Interp2D {
     fn validate(&self) -> Result<(), ValidationError> {
         // Check that interpolation strategy is applicable
-        if !matches!(self.strategy, Strategy::Linear) {
+        if !matches!(self.strategy, Strategy::Linear | Strategy::Nearest) {
             return Err(ValidationError::StrategySelection(format!(
                 "{:?}",
                 self.strategy

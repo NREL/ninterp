@@ -142,6 +142,9 @@ impl Interpolator {
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
+    /// - [`Strategy::LeftNearest`]
+    /// - [`Strategy::RightNearest`]
+    /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Clamp`]
@@ -192,6 +195,7 @@ impl Interpolator {
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
+    /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Clamp`]
@@ -244,6 +248,7 @@ impl Interpolator {
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
+    /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Clamp`]
@@ -306,6 +311,7 @@ impl Interpolator {
     ///
     /// Applicable interpolation strategies:
     /// - [`Strategy::Linear`]
+    /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Clamp`]
