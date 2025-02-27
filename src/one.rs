@@ -35,6 +35,9 @@ impl Linear for Interp1D {
 
 impl LeftNearest for Interp1D {
     fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
+            return Ok(self.f_x[i]);
+        }
         let x_l = find_nearest_index(&self.x, point[0]);
         Ok(self.f_x[x_l])
     }

@@ -158,9 +158,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(interp.interpolate(&[0.25, 0.25]).unwrap(), 0.);
+        assert_eq!(interp.interpolate(&[0., 0.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.65]).unwrap(), 1.);
         assert_eq!(interp.interpolate(&[0.99, 0.2]).unwrap(), 2.);
         assert_eq!(interp.interpolate(&[0.99, 0.99]).unwrap(), 3.);
+        assert_eq!(interp.interpolate(&[1., 1.]).unwrap(), 3.);
     }
 
     #[test]

@@ -238,10 +238,13 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
+        assert_eq!(interp.interpolate(&[0., 0., 0.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.25, 0.25]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.75, 0.25]).unwrap(), 2.);
+        assert_eq!(interp.interpolate(&[0., 1., 0.]).unwrap(), 2.);
         assert_eq!(interp.interpolate(&[0.75, 0.25, 0.75]).unwrap(), 5.);
         assert_eq!(interp.interpolate(&[0.75, 0.75, 0.75]).unwrap(), 7.);
+        assert_eq!(interp.interpolate(&[1., 1., 1.]).unwrap(), 7.);
     }
 
     #[test]
