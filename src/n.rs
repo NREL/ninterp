@@ -2,14 +2,14 @@
 
 use super::*;
 use itertools::Itertools;
-use ndarray;
+use ndarray::prelude::*;
 
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub(crate) struct InterpND {
     pub(crate) grid: Vec<Vec<f64>>,
-    pub(crate) values: ndarray::ArrayD<f64>,
+    pub(crate) values: ArrayD<f64>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) strategy: Strategy,
     #[cfg_attr(feature = "serde", serde(default))]
@@ -57,7 +57,7 @@ impl Linear for InterpND {
             {
                 point.remove(dim);
                 grid.remove(dim);
-                values_view.index_axis_inplace(ndarray::Axis(dim), pos);
+                values_view.index_axis_inplace(Axis(dim), pos);
             }
         }
         if values_view.len() == 1 {
@@ -97,7 +97,7 @@ impl Linear for InterpND {
             // Indeces used for saving results of this dimensions interpolation results
             // assigned to `index_permutations` at end of loop to be used for indexing in next iteration
             let next_idxs = self.get_index_permutations(&next_shape);
-            let mut intermediate_arr = ndarray::Array::default(next_shape);
+            let mut intermediate_arr = Array::default(next_shape);
             for i in 0..next_idxs.len() {
                 // `next_idxs` is always half the length of `index_permutations`
                 let l = index_permutations[i].as_slice();
@@ -201,7 +201,7 @@ mod tests {
             vec![0.10, 0.20, 0.30],
             vec![0.20, 0.40, 0.60],
         ];
-        let f_xyz = ndarray::array![
+        let f_xyz = array![
             [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
             [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
@@ -222,7 +222,7 @@ mod tests {
                         &interp
                             .interpolate(&[grid[0][i], grid[1][j], grid[2][k]])
                             .unwrap(),
-                        f_xyz.slice(ndarray::s![i, j, k]).first().unwrap()
+                        f_xyz.slice(s![i, j, k]).first().unwrap()
                     );
                 }
             }
@@ -259,7 +259,7 @@ mod tests {
     fn test_linear_offset() {
         let interp = Interpolator::new_nd(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
             Extrapolate::Error,
         )
@@ -276,7 +276,7 @@ mod tests {
         assert!(matches!(
             InterpND {
                 grid: vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                values: ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+                values: array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 strategy: Strategy::Linear,
                 extrapolate: Extrapolate::Enable,
             }
@@ -287,7 +287,7 @@ mod tests {
         // Extrapolate::Error
         let interp = Interpolator::new_nd(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
             Extrapolate::Error,
         )
@@ -306,7 +306,7 @@ mod tests {
     fn test_extrapolate_clamp() {
         let interp = Interpolator::new_nd(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-            ndarray::array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
             Extrapolate::Clamp,
         )

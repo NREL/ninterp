@@ -1,6 +1,6 @@
 //! The `ninterp` crate provides
 //! [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid)
-//!  over a regular, sorted, nonrepeating grid of any dimensionality.
+//! over a sorted, nonrepeating grid of any dimensionality.
 //! A variety of interpolation strategies are implemented, however more are likely to be added.
 //! Extrapolation beyond the range of the supplied coordinates
 //! is supported for 1-D linear interpolators, using the slope of the nearby points.
@@ -15,7 +15,7 @@
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
 //!
 //! # Getting Started
-//! A prelude module has been defined: `use ninterp::prelude::*`.
+//! A prelude module has been defined: `use ninterp::prelude::*;`.
 //! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], [`Extrapolate`], and the trait [`InterpMethods`].
 //!
 //! All interpolation is handled through instances of the [`Interpolator`] enum.

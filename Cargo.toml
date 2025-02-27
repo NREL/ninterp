@@ -2,7 +2,7 @@
 name = "ninterp"
 version = "0.2.5"
 edition = "2021"
-description = "Numerical interpolation in N-dimensions over a regular, sorted, nonrepeating grid"
+description = "Numerical interpolation in N-dimensions over a sorted, nonrepeating grid"
 repository = "https://github.com/NREL/ninterp"
 license = "BSD-3-Clause"
 keywords = ["interpolation", "multidimensional", "multilinear", "numerical", "approximation"]
