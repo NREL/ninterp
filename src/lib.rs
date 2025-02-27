@@ -314,7 +314,6 @@ impl Interpolator {
     /// # Example (using [`Extrapolate::Error`]):
     /// ```
     /// use ninterp::prelude::*;
-    /// use ndarray::array;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     /// let interp = Interpolator::new_nd(
     ///     // grid
@@ -324,7 +323,7 @@ impl Interpolator {
     ///         vec![1., 2.], // z0, z1
     ///     ],
     ///     // values
-    ///     array![
+    ///     ndarray::array![
     ///         [
     ///             [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
     ///             [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
