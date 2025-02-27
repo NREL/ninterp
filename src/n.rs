@@ -274,6 +274,7 @@ impl InterpMethods for InterpND {
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
+            Strategy::Nearest => self.nearest(point),
             _ => unreachable!(),
         }
     }
@@ -357,6 +358,21 @@ mod tests {
             interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
             3.1999999999999997
         ) // 3.2
+    }
+
+    #[test]
+    fn test_nearest() {
+        let interp = Interpolator::new_nd(
+            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Strategy::Nearest,
+            Extrapolate::Error,
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.25, 0.25, 0.25]).unwrap(), 0.);
+        assert_eq!(interp.interpolate(&[0.25, 0.75, 0.25]).unwrap(), 2.);
+        assert_eq!(interp.interpolate(&[0.75, 0.25, 0.75]).unwrap(), 5.);
+        assert_eq!(interp.interpolate(&[0.75, 0.75, 0.75]).unwrap(), 7.);
     }
 
     #[test]

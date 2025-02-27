@@ -134,6 +134,7 @@ impl InterpMethods for Interp3D {
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
+            Strategy::Nearest => self.nearest(point),
             _ => unreachable!(),
         }
     }
@@ -220,7 +221,27 @@ mod tests {
         assert_eq!(
             interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
             3.1999999999999997
-        ) // 3.2
+        ); // 3.2
+    }
+
+    #[test]
+    fn test_nearest() {
+        let interp = Interpolator::new_3d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![
+                vec![vec![0., 1.], vec![2., 3.]],
+                vec![vec![4., 5.], vec![6., 7.]],
+            ],
+            Strategy::Nearest,
+            Extrapolate::Error,
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.25, 0.25, 0.25]).unwrap(), 0.);
+        assert_eq!(interp.interpolate(&[0.25, 0.75, 0.25]).unwrap(), 2.);
+        assert_eq!(interp.interpolate(&[0.75, 0.25, 0.75]).unwrap(), 5.);
+        assert_eq!(interp.interpolate(&[0.75, 0.75, 0.75]).unwrap(), 7.);
     }
 
     #[test]

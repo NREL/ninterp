@@ -104,6 +104,7 @@ impl InterpMethods for Interp2D {
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
+            Strategy::Nearest => self.nearest(point),
             _ => unreachable!(),
         }
     }
@@ -143,7 +144,23 @@ mod tests {
         assert_eq!(
             interp.interpolate(&[0.25, 0.65]).unwrap(),
             1.1500000000000001 // 1.15
+        );
+    }
+
+    #[test]
+    fn test_nearest() {
+        let interp = Interpolator::new_2d(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Strategy::Nearest,
+            Extrapolate::Error,
         )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.25, 0.25]).unwrap(), 0.);
+        assert_eq!(interp.interpolate(&[0.25, 0.65]).unwrap(), 1.);
+        assert_eq!(interp.interpolate(&[0.99, 0.2]).unwrap(), 2.);
+        assert_eq!(interp.interpolate(&[0.99, 0.99]).unwrap(), 3.);
     }
 
     #[test]
