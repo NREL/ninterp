@@ -1,6 +1,6 @@
 //! The `ninterp` crate provides
 //! [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid)
-//! over a sorted, nonrepeating grid of any dimensionality.
+//! over rectilinear grids of any dimensionality.
 //! A variety of interpolation strategies are implemented, however more are likely to be added.
 //! Extrapolation beyond the range of the supplied coordinates
 //! is supported for 1-D linear interpolators, using the slope of the nearby points.
