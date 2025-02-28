@@ -133,6 +133,7 @@ impl InterpMethods for Interp2D {
     }
 }
 
+// TODO: create tests for 2-D linear extrapolation
 #[cfg(test)]
 mod tests {
     use super::*;
