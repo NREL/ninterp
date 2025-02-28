@@ -291,7 +291,7 @@ mod tests {
             vec![0.10, 0.20, 0.30],
             vec![0.20, 0.40, 0.60],
         ];
-        let f_xyz = array![
+        let values = array![
             [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
             [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
@@ -299,7 +299,7 @@ mod tests {
         .into_dyn();
         let interp = Interpolator::new_nd(
             grid.clone(),
-            f_xyz.clone(),
+            values.clone(),
             Strategy::Linear,
             Extrapolate::Error,
         )
@@ -312,7 +312,7 @@ mod tests {
                         &interp
                             .interpolate(&[grid[0][i], grid[1][j], grid[2][k]])
                             .unwrap(),
-                        f_xyz.slice(s![i, j, k]).first().unwrap()
+                        values.slice(s![i, j, k]).first().unwrap()
                     );
                 }
             }
@@ -362,20 +362,32 @@ mod tests {
 
     #[test]
     fn test_nearest() {
+        let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
+        let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
         let interp = Interpolator::new_nd(
-            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            grid.clone(),
+            values.clone(),
             Strategy::Nearest,
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(interp.interpolate(&[0., 0., 0.]).unwrap(), 0.);
+        // Check that interpolating at grid points just retrieves the value
+        for i in 0..grid[0].len() {
+            for j in 0..grid[1].len() {
+                for k in 0..grid[2].len() {
+                    assert_eq!(
+                        &interp
+                            .interpolate(&[grid[0][i], grid[1][j], grid[2][k]])
+                            .unwrap(),
+                        values.slice(s![i, j, k]).first().unwrap()
+                    );
+                }
+            }
+        }
         assert_eq!(interp.interpolate(&[0.25, 0.25, 0.25]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.75, 0.25]).unwrap(), 2.);
-        assert_eq!(interp.interpolate(&[0., 1., 0.]).unwrap(), 2.);
         assert_eq!(interp.interpolate(&[0.75, 0.25, 0.75]).unwrap(), 5.);
         assert_eq!(interp.interpolate(&[0.75, 0.75, 0.75]).unwrap(), 7.);
-        assert_eq!(interp.interpolate(&[1., 1., 1.]).unwrap(), 7.);
     }
 
     #[test]

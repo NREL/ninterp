@@ -226,18 +226,33 @@ mod tests {
 
     #[test]
     fn test_nearest() {
+        let x = vec![0., 1.];
+        let y = vec![0., 1.];
+        let z = vec![0., 1.];
+        let f_xyz = vec![
+            vec![vec![0., 1.], vec![2., 3.]],
+            vec![vec![4., 5.], vec![6., 7.]],
+        ];
         let interp = Interpolator::new_3d(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
+            x.clone(),
+            y.clone(),
+            z.clone(),
+            f_xyz.clone(),
             Strategy::Nearest,
             Extrapolate::Error,
         )
         .unwrap();
+        // Check that interpolating at grid points just retrieves the value
+        for (i, x_i) in x.iter().enumerate() {
+            for (j, y_j) in y.iter().enumerate() {
+                for (k, z_k) in z.iter().enumerate() {
+                    assert_eq!(
+                        interp.interpolate(&[*x_i, *y_j, *z_k]).unwrap(),
+                        f_xyz[i][j][k]
+                    );
+                }
+            }
+        }
         assert_eq!(interp.interpolate(&[0., 0., 0.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.25, 0.25]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[0.25, 0.75, 0.25]).unwrap(), 2.);

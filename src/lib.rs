@@ -780,6 +780,9 @@ pub enum Strategy {
     /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
     RightNearest,
     /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
+    /// 
+    /// # Note
+    /// Float imprecision may affect the value returned near midpoints.
     Nearest,
 }
 

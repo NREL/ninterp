@@ -127,6 +127,12 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
+        // Check that interpolating at grid points just retrieves the value
+        for (i, x_i) in x.iter().enumerate() {
+            for (j, y_j) in y.iter().enumerate() {
+                assert_eq!(interp.interpolate(&[*x_i, *y_j]).unwrap(), f_xy[i][j]);
+            }
+        }
         assert_eq!(interp.interpolate(&[x[2], y[1]]).unwrap(), f_xy[2][1]);
         assert_eq!(interp.interpolate(&[0.075, 0.25]).unwrap(), 3.);
     }
@@ -149,20 +155,34 @@ mod tests {
 
     #[test]
     fn test_nearest() {
+        let x = vec![0.05, 0.10, 0.15];
+        let y = vec![0.10, 0.20, 0.30];
+        let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
         let interp = Interpolator::new_2d(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![vec![0., 1.], vec![2., 3.]],
+            x.clone(),
+            y.clone(),
+            f_xy.clone(),
             Strategy::Nearest,
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(interp.interpolate(&[0.25, 0.25]).unwrap(), 0.);
-        assert_eq!(interp.interpolate(&[0., 0.]).unwrap(), 0.);
-        assert_eq!(interp.interpolate(&[0.25, 0.65]).unwrap(), 1.);
-        assert_eq!(interp.interpolate(&[0.99, 0.2]).unwrap(), 2.);
-        assert_eq!(interp.interpolate(&[0.99, 0.99]).unwrap(), 3.);
-        assert_eq!(interp.interpolate(&[1., 1.]).unwrap(), 3.);
+        // Check that interpolating at grid points just retrieves the value
+        for (i, x_i) in x.iter().enumerate() {
+            for (j, y_j) in y.iter().enumerate() {
+                assert_eq!(interp.interpolate(&[*x_i, *y_j]).unwrap(), f_xy[i][j]);
+            }
+        }
+        assert_eq!(interp.interpolate(&[0.05, 0.12]).unwrap(), f_xy[0][0]);
+        assert_eq!(
+            // float imprecision
+            // TODO: any way to avoid this?
+            interp.interpolate(&[0.07, 0.15 + 0.0001]).unwrap(),
+            f_xy[0][1]
+        );
+        assert_eq!(interp.interpolate(&[0.08, 0.21]).unwrap(), f_xy[1][1]);
+        assert_eq!(interp.interpolate(&[0.11, 0.26]).unwrap(), f_xy[1][2]);
+        assert_eq!(interp.interpolate(&[0.13, 0.12]).unwrap(), f_xy[2][0]);
+        assert_eq!(interp.interpolate(&[0.14, 0.29]).unwrap(), f_xy[2][2]);
     }
 
     #[test]

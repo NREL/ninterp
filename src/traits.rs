@@ -1,8 +1,7 @@
 use super::*;
 
-/// Methods applicable to all interpolators
 pub trait InterpMethods {
-    /// Validate data stored in [Self]
+    /// Validate interpolator data
     fn validate(&self) -> Result<(), ValidationError>;
     /// Interpolate at supplied point
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError>;
@@ -23,7 +22,7 @@ pub trait RightNearest {
     fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError>;
 }
 
-/// Nearest value (left or right, whichever nearest) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
+/// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
 pub trait Nearest {
     fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError>;
 }
