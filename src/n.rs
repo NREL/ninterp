@@ -223,9 +223,9 @@ impl InterpMethods for InterpND {
                 // Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
                 _,
                 Extrapolate::Enable,
-            ) => Err(ValidationError::StrategySelection(format!(
+            ) => Err(ValidationError::ExtrapolationSelection(format!(
                 "{:?}",
-                self.strategy
+                self.extrapolate
             ))),
             _ => Ok(()),
         }?;

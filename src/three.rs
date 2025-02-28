@@ -90,9 +90,9 @@ impl InterpMethods for Interp3D {
                 ValidationError::StrategySelection(format!("{:?}", self.strategy)),
             ),
             // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => Err(ValidationError::StrategySelection(
-                format!("{:?}", self.strategy),
-            )),
+            (Strategy::Nearest, Extrapolate::Enable) => Err(
+                ValidationError::ExtrapolationSelection(format!("{:?}", self.extrapolate)),
+            ),
             _ => Ok(()),
         }?;
 
@@ -299,7 +299,7 @@ mod tests {
                     vec![vec![0., 1.], vec![2., 3.]],
                     vec![vec![4., 5.], vec![6., 7.]],
                 ],
-                strategy: Strategy::Linear,
+                strategy: Strategy::Nearest,
                 extrapolate: Extrapolate::Enable,
             }
             .validate()

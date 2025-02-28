@@ -75,9 +75,9 @@ impl InterpMethods for Interp2D {
                 ValidationError::StrategySelection(format!("{:?}", self.strategy)),
             ),
             // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => Err(ValidationError::StrategySelection(
-                format!("{:?}", self.strategy),
-            )),
+            (Strategy::Nearest, Extrapolate::Enable) => Err(
+                ValidationError::ExtrapolationSelection(format!("{:?}", self.extrapolate)),
+            ),
             _ => Ok(()),
         }?;
 
@@ -198,7 +198,6 @@ mod tests {
         assert_eq!(interp.interpolate(&[0.05, 0.12]).unwrap(), f_xy[0][0]);
         assert_eq!(
             // float imprecision
-            // TODO: any way to avoid this?
             interp.interpolate(&[0.07, 0.15 + 0.0001]).unwrap(),
             f_xy[0][1]
         );
@@ -216,7 +215,7 @@ mod tests {
                 x: vec![0., 1.],
                 y: vec![0., 1.],
                 f_xy: vec![vec![0., 1.], vec![2., 3.]],
-                strategy: Strategy::Linear,
+                strategy: Strategy::Nearest,
                 extrapolate: Extrapolate::Enable,
             }
             .validate()

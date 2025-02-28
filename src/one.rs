@@ -77,9 +77,9 @@ impl InterpMethods for Interp1D {
             (
                 Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
                 Extrapolate::Enable,
-            ) => Err(ValidationError::StrategySelection(format!(
+            ) => Err(ValidationError::ExtrapolationSelection(format!(
                 "{:?}",
-                self.strategy
+                self.extrapolate
             ))),
             _ => Ok(()),
         }?;
