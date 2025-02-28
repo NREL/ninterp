@@ -653,11 +653,14 @@ impl InterpMethods for Interpolator {
                 match interp.extrapolate {
                     Extrapolate::Clamp => {
                         let clamped_point =
-                            &[point[0].clamp(interp.x[0], *interp.x.last().unwrap())];
+                            &[point[0]
+                                .clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap())];
                         return interp.interpolate(clamped_point);
                     }
                     Extrapolate::Error => {
-                        if !(interp.x[0] <= point[0] && &point[0] <= interp.x.last().unwrap()) {
+                        if !(interp.x.first().unwrap()..=interp.x.last().unwrap())
+                            .contains(&&point[0])
+                        {
                             return Err(InterpolationError::ExtrapolationError(format!(
                                 "\n    point[0] = {:?} is out of bounds for x-grid = {:?}",
                                 point[0], interp.x
@@ -672,8 +675,8 @@ impl InterpMethods for Interpolator {
                 match interp.extrapolate {
                     Extrapolate::Clamp => {
                         let clamped_point = &[
-                            point[0].clamp(interp.x[0], *interp.x.last().unwrap()),
-                            point[1].clamp(interp.y[0], *interp.y.last().unwrap()),
+                            point[0].clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap()),
+                            point[1].clamp(*interp.y.first().unwrap(), *interp.y.last().unwrap()),
                         ];
                         return interp.interpolate(clamped_point);
                     }
@@ -682,8 +685,8 @@ impl InterpMethods for Interpolator {
                         let grid_names = ["x", "y"];
                         let mut errors = Vec::new();
                         for dim in 0..2 {
-                            if !(grid[dim][0] <= point[dim]
-                                && &point[dim] <= grid[dim].last().unwrap())
+                            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
+                                .contains(&&point[dim])
                             {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
@@ -703,9 +706,9 @@ impl InterpMethods for Interpolator {
                 match interp.extrapolate {
                     Extrapolate::Clamp => {
                         let clamped_point = &[
-                            point[0].clamp(interp.x[0], *interp.x.last().unwrap()),
-                            point[1].clamp(interp.y[0], *interp.y.last().unwrap()),
-                            point[2].clamp(interp.z[0], *interp.z.last().unwrap()),
+                            point[0].clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap()),
+                            point[1].clamp(*interp.x.first().unwrap(), *interp.y.last().unwrap()),
+                            point[2].clamp(*interp.x.first().unwrap(), *interp.z.last().unwrap()),
                         ];
                         return interp.interpolate(clamped_point);
                     }
@@ -714,8 +717,8 @@ impl InterpMethods for Interpolator {
                         let grid_names = ["x", "y", "z"];
                         let mut errors = Vec::new();
                         for dim in 0..3 {
-                            if !(grid[dim][0] <= point[dim]
-                                && &point[dim] <= grid[dim].last().unwrap())
+                            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
+                                .contains(&&point[dim])
                             {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
@@ -738,7 +741,10 @@ impl InterpMethods for Interpolator {
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
-                                pt.clamp(interp.grid[dim][0], *interp.grid[dim].last().unwrap())
+                                pt.clamp(
+                                    *interp.grid[dim].first().unwrap(),
+                                    *interp.grid[dim].last().unwrap(),
+                                )
                             })
                             .collect();
                         return interp.interpolate(&clamped_point);
@@ -746,8 +752,9 @@ impl InterpMethods for Interpolator {
                     Extrapolate::Error => {
                         let mut errors = Vec::new();
                         for dim in 0..interp.ndim() {
-                            if !(interp.grid[dim][0] <= point[dim]
-                                && &point[dim] <= interp.grid[dim].last().unwrap())
+                            if !(interp.grid[dim].first().unwrap()
+                                ..=interp.grid[dim].last().unwrap())
+                                .contains(&&point[dim])
                             {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for grid[{dim}] = {:?}",
@@ -780,7 +787,7 @@ pub enum Strategy {
     /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
     RightNearest,
     /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-    /// 
+    ///
     /// # Note
     /// Float imprecision may affect the value returned near midpoints.
     Nearest,

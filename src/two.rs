@@ -16,19 +16,36 @@ pub(crate) struct Interp2D {
 
 impl Linear for Interp2D {
     fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+        // Extrapolation is checked previously in Interpolator::interpolate,
+        // meaning:
+        // - point is within grid bounds, or
+        // - point is clamped, or
+        // - extrapolation is enabled
+        let grid = [&self.x, &self.y];
+        let lowers: Vec<usize> = (0..2)
+            .map(|dim| {
+                if &point[dim] < grid[dim].first().unwrap() {
+                    0
+                } else if &point[dim] > grid[dim].last().unwrap() {
+                    grid[dim].len() - 2
+                } else {
+                    find_nearest_index(grid[dim], point[dim])
+                }
+            })
+            .collect();
         // x
-        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_l = lowers[0];
         let x_u = x_l + 1;
         let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
         // y
-        let y_l = find_nearest_index(&self.y, point[1]);
+        let y_l = lowers[1];
         let y_u = y_l + 1;
         let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
         // interpolate in the x-direction
-        let c0 = self.f_xy[x_l][y_l] * (1.0 - x_diff) + self.f_xy[x_u][y_l] * x_diff;
-        let c1 = self.f_xy[x_l][y_u] * (1.0 - x_diff) + self.f_xy[x_u][y_u] * x_diff;
+        let f0 = self.f_xy[x_l][y_l] * (1.0 - x_diff) + self.f_xy[x_u][y_l] * x_diff;
+        let f1 = self.f_xy[x_l][y_u] * (1.0 - x_diff) + self.f_xy[x_u][y_u] * x_diff;
         // interpolate in the y-direction
-        Ok(c0 * (1.0 - y_diff) + c1 * y_diff)
+        Ok(f0 * (1.0 - y_diff) + f1 * y_diff)
     }
 }
 
@@ -51,30 +68,36 @@ impl Nearest for Interp2D {
 
 impl InterpMethods for Interp2D {
     fn validate(&self) -> Result<(), ValidationError> {
-        // Check that interpolation strategy is applicable
-        if !matches!(self.strategy, Strategy::Linear | Strategy::Nearest) {
-            return Err(ValidationError::StrategySelection(format!(
-                "{:?}",
-                self.strategy
-            )));
-        }
+        // Check applicablitity of strategy and extrapolate
+        match (&self.strategy, &self.extrapolate) {
+            // inapplicable strategies
+            (Strategy::LeftNearest | Strategy::RightNearest, _) => Err(
+                ValidationError::StrategySelection(format!("{:?}", self.strategy)),
+            ),
+            // inapplicable combinations of strategy + extrapolate
+            (Strategy::Nearest, Extrapolate::Enable) => Err(ValidationError::StrategySelection(
+                format!("{:?}", self.strategy),
+            )),
+            _ => Ok(()),
+        }?;
 
-        // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Enable) {
-            return Err(ValidationError::ExtrapolationSelection(format!(
-                "{:?}",
-                self.extrapolate
-            )));
-        }
+        let x_grid_len = self.x.len();
+        let y_grid_len = self.y.len();
 
         // Check that each grid dimension has elements
-        let x_grid_len = self.x.len();
         if x_grid_len == 0 {
             return Err(ValidationError::EmptyGrid("x".into()));
         }
-        let y_grid_len = self.y.len();
         if y_grid_len == 0 {
             return Err(ValidationError::EmptyGrid("y".into()));
+        }
+
+        // If using Extrapolate::Enable,
+        // check that each grid dimension has at least two elements
+        if matches!(self.extrapolate, Extrapolate::Enable) && (x_grid_len < 2 || y_grid_len < 2) {
+            return Err(ValidationError::Other(
+                "at least 2 data points are required for extrapolation".into(),
+            ));
         }
 
         // Check that grid points are monotonically increasing

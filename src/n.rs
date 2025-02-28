@@ -215,42 +215,47 @@ impl Nearest for InterpND {
 
 impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidationError> {
-        let n = self.ndim();
-
-        // Check that interpolation strategy is applicable
-        if !matches!(self.strategy, Strategy::Linear | Strategy::Nearest) {
-            return Err(ValidationError::StrategySelection(format!(
+        // Check applicablitity of strategy and extrapolate
+        match (&self.strategy, &self.extrapolate) {
+            // inapplicable combinations of strategy + extrapolate
+            (
+                // TODO: N-D Linear extrapolation is not currently implemented
+                // Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
+                _,
+                Extrapolate::Enable,
+            ) => Err(ValidationError::StrategySelection(format!(
                 "{:?}",
                 self.strategy
-            )));
-        }
+            ))),
+            _ => Ok(()),
+        }?;
 
-        // Check that extrapolation variant is applicable
-        if matches!(self.extrapolate, Extrapolate::Enable) {
-            return Err(ValidationError::ExtrapolationSelection(format!(
-                "{:?}",
-                self.extrapolate
-            )));
-        }
+        let n = self.ndim();
 
-        // Check that each grid dimension has elements
         for i in 0..n {
+            let i_grid_len = self.grid[i].len();
+
+            // Check that each grid dimension has elements
             // Indexing `grid` directly is okay because empty dimensions are caught at compilation
-            if self.grid[i].is_empty() {
+            if i_grid_len == 0 {
                 return Err(ValidationError::EmptyGrid(i.to_string()));
             }
-        }
 
-        // Check that grid points are monotonically increasing
-        for i in 0..n {
+            // // If using Extrapolate::Enable,
+            // // check that each grid dimension has at least two elements
+            // if matches!(self.extrapolate, Extrapolate::Enable) && i_grid_len < 2 {
+            //     return Err(ValidationError::Other(
+            //         "at least 2 data points are required for extrapolation".into(),
+            //     ));
+            // }
+
+            // Check that grid points are monotonically increasing
             if !self.grid[i].windows(2).all(|w| w[0] <= w[1]) {
                 return Err(ValidationError::Monotonicity(i.to_string()));
             }
-        }
 
-        // Check that grid and values are compatible shapes
-        for i in 0..n {
-            if self.grid[i].len() != self.values.shape()[i] {
+            // Check that grid and values are compatible shapes
+            if i_grid_len != self.values.shape()[i] {
                 return Err(ValidationError::IncompatibleShapes(i.to_string()));
             }
         }
