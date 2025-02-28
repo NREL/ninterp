@@ -217,6 +217,10 @@ impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidationError> {
         // Check applicablitity of strategy and extrapolate
         match (&self.strategy, &self.extrapolate) {
+            // inapplicable strategies
+            (Strategy::LeftNearest | Strategy::RightNearest, _) => Err(
+                ValidationError::StrategySelection(format!("{:?}", self.strategy)),
+            ),
             // inapplicable combinations of strategy + extrapolate
             (
                 // TODO: N-D Linear extrapolation is not currently implemented
