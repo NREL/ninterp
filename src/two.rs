@@ -133,7 +133,6 @@ impl InterpMethods for Interp2D {
     }
 }
 
-// TODO: create tests for 2-D linear extrapolation
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,6 +174,41 @@ mod tests {
             interp.interpolate(&[0.25, 0.65]).unwrap(),
             1.1500000000000001 // 1.15
         );
+    }
+
+    #[test]
+    fn test_linear_extrapolation() {
+        let interp = Interpolator::new_2d(
+            vec![0.05, 0.10, 0.15],
+            vec![0.10, 0.20, 0.30],
+            vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        // RHS are coplanar neighboring data planes according to:
+        // https://www.ambrbit.com/TrigoCalc/Plan3D/PointsCoplanar.htm
+        // below x, below y
+        assert_eq!(interp.interpolate(&[0.0, 0.0]).unwrap(), -4.);
+        assert_eq!(
+            interp.interpolate(&[0.03, 0.04]).unwrap(),
+            -1.8000000000000003
+        );
+        // below x, above y
+        assert_eq!(
+            interp.interpolate(&[0.0, 0.32]).unwrap(),
+            -0.7999999999999998
+        );
+        assert_eq!(interp.interpolate(&[0.03, 0.36]).unwrap(), 1.4);
+        // above x, below y
+        assert_eq!(interp.interpolate(&[0.17, 0.0]).unwrap(), 6.200000000000001);
+        assert_eq!(
+            interp.interpolate(&[0.19, 0.04]).unwrap(),
+            7.800000000000002
+        );
+        // above x, above y
+        assert_eq!(interp.interpolate(&[0.17, 0.32]).unwrap(), 9.4);
+        assert_eq!(interp.interpolate(&[0.19, 0.36]).unwrap(), 11.);
     }
 
     #[test]

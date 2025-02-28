@@ -165,7 +165,6 @@ impl InterpMethods for Interp3D {
     }
 }
 
-// TODO: create tests for 2-D linear extrapolation
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -228,6 +227,87 @@ mod tests {
             interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(),
             5.999999999999998 // 6.0
         );
+    }
+
+    #[test]
+    fn test_linear_extrapolation() {
+        let interp = Interpolator::new_3d(
+            vec![0.05, 0.10, 0.15],
+            vec![0.10, 0.20, 0.30],
+            vec![0.20, 0.40, 0.60],
+            vec![
+                vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
+                vec![vec![9., 10., 11.], vec![12., 13., 14.], vec![15., 16., 17.]],
+                vec![
+                    vec![18., 19., 20.],
+                    vec![21., 22., 23.],
+                    vec![24., 25., 26.],
+                ],
+            ],
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        // below x, below y, below z
+        assert_eq!(interp.interpolate(&[0.01, 0.06, 0.17]).unwrap(), -8.55);
+        assert_eq!(
+            interp.interpolate(&[0.02, 0.08, 0.19]).unwrap(),
+            -6.050000000000001
+        );
+        // below x, below y, above z
+        assert_eq!(
+            interp.interpolate(&[0.01, 0.06, 0.63]).unwrap(),
+            -6.249999999999999
+        );
+        assert_eq!(
+            interp.interpolate(&[0.02, 0.08, 0.65]).unwrap(),
+            -3.749999999999999
+        );
+        // below x, above y, below z
+        assert_eq!(
+            interp.interpolate(&[0.01, 0.33, 0.17]).unwrap(),
+            -0.44999999999999785
+        );
+        assert_eq!(
+            interp.interpolate(&[0.02, 0.36, 0.19]).unwrap(),
+            2.3500000000000014
+        );
+        // below x, above y, above z
+        assert_eq!(
+            interp.interpolate(&[0.01, 0.33, 0.63]).unwrap(),
+            1.8499999999999994
+        );
+        assert_eq!(
+            interp.interpolate(&[0.02, 0.36, 0.65]).unwrap(),
+            4.650000000000003
+        );
+        // above x, below y, below z
+        assert_eq!(
+            interp.interpolate(&[0.17, 0.06, 0.17]).unwrap(),
+            20.250000000000004
+        );
+        assert_eq!(interp.interpolate(&[0.19, 0.08, 0.19]).unwrap(), 24.55);
+        // above x, below y, above z
+        assert_eq!(interp.interpolate(&[0.17, 0.06, 0.63]).unwrap(), 22.55);
+        assert_eq!(
+            interp.interpolate(&[0.19, 0.08, 0.65]).unwrap(),
+            26.849999999999994
+        );
+        // above x, above y, below z
+        assert_eq!(
+            interp.interpolate(&[0.17, 0.33, 0.17]).unwrap(),
+            28.349999999999998
+        );
+        assert_eq!(
+            interp.interpolate(&[0.19, 0.36, 0.19]).unwrap(),
+            32.949999999999996
+        );
+        // above x, above y, above z
+        assert_eq!(
+            interp.interpolate(&[0.17, 0.33, 0.63]).unwrap(),
+            30.650000000000006
+        );
+        assert_eq!(interp.interpolate(&[0.19, 0.36, 0.65]).unwrap(), 35.25);
     }
 
     #[test]

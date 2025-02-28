@@ -2,8 +2,7 @@
 //! [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid)
 //! over rectilinear grids of any dimensionality.
 //! A variety of interpolation strategies are implemented, however more are likely to be added.
-//! Extrapolation beyond the range of the supplied coordinates
-//! is supported for 1-D linear interpolators, using the slope of the nearby points.
+//! Linear extrapolation is implemented for all dimensionalities.
 //!
 //! There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
 //!
@@ -147,6 +146,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
+    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -198,6 +198,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
+    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -251,6 +252,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
+    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -314,6 +316,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
+    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///

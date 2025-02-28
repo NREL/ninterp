@@ -72,7 +72,18 @@ impl Linear for InterpND {
         let mut lower_idxs = Vec::with_capacity(n);
         let mut interp_diffs = Vec::with_capacity(n);
         for dim in 0..n {
-            let lower_idx = find_nearest_index(&grid[dim], point[dim]);
+            // Extrapolation is checked previously in Interpolator::interpolate,
+            // meaning:
+            // - point is within grid bounds, or
+            // - point is clamped, or
+            // - extrapolation is enabled
+            let lower_idx = if &point[dim] < grid[dim].first().unwrap() {
+                0
+            } else if &point[dim] > grid[dim].last().unwrap() {
+                grid[dim].len() - 2
+            } else {
+                find_nearest_index(&grid[dim], point[dim])
+            };
             let interp_diff = (point[dim] - grid[dim][lower_idx])
                 / (grid[dim][lower_idx + 1] - grid[dim][lower_idx]);
             lower_idxs.push(lower_idx);
@@ -222,15 +233,9 @@ impl InterpMethods for InterpND {
                 ValidationError::StrategySelection(format!("{:?}", self.strategy)),
             ),
             // inapplicable combinations of strategy + extrapolate
-            (
-                // TODO: N-D Linear extrapolation is not currently implemented
-                // Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
-                _,
-                Extrapolate::Enable,
-            ) => Err(ValidationError::ExtrapolationSelection(format!(
-                "{:?}",
-                self.extrapolate
-            ))),
+            (Strategy::Nearest, Extrapolate::Enable) => Err(
+                ValidationError::ExtrapolationSelection(format!("{:?}", self.extrapolate)),
+            ),
             _ => Ok(()),
         }?;
 
@@ -370,6 +375,170 @@ mod tests {
     }
 
     #[test]
+    fn test_linear_extrapolation_2d() {
+        let interp_2d = Interpolator::new_2d(
+            vec![0.05, 0.10, 0.15],
+            vec![0.10, 0.20, 0.30],
+            vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        let interp_nd = Interpolator::new_nd(
+            vec![vec![0.05, 0.10, 0.15], vec![0.10, 0.20, 0.30]],
+            array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]].into_dyn(),
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        // below x, below y
+        assert_eq!(
+            interp_2d.interpolate(&[0.0, 0.0]).unwrap(),
+            interp_nd.interpolate(&[0.0, 0.0]).unwrap()
+        );
+        assert_eq!(
+            interp_2d.interpolate(&[0.03, 0.04]).unwrap(),
+            interp_nd.interpolate(&[0.03, 0.04]).unwrap(),
+        );
+        // below x, above y
+        assert_eq!(
+            interp_2d.interpolate(&[0.0, 0.32]).unwrap(),
+            interp_nd.interpolate(&[0.0, 0.32]).unwrap(),
+        );
+        assert_eq!(
+            interp_2d.interpolate(&[0.03, 0.36]).unwrap(),
+            interp_nd.interpolate(&[0.03, 0.36]).unwrap()
+        );
+        // above x, below y
+        assert_eq!(
+            interp_2d.interpolate(&[0.17, 0.0]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.0]).unwrap(),
+        );
+        assert_eq!(
+            interp_2d.interpolate(&[0.19, 0.04]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.04]).unwrap(),
+        );
+        // above x, above y
+        assert_eq!(
+            interp_2d.interpolate(&[0.17, 0.32]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.32]).unwrap()
+        );
+        assert_eq!(
+            interp_2d.interpolate(&[0.19, 0.36]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.36]).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_linear_extrapolate_3d() {
+        let interp_3d = Interpolator::new_3d(
+            vec![0.05, 0.10, 0.15],
+            vec![0.10, 0.20, 0.30],
+            vec![0.20, 0.40, 0.60],
+            vec![
+                vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
+                vec![vec![9., 10., 11.], vec![12., 13., 14.], vec![15., 16., 17.]],
+                vec![
+                    vec![18., 19., 20.],
+                    vec![21., 22., 23.],
+                    vec![24., 25., 26.],
+                ],
+            ],
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        let interp_nd = Interpolator::new_nd(
+            vec![
+                vec![0.05, 0.10, 0.15],
+                vec![0.10, 0.20, 0.30],
+                vec![0.20, 0.40, 0.60],
+            ],
+            array![
+                [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
+                [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
+                [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
+            ]
+            .into_dyn(),
+            Strategy::Linear,
+            Extrapolate::Enable,
+        )
+        .unwrap();
+        // below x, below y, below z
+        assert_eq!(
+            interp_3d.interpolate(&[0.01, 0.06, 0.17]).unwrap(),
+            interp_nd.interpolate(&[0.01, 0.06, 0.17]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.02, 0.08, 0.19]).unwrap(),
+            interp_nd.interpolate(&[0.02, 0.08, 0.19]).unwrap()
+        );
+        // below x, below y, above z
+        assert_eq!(
+            interp_3d.interpolate(&[0.01, 0.06, 0.63]).unwrap(),
+            interp_nd.interpolate(&[0.01, 0.06, 0.63]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.02, 0.08, 0.65]).unwrap(),
+            interp_nd.interpolate(&[0.02, 0.08, 0.65]).unwrap()
+        );
+        // below x, above y, below z
+        assert_eq!(
+            interp_3d.interpolate(&[0.01, 0.33, 0.17]).unwrap(),
+            interp_nd.interpolate(&[0.01, 0.33, 0.17]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.02, 0.36, 0.19]).unwrap(),
+            interp_nd.interpolate(&[0.02, 0.36, 0.19]).unwrap()
+        );
+        // below x, above y, above z
+        assert_eq!(
+            interp_3d.interpolate(&[0.01, 0.33, 0.63]).unwrap(),
+            interp_nd.interpolate(&[0.01, 0.33, 0.63]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.02, 0.36, 0.65]).unwrap(),
+            interp_nd.interpolate(&[0.02, 0.36, 0.65]).unwrap()
+        );
+        // above x, below y, below z
+        assert_eq!(
+            interp_3d.interpolate(&[0.17, 0.06, 0.17]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.06, 0.17]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.19, 0.08, 0.19]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.08, 0.19]).unwrap()
+        );
+        // above x, below y, above z
+        assert_eq!(
+            interp_3d.interpolate(&[0.17, 0.06, 0.63]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.06, 0.63]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.19, 0.08, 0.65]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.08, 0.65]).unwrap()
+        );
+        // above x, above y, below z
+        assert_eq!(
+            interp_3d.interpolate(&[0.17, 0.33, 0.17]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.33, 0.17]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.19, 0.36, 0.19]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.36, 0.19]).unwrap()
+        );
+        // above x, above y, above z
+        assert_eq!(
+            interp_3d.interpolate(&[0.17, 0.33, 0.63]).unwrap(),
+            interp_nd.interpolate(&[0.17, 0.33, 0.63]).unwrap()
+        );
+        assert_eq!(
+            interp_3d.interpolate(&[0.19, 0.36, 0.65]).unwrap(),
+            interp_nd.interpolate(&[0.19, 0.36, 0.65]).unwrap()
+        );
+    }
+
+    #[test]
     fn test_nearest() {
         let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
@@ -406,7 +575,7 @@ mod tests {
             InterpND {
                 grid: vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 values: array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                strategy: Strategy::Linear,
+                strategy: Strategy::Nearest,
                 extrapolate: Extrapolate::Enable,
             }
             .validate()
