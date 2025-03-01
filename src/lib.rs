@@ -1,27 +1,21 @@
 //! The `ninterp` crate provides
 //! [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid)
 //! over rectilinear grids of any dimensionality.
-//! A variety of interpolation strategies are implemented, however more are likely to be added.
-//! Linear extrapolation is implemented for all dimensionalities.
+//! A variety of interpolation strategies are implemented, and more are likely to be added.
 //!
 //! There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
-//!
-//! All interpolation is handled through instances of the [`Interpolator`] enum,
-//! with the selected tuple variant containing relevant data.
-//! Interpolation is executed by calling [`Interpolator::interpolate`].
 //!
 //! # Feature Flags
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
 //!
 //! # Getting Started
 //! A prelude module has been defined: `use ninterp::prelude::*;`.
-//! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], [`Extrapolate`], and the trait [`InterpMethods`].
+//! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], and [`Extrapolate`].
 //!
 //! All interpolation is handled through instances of the [`Interpolator`] enum.
 //!
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
-//! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
 //!
 //! ## Note
 //! For interpolators of dimensionality N ≥ 1:
@@ -30,10 +24,11 @@
 //!   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
 //! - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
 //! Not all interpolation strategies are implemented for every dimensionality.
-//! [`Strategy::Linear`] is implemented for all dimensionalities.
+//! [`Strategy::Linear`] and [`Strategy::Nearest`] are implemented for all dimensionalities.
 //! - An [`Extrapolate`] setting must be specified.
 //! This controls what happens when a point is beyond the range of supplied coordinates.
 //! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
+//! Linear extrapolation is implemented for all dimensionalities.
 //!
 //! For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
 //!
@@ -146,7 +141,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -198,7 +193,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -252,7 +247,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -316,7 +311,7 @@ impl Interpolator {
     /// - [`Strategy::Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (for [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Error`]
     ///
@@ -803,9 +798,7 @@ pub enum Strategy {
 #[derive(Clone, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate {
-    /// If interpolant point is beyond the limits of the interpolation grid,
-    /// find result via extrapolation using slope of nearby points.  
-    /// Currently only implemented for 1-D linear interpolation.
+    /// Evaluate beyond the limits of the interpolation grid.
     Enable,
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
