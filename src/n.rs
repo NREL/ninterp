@@ -296,6 +296,8 @@ impl InterpMethods for InterpND {
 
 #[cfg(test)]
 mod tests {
+    use core::f64;
+
     use super::*;
 
     #[test]
@@ -572,13 +574,12 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            InterpND {
-                grid: vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
-                values: array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                strategy: Strategy::Nearest,
-                extrapolate: Extrapolate::Enable,
-            }
-            .validate()
+            Interpolator::new_nd(
+                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+                array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+                Strategy::Nearest,
+                Extrapolate::Enable,
+            )
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
@@ -601,9 +602,28 @@ mod tests {
     }
 
     #[test]
+    fn test_extrapolate_fill_value() {
+        let interp = Interpolator::new_nd(
+            vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Strategy::Linear,
+            Extrapolate::FillValue(f64::NAN),
+        )
+        .unwrap();
+        assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 0., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 2., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 2., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 0., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 0., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 2., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 2., 2.]).unwrap().is_nan());
+    }
+
+    #[test]
     fn test_extrapolate_clamp() {
         let interp = Interpolator::new_nd(
-            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
             Extrapolate::Clamp,

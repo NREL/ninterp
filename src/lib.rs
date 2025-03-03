@@ -648,125 +648,140 @@ impl InterpMethods for Interpolator {
         match self {
             Self::Interp0D(value) => Ok(*value),
             Self::Interp1D(interp) => {
-                match interp.extrapolate {
-                    Extrapolate::Clamp => {
-                        let clamped_point =
-                            &[point[0]
+                if !(interp.x.first().unwrap()..=interp.x.last().unwrap()).contains(&&point[0]) {
+                    match interp.extrapolate {
+                        Extrapolate::FillValue(value) => return Ok(value),
+                        Extrapolate::Clamp => {
+                            let clamped_point = &[point[0]
                                 .clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap())];
-                        return interp.interpolate(clamped_point);
-                    }
-                    Extrapolate::Error => {
-                        if !(interp.x.first().unwrap()..=interp.x.last().unwrap())
-                            .contains(&&point[0])
-                        {
+                            return interp.interpolate(clamped_point);
+                        }
+                        Extrapolate::Error => {
                             return Err(InterpolationError::ExtrapolationError(format!(
                                 "\n    point[0] = {:?} is out of bounds for x-grid = {:?}",
                                 point[0], interp.x
-                            )));
+                            )))
                         }
+                        _ => {}
                     }
-                    _ => {}
                 };
                 interp.interpolate(point)
             }
             Self::Interp2D(interp) => {
-                match interp.extrapolate {
-                    Extrapolate::Clamp => {
-                        let clamped_point = &[
-                            point[0].clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap()),
-                            point[1].clamp(*interp.y.first().unwrap(), *interp.y.last().unwrap()),
-                        ];
-                        return interp.interpolate(clamped_point);
-                    }
-                    Extrapolate::Error => {
-                        let grid = [&interp.x, &interp.y];
-                        let grid_names = ["x", "y"];
-                        let mut errors = Vec::new();
-                        for dim in 0..2 {
-                            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
-                                .contains(&&point[dim])
-                            {
+                let grid = [&interp.x, &interp.y];
+                let grid_names = ["x", "y"];
+                let mut errors = Vec::new();
+                for dim in 0..2 {
+                    if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
+                        .contains(&&point[dim])
+                    {
+                        match interp.extrapolate {
+                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Clamp => {
+                                let clamped_point = &[
+                                    point[0].clamp(
+                                        *interp.x.first().unwrap(),
+                                        *interp.x.last().unwrap(),
+                                    ),
+                                    point[1].clamp(
+                                        *interp.y.first().unwrap(),
+                                        *interp.y.last().unwrap(),
+                                    ),
+                                ];
+                                return interp.interpolate(clamped_point);
+                            }
+                            Extrapolate::Error => {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
                                     point[dim], grid_names[dim], grid[dim],
                                 ));
                             }
-                        }
-                        if !errors.is_empty() {
-                            return Err(InterpolationError::ExtrapolationError(errors.join("")));
-                        }
+                            _ => {}
+                        };
                     }
-                    _ => {}
-                };
+                }
+                if !errors.is_empty() {
+                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                }
                 interp.interpolate(point)
             }
             Self::Interp3D(interp) => {
-                match interp.extrapolate {
-                    Extrapolate::Clamp => {
-                        let clamped_point = &[
-                            point[0].clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap()),
-                            point[1].clamp(*interp.x.first().unwrap(), *interp.y.last().unwrap()),
-                            point[2].clamp(*interp.x.first().unwrap(), *interp.z.last().unwrap()),
-                        ];
-                        return interp.interpolate(clamped_point);
-                    }
-                    Extrapolate::Error => {
-                        let grid = [&interp.x, &interp.y, &interp.z];
-                        let grid_names = ["x", "y", "z"];
-                        let mut errors = Vec::new();
-                        for dim in 0..3 {
-                            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
-                                .contains(&&point[dim])
-                            {
+                let grid = [&interp.x, &interp.y, &interp.z];
+                let grid_names = ["x", "y", "z"];
+                let mut errors = Vec::new();
+                for dim in 0..3 {
+                    if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap())
+                        .contains(&&point[dim])
+                    {
+                        match interp.extrapolate {
+                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Clamp => {
+                                let clamped_point = &[
+                                    point[0].clamp(
+                                        *interp.x.first().unwrap(),
+                                        *interp.x.last().unwrap(),
+                                    ),
+                                    point[1].clamp(
+                                        *interp.y.first().unwrap(),
+                                        *interp.y.last().unwrap(),
+                                    ),
+                                    point[2].clamp(
+                                        *interp.z.first().unwrap(),
+                                        *interp.z.last().unwrap(),
+                                    ),
+                                ];
+                                return interp.interpolate(clamped_point);
+                            }
+                            Extrapolate::Error => {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
                                     point[dim], grid_names[dim], grid[dim],
                                 ));
                             }
-                        }
-                        if !errors.is_empty() {
-                            return Err(InterpolationError::ExtrapolationError(errors.join("")));
-                        }
+                            _ => {}
+                        };
                     }
-                    _ => {}
-                };
+                }
+                if !errors.is_empty() {
+                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                }
                 interp.interpolate(point)
             }
             Self::InterpND(interp) => {
-                match interp.extrapolate {
-                    Extrapolate::Clamp => {
-                        let clamped_point: Vec<f64> = point
-                            .iter()
-                            .enumerate()
-                            .map(|(dim, pt)| {
-                                pt.clamp(
-                                    *interp.grid[dim].first().unwrap(),
-                                    *interp.grid[dim].last().unwrap(),
-                                )
-                            })
-                            .collect();
-                        return interp.interpolate(&clamped_point);
-                    }
-                    Extrapolate::Error => {
-                        let mut errors = Vec::new();
-                        for dim in 0..interp.ndim() {
-                            if !(interp.grid[dim].first().unwrap()
-                                ..=interp.grid[dim].last().unwrap())
-                                .contains(&&point[dim])
-                            {
+                let mut errors = Vec::new();
+                for dim in 0..interp.ndim() {
+                    if !(interp.grid[dim].first().unwrap()..=interp.grid[dim].last().unwrap())
+                        .contains(&&point[dim])
+                    {
+                        match interp.extrapolate {
+                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Clamp => {
+                                let clamped_point: Vec<f64> = point
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(dim, pt)| {
+                                        pt.clamp(
+                                            *interp.grid[dim].first().unwrap(),
+                                            *interp.grid[dim].last().unwrap(),
+                                        )
+                                    })
+                                    .collect();
+                                return interp.interpolate(&clamped_point);
+                            }
+                            Extrapolate::Error => {
                                 errors.push(format!(
                                     "\n    point[{dim}] = {:?} is out of bounds for grid[{dim}] = {:?}",
                                     point[dim],
                                     interp.grid[dim],
                                 ));
                             }
-                        }
-                        if !errors.is_empty() {
-                            return Err(InterpolationError::ExtrapolationError(errors.join("")));
-                        }
+                            _ => {}
+                        };
                     }
-                    _ => {}
-                };
+                }
+                if !errors.is_empty() {
+                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                }
                 interp.interpolate(point)
             }
         }
@@ -802,6 +817,8 @@ pub enum Extrapolate {
     Enable,
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
+    /// If point is beyond grid limits, return this value instead.
+    FillValue(f64),
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,

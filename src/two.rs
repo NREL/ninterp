@@ -246,21 +246,20 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interp2D {
-                x: vec![0., 1.],
-                y: vec![0., 1.],
-                f_xy: vec![vec![0., 1.], vec![2., 3.]],
-                strategy: Strategy::Nearest,
-                extrapolate: Extrapolate::Enable,
-            }
-            .validate()
+            Interpolator::new_2d(
+                vec![0.1, 1.1],
+                vec![0.2, 1.2],
+                vec![vec![0., 1.], vec![2., 3.]],
+                Strategy::Nearest,
+                Extrapolate::Enable,
+            )
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::new_2d(
-            vec![0., 1.],
-            vec![0., 1.],
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
             Strategy::Linear,
             Extrapolate::Error,
@@ -277,10 +276,28 @@ mod tests {
     }
 
     #[test]
+    fn test_extrapolate_fill_value() {
+        let interp = Interpolator::new_2d(
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Strategy::Linear,
+            Extrapolate::FillValue(f64::NAN),
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.5, 0.5]).unwrap(), 1.1);
+        assert_eq!(interp.interpolate(&[0.1, 1.2]).unwrap(), 1.);
+        assert!(interp.interpolate(&[0., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 2.]).unwrap().is_nan());
+    }
+
+    #[test]
     fn test_extrapolate_clamp() {
         let interp = Interpolator::new_2d(
-            vec![0., 1.],
-            vec![0., 1.],
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
             Strategy::Linear,
             Extrapolate::Clamp,

@@ -372,26 +372,25 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interp3D {
-                x: vec![0., 1.],
-                y: vec![0., 1.],
-                z: vec![0., 1.],
-                f_xyz: vec![
+            Interpolator::new_3d(
+                vec![0.1, 1.1],
+                vec![0.2, 1.2],
+                vec![0.3, 1.3],
+                vec![
                     vec![vec![0., 1.], vec![2., 3.]],
                     vec![vec![4., 5.], vec![6., 7.]],
                 ],
-                strategy: Strategy::Nearest,
-                extrapolate: Extrapolate::Enable,
-            }
-            .validate()
+                Strategy::Nearest,
+                Extrapolate::Enable,
+            )
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::new_3d(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![0., 1.],
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
+            vec![0.3, 1.3],
             vec![
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],
@@ -411,11 +410,37 @@ mod tests {
     }
 
     #[test]
+    fn test_extrapolate_fill_value() {
+        let interp = Interpolator::new_3d(
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
+            vec![0.3, 1.3],
+            vec![
+                vec![vec![0., 1.], vec![2., 3.]],
+                vec![vec![4., 5.], vec![6., 7.]],
+            ],
+            Strategy::Linear,
+            Extrapolate::FillValue(f64::NAN),
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(), 1.7000000000000002);
+        assert_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
+        assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 0., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 2., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[0., 2., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 0., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 0., 2.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 2., 0.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[2., 2., 2.]).unwrap().is_nan());
+    }
+
+    #[test]
     fn test_extrapolate_clamp() {
         let interp = Interpolator::new_3d(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![0., 1.],
+            vec![0.1, 1.1],
+            vec![0.2, 1.2],
+            vec![0.3, 1.3],
             vec![
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],

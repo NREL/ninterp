@@ -124,6 +124,8 @@ impl InterpMethods for Interp1D {
 
 #[cfg(test)]
 mod tests {
+    use core::f64;
+
     use super::*;
 
     #[test]
@@ -224,13 +226,12 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Incorrect extrapolation selection
         assert!(matches!(
-            Interp1D {
-                x: vec![0., 1., 2., 3., 4.],
-                f_x: vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                strategy: Strategy::Nearest,
-                extrapolate: Extrapolate::Enable,
-            }
-            .validate()
+            Interpolator::new_1d(
+                vec![0., 1., 2., 3., 4.],
+                vec![0.2, 0.4, 0.6, 0.8, 1.0],
+                Strategy::Nearest,
+                Extrapolate::Enable,
+            )
             .unwrap_err(),
             ValidationError::ExtrapolationSelection(_)
         ));
@@ -253,6 +254,21 @@ mod tests {
             interp.interpolate(&[5.]).unwrap_err(),
             InterpolationError::ExtrapolationError(_)
         ));
+    }
+
+    #[test]
+    fn test_extrapolate_fill_value() {
+        let interp = Interpolator::new_1d(
+            vec![0., 1., 2., 3., 4.],
+            vec![0.2, 0.4, 0.6, 0.8, 1.0],
+            Strategy::Linear,
+            Extrapolate::FillValue(f64::NAN),
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[1.5]).unwrap(), 0.5);
+        assert_eq!(interp.interpolate(&[2.]).unwrap(), 0.6);
+        assert!(interp.interpolate(&[-1.]).unwrap().is_nan());
+        assert!(interp.interpolate(&[5.]).unwrap().is_nan());
     }
 
     #[test]
