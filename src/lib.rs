@@ -141,6 +141,7 @@ impl Interpolator {
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
+    /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
     ///
     /// # Example (using [`Extrapolate::Clamp`]):
@@ -193,6 +194,7 @@ impl Interpolator {
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
+    /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
     ///
     /// # Example (using [`Extrapolate::Clamp`]):
@@ -247,6 +249,7 @@ impl Interpolator {
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
+    /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
     ///
     /// # Example (using [`Extrapolate::Error`]):
@@ -311,6 +314,7 @@ impl Interpolator {
     /// Applicable extrapolation strategies:
     /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
     /// - [`Extrapolate::Clamp`]
+    /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
     ///
     /// # Example (using [`Extrapolate::Error`]):
