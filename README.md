@@ -15,9 +15,7 @@ cargo add ninterp
 
 ## Getting Started
 A prelude module has been defined: `use ninterp::prelude::*;`.
-This exposes the types necessary for usage: `Interpolator`, `Strategy`, and `Extrapolate`.
-
-All interpolation is handled through instances of the [`Interpolator`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html) enum.
+This exposes the types necessary for usage: [`Interpolator`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html), [`Strategy`](https://docs.rs/ninterp/latest/ninterp/enum.Strategy.html), and [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/enum.Extrapolate.html).
 
 Interpolation is executed by calling [`Interpolator::interpolate`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.interpolate).
 The length of the supplied point slice must be equal to the interpolator dimensionality.

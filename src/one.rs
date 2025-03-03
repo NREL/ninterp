@@ -14,7 +14,7 @@ pub(crate) struct Interp1D {
 }
 
 impl Linear for Interp1D {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(self.f_x[i]);
         }
@@ -37,7 +37,7 @@ impl Linear for Interp1D {
 }
 
 impl LeftNearest for Interp1D {
-    fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(self.f_x[i]);
         }
@@ -47,7 +47,7 @@ impl LeftNearest for Interp1D {
 }
 
 impl RightNearest for Interp1D {
-    fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(self.f_x[i]);
         }
@@ -57,7 +57,7 @@ impl RightNearest for Interp1D {
 }
 
 impl Nearest for Interp1D {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(self.f_x[i]);
         }
@@ -70,17 +70,14 @@ impl Nearest for Interp1D {
 }
 
 impl InterpMethods for Interp1D {
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
         match (&self.strategy, &self.extrapolate) {
             // inapplicable combinations of strategy + extrapolate
             (
                 Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
                 Extrapolate::Enable,
-            ) => Err(ValidationError::ExtrapolationSelection(format!(
-                "{:?}",
-                self.extrapolate
-            ))),
+            ) => Err(ValidateError::ExtrapolateSelection(self.extrapolate)),
             _ => Ok(()),
         }?;
 
@@ -88,31 +85,31 @@ impl InterpMethods for Interp1D {
 
         // Check that each grid dimension has elements
         if x_grid_len == 0 {
-            return Err(ValidationError::EmptyGrid("x".into()));
+            return Err(ValidateError::EmptyGrid("x".into()));
         }
 
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
         if matches!(self.extrapolate, Extrapolate::Enable) && x_grid_len < 2 {
-            return Err(ValidationError::Other(
+            return Err(ValidateError::Other(
                 "at least 2 data points are required for extrapolation".into(),
             ));
         }
 
         // Check that grid points are monotonically increasing
         if !self.x.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidationError::Monotonicity("x".into()));
+            return Err(ValidateError::Monotonicity("x".into()));
         }
 
         // Check that grid and values are compatible shapes
         if x_grid_len != self.f_x.len() {
-            return Err(ValidationError::IncompatibleShapes("x".into()));
+            return Err(ValidateError::IncompatibleShapes("x".into()));
         }
 
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
             Strategy::LeftNearest => self.left_nearest(point),
@@ -139,7 +136,7 @@ mod tests {
         .unwrap();
         assert!(matches!(
             interp.interpolate(&[]).unwrap_err(),
-            InterpolationError::InvalidPoint(_)
+            InterpolateError::InvalidPoint(_)
         ));
         assert_eq!(interp.interpolate(&[1.0]).unwrap(), 0.4);
     }
@@ -233,7 +230,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection(_)
+            ValidateError::ExtrapolateSelection(_)
         ));
 
         // Extrapolate::Error
@@ -247,12 +244,12 @@ mod tests {
         // Fail to extrapolate below lowest grid value
         assert!(matches!(
             interp.interpolate(&[-1.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
         // Fail to extrapolate above highest grid value
         assert!(matches!(
             interp.interpolate(&[5.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
     }
 
@@ -262,7 +259,7 @@ mod tests {
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Strategy::Linear,
-            Extrapolate::FillValue(f64::NAN),
+            Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
         assert_eq!(interp.interpolate(&[1.5]).unwrap(), 0.5);

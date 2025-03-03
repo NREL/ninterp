@@ -4,6 +4,17 @@ use super::*;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
+fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
+    if shape.is_empty() {
+        return vec![vec![]];
+    }
+    shape
+        .iter()
+        .map(|&len| 0..len)
+        .multi_cartesian_product()
+        .collect()
+}
+
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -25,21 +36,10 @@ impl InterpND {
             self.values.ndim()
         }
     }
-
-    fn get_index_permutations(&self, shape: &[usize]) -> Vec<Vec<usize>> {
-        if shape.is_empty() {
-            return vec![vec![]];
-        }
-        shape
-            .iter()
-            .map(|&len| 0..len)
-            .multi_cartesian_product()
-            .collect()
-    }
 }
 
 impl Linear for InterpND {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = self.values.ndim();
 
@@ -98,7 +98,7 @@ impl Linear for InterpND {
                 ndarray::Slice::from(lower..=lower + 1)
             })
             .to_owned();
-        let mut index_permutations = self.get_index_permutations(interp_vals.shape());
+        let mut index_permutations = get_index_permutations(interp_vals.shape());
         // This loop interpolates in each dimension sequentially
         // each outer loop iteration the dimensionality reduces by 1
         // `interp_vals` ends up as a 0-dimensional array containing only the final interpolated value
@@ -107,19 +107,17 @@ impl Linear for InterpND {
             let next_shape = vec![2; next_dim];
             // Indeces used for saving results of this dimensions interpolation results
             // assigned to `index_permutations` at end of loop to be used for indexing in next iteration
-            let next_idxs = self.get_index_permutations(&next_shape);
+            let next_idxs = get_index_permutations(&next_shape);
             let mut intermediate_arr = Array::default(next_shape);
             for i in 0..next_idxs.len() {
                 // `next_idxs` is always half the length of `index_permutations`
                 let l = index_permutations[i].as_slice();
                 let u = index_permutations[next_idxs.len() + i].as_slice();
-                if dim == 0 {
-                    if interp_vals[l].is_nan() || interp_vals[u].is_nan() {
-                        return Err(InterpolationError::NaNError(format!(
-                            "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                            self.values
-                        )));
-                    }
+                if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
+                    return Err(InterpolateError::NaNError(format!(
+                        "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
+                        self.values
+                    )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
                 // 2^(n-2) times in the second iteration, etc.
@@ -136,7 +134,7 @@ impl Linear for InterpND {
 }
 
 impl Nearest for InterpND {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = self.values.ndim();
 
@@ -184,7 +182,7 @@ impl Nearest for InterpND {
                 ndarray::Slice::from(lower..=lower + 1)
             })
             .to_owned();
-        let mut index_permutations = self.get_index_permutations(interp_vals.shape());
+        let mut index_permutations = get_index_permutations(interp_vals.shape());
         // This loop interpolates in each dimension sequentially
         // each outer loop iteration the dimensionality reduces by 1
         // `interp_vals` ends up as a 0-dimensional array containing only the final interpolated value
@@ -193,19 +191,17 @@ impl Nearest for InterpND {
             let next_shape = vec![2; next_dim];
             // Indeces used for saving results of this dimensions interpolation results
             // assigned to `index_permutations` at end of loop to be used for indexing in next iteration
-            let next_idxs = self.get_index_permutations(&next_shape);
+            let next_idxs = get_index_permutations(&next_shape);
             let mut intermediate_arr = Array::default(next_shape);
             for i in 0..next_idxs.len() {
                 // `next_idxs` is always half the length of `index_permutations`
                 let l = index_permutations[i].as_slice();
                 let u = index_permutations[next_idxs.len() + i].as_slice();
-                if dim == 0 {
-                    if interp_vals[l].is_nan() || interp_vals[u].is_nan() {
-                        return Err(InterpolationError::NaNError(format!(
-                            "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                            self.values
-                        )));
-                    }
+                if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
+                    return Err(InterpolateError::NaNError(format!(
+                        "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
+                        self.values
+                    )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
                 // 2^(n-2) times in the second iteration, etc.
@@ -225,17 +221,17 @@ impl Nearest for InterpND {
 }
 
 impl InterpMethods for InterpND {
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
         match (&self.strategy, &self.extrapolate) {
             // inapplicable strategies
-            (Strategy::LeftNearest | Strategy::RightNearest, _) => Err(
-                ValidationError::StrategySelection(format!("{:?}", self.strategy)),
-            ),
+            (Strategy::LeftNearest | Strategy::RightNearest, _) => {
+                Err(ValidateError::StrategySelection(self.strategy))
+            }
             // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => Err(
-                ValidationError::ExtrapolationSelection(format!("{:?}", self.extrapolate)),
-            ),
+            (Strategy::Nearest, Extrapolate::Enable) => {
+                Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+            }
             _ => Ok(()),
         }?;
 
@@ -247,25 +243,25 @@ impl InterpMethods for InterpND {
             // Check that each grid dimension has elements
             // Indexing `grid` directly is okay because empty dimensions are caught at compilation
             if i_grid_len == 0 {
-                return Err(ValidationError::EmptyGrid(i.to_string()));
+                return Err(ValidateError::EmptyGrid(i.to_string()));
             }
 
-            // // If using Extrapolate::Enable,
-            // // check that each grid dimension has at least two elements
-            // if matches!(self.extrapolate, Extrapolate::Enable) && i_grid_len < 2 {
-            //     return Err(ValidationError::Other(
-            //         "at least 2 data points are required for extrapolation".into(),
-            //     ));
-            // }
+            // If using Extrapolate::Enable,
+            // check that each grid dimension has at least two elements
+            if matches!(self.extrapolate, Extrapolate::Enable) && i_grid_len < 2 {
+                return Err(ValidateError::Other(format!(
+                    "at least 2 data points are required for extrapolation: dim {i}"
+                )));
+            }
 
             // Check that grid points are monotonically increasing
             if !self.grid[i].windows(2).all(|w| w[0] <= w[1]) {
-                return Err(ValidationError::Monotonicity(i.to_string()));
+                return Err(ValidateError::Monotonicity(i.to_string()));
             }
 
             // Check that grid and values are compatible shapes
             if i_grid_len != self.values.shape()[i] {
-                return Err(ValidationError::IncompatibleShapes(i.to_string()));
+                return Err(ValidateError::IncompatibleShapes(i.to_string()));
             }
         }
 
@@ -285,7 +281,7 @@ impl InterpMethods for InterpND {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
             Strategy::Nearest => self.nearest(point),
@@ -581,7 +577,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection(_)
+            ValidateError::ExtrapolateSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::new_nd(
@@ -593,11 +589,11 @@ mod tests {
         .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
         assert!(matches!(
             interp.interpolate(&[2., 2., 2.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
     }
 
@@ -607,7 +603,7 @@ mod tests {
             vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Strategy::Linear,
-            Extrapolate::FillValue(f64::NAN),
+            Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
         assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());

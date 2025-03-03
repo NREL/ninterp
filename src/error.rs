@@ -1,26 +1,28 @@
-//! Custom error types
+//! Crate error types
 
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
 pub enum Error {
     #[error(transparent)]
-    ValidationError(#[from] ValidationError),
+    ValidateError(#[from] ValidateError),
     #[error(transparent)]
-    InterpolationError(#[from] InterpolationError),
-    #[error("no such field exists for interpolator variant")]
-    NoSuchField,
+    InterpolateError(#[from] InterpolateError),
+    #[error("{0:?} field does not exist for interpolator variant")]
+    NoSuchField(&'static str),
     #[error("{0}")]
     Other(String),
 }
 
-/// Error types that occur from a `validate()` call, before calling interpolate()
+/// Error types that occur from a `validate()` call, before calling `interpolate()`
 #[derive(Error, Debug, Clone)]
-pub enum ValidationError {
-    #[error("selected `Strategy` variant ({0}) is unimplemented for interpolator variant")]
-    StrategySelection(String),
-    #[error("selected `Extrapolate` variant ({0}) is unimplemented for interpolator variant")]
-    ExtrapolationSelection(String),
+pub enum ValidateError {
+    #[error("selected `Strategy` variant ({0:?}) is unimplemented/inapplicable for interpolator")]
+    StrategySelection(crate::Strategy),
+    #[error(
+        "selected `Extrapolate` variant ({0:?}) is unimplemented/inapplicable for interpolator"
+    )]
+    ExtrapolateSelection(crate::Extrapolate),
     #[error("supplied grid coordinates cannot be empty: dim {0}")]
     EmptyGrid(String),
     #[error("supplied coordinates must be sorted and non-repeating: dim {0}")]
@@ -32,9 +34,9 @@ pub enum ValidationError {
 }
 
 #[derive(Error, Debug, Clone)]
-pub enum InterpolationError {
+pub enum InterpolateError {
     #[error("attempted to interpolate at point beyond grid data: {0}")]
-    ExtrapolationError(String),
+    ExtrapolateError(String),
     #[error("surrounding values cannot be NaN: {0}")]
     NaNError(String),
     #[error("supplied point is invalid for interpolator: {0}")]

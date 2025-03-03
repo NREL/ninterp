@@ -12,23 +12,21 @@
 //! A prelude module has been defined: `use ninterp::prelude::*;`.
 //! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], and [`Extrapolate`].
 //!
-//! All interpolation is handled through instances of the [`Interpolator`] enum.
-//!
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
 //!
 //! ## Note
 //! For interpolators of dimensionality N ≥ 1:
 //! - Instantiation is done via the Interpolator enum's `new_*` methods (`new_1d`, `new_2d`, `new_3d`, `new_nd`).
-//! These methods run a validation step that catches any potential errors early, preventing runtime panics.
+//!   These methods run a validation step that catches any potential errors early, preventing runtime panics.
 //!   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
 //! - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
-//! Not all interpolation strategies are implemented for every dimensionality.
-//! [`Strategy::Linear`] and [`Strategy::Nearest`] are implemented for all dimensionalities.
+//!   Not all interpolation strategies are implemented for every dimensionality.
+//!   [`Strategy::Linear`] and [`Strategy::Nearest`] are implemented for all dimensionalities.
 //! - An [`Extrapolate`] setting must be specified.
-//! This controls what happens when a point is beyond the range of supplied coordinates.
-//! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
-//! Linear extrapolation is implemented for all dimensionalities.
+//!   This controls what happens when a point is beyond the range of supplied coordinates.
+//!   If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
+//!   Linear extrapolation is implemented for all dimensionalities.
 //!
 //! For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
 //!
@@ -128,7 +126,7 @@ pub enum Interpolator {
 
 impl Interpolator {
     #[deprecated(note = "instantiate directly via `Interpolator::Interp0D(value)` instead")]
-    pub fn new_0d(value: f64) -> Result<Self, ValidationError> {
+    pub fn new_0d(value: f64) -> Result<Self, ValidateError> {
         Ok(Self::Interp0D(value))
     }
 
@@ -175,7 +173,7 @@ impl Interpolator {
         f_x: Vec<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, ValidateError> {
         let interp = Interp1D {
             x,
             f_x,
@@ -228,7 +226,7 @@ impl Interpolator {
         f_xy: Vec<Vec<f64>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, ValidateError> {
         let interp = Interp2D {
             x,
             y,
@@ -281,7 +279,7 @@ impl Interpolator {
     /// // out of bounds point with `Extrapolate::Error` fails
     /// assert!(matches!(
     ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
-    ///     ninterp::error::InterpolationError::ExtrapolationError(_)
+    ///     ninterp::error::InterpolateError::ExtrapolateError(_)
     /// ));
     /// ```
     pub fn new_3d(
@@ -291,7 +289,7 @@ impl Interpolator {
         f_xyz: Vec<Vec<Vec<f64>>>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, ValidateError> {
         let interp = Interp3D {
             x,
             y,
@@ -345,7 +343,7 @@ impl Interpolator {
     /// // out of bounds point with `Extrapolate::Error` fails
     /// assert!(matches!(
     ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
-    ///     ninterp::error::InterpolationError::ExtrapolationError(_)
+    ///     ninterp::error::InterpolateError::ExtrapolateError(_)
     /// ));
     /// ```
     pub fn new_nd(
@@ -353,7 +351,7 @@ impl Interpolator {
         values: ndarray::ArrayD<f64>,
         strategy: Strategy,
         extrapolate: Extrapolate,
-    ) -> Result<Self, ValidationError> {
+    ) -> Result<Self, ValidateError> {
         let interp = InterpND {
             grid,
             values,
@@ -365,15 +363,15 @@ impl Interpolator {
     }
 
     /// Ensure supplied point is valid for the given interpolator.
-    fn validate_point(&self, point: &[f64]) -> Result<(), InterpolationError> {
+    fn validate_point(&self, point: &[f64]) -> Result<(), InterpolateError> {
         let n = self.ndim();
         // Check supplied point dimensionality
         if n == 0 && !point.is_empty() {
-            return Err(InterpolationError::InvalidPoint(
+            return Err(InterpolateError::InvalidPoint(
                 "No point should be provided for 0-D interpolation".into(),
             ));
         } else if point.len() != n {
-            return Err(InterpolationError::InvalidPoint(format!(
+            return Err(InterpolateError::InvalidPoint(format!(
                 "Supplied point slice should have length {n} for {n}-D interpolation"
             )));
         }
@@ -401,7 +399,7 @@ impl Interpolator {
             Self::Interp2D(interp) => Ok(&interp.strategy),
             Self::Interp3D(interp) => Ok(&interp.strategy),
             Self::InterpND(interp) => Ok(&interp.strategy),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("strategy")),
         }
     }
 
@@ -424,7 +422,7 @@ impl Interpolator {
                 interp.strategy = strategy;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("strategy")),
         }
     }
 
@@ -435,7 +433,7 @@ impl Interpolator {
             Self::Interp2D(interp) => Ok(&interp.extrapolate),
             Self::Interp3D(interp) => Ok(&interp.extrapolate),
             Self::InterpND(interp) => Ok(&interp.extrapolate),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("extrapolate")),
         }
     }
 
@@ -458,7 +456,7 @@ impl Interpolator {
                 interp.extrapolate = extrapolate;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("extrapolate")),
         }
     }
 
@@ -468,7 +466,7 @@ impl Interpolator {
             Self::Interp1D(interp) => Ok(&interp.x),
             Self::Interp2D(interp) => Ok(&interp.x),
             Self::Interp3D(interp) => Ok(&interp.x),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("x")),
         }
     }
 
@@ -487,7 +485,7 @@ impl Interpolator {
                 interp.x = x;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("x")),
         }
     }
 
@@ -496,7 +494,7 @@ impl Interpolator {
         match self {
             Self::Interp2D(interp) => Ok(&interp.y),
             Self::Interp3D(interp) => Ok(&interp.y),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("y")),
         }
     }
 
@@ -511,7 +509,7 @@ impl Interpolator {
                 interp.y = y;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("y")),
         }
     }
 
@@ -519,7 +517,7 @@ impl Interpolator {
     pub fn z(&self) -> Result<&[f64], Error> {
         match self {
             Self::Interp3D(interp) => Ok(&interp.z),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("z")),
         }
     }
 
@@ -530,7 +528,7 @@ impl Interpolator {
                 interp.z = z;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("z")),
         }
     }
 
@@ -538,7 +536,7 @@ impl Interpolator {
     pub fn f_x(&self) -> Result<&[f64], Error> {
         match self {
             Self::Interp1D(interp) => Ok(&interp.f_x),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_x")),
         }
     }
 
@@ -549,7 +547,7 @@ impl Interpolator {
                 interp.f_x = f_x;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_x")),
         }
     }
 
@@ -557,7 +555,7 @@ impl Interpolator {
     pub fn f_xy(&self) -> Result<&[Vec<f64>], Error> {
         match self {
             Self::Interp2D(interp) => Ok(&interp.f_xy),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_xy")),
         }
     }
 
@@ -568,7 +566,7 @@ impl Interpolator {
                 interp.f_xy = f_xy;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_xy")),
         }
     }
 
@@ -576,7 +574,7 @@ impl Interpolator {
     pub fn f_xyz(&self) -> Result<&[Vec<Vec<f64>>], Error> {
         match self {
             Self::Interp3D(interp) => Ok(&interp.f_xyz),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_xyz")),
         }
     }
 
@@ -587,7 +585,7 @@ impl Interpolator {
                 interp.f_xyz = f_xyz;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("f_xyz")),
         }
     }
 
@@ -595,7 +593,7 @@ impl Interpolator {
     pub fn grid(&self) -> Result<&[Vec<f64>], Error> {
         match self {
             Self::InterpND(interp) => Ok(&interp.grid),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("grid")),
         }
     }
 
@@ -606,7 +604,7 @@ impl Interpolator {
                 interp.grid = grid;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("grid")),
         }
     }
 
@@ -614,7 +612,7 @@ impl Interpolator {
     pub fn values(&self) -> Result<&ndarray::ArrayD<f64>, Error> {
         match self {
             Self::InterpND(interp) => Ok(&interp.values),
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("values")),
         }
     }
 
@@ -625,13 +623,13 @@ impl Interpolator {
                 interp.values = values;
                 Ok(interp.validate()?)
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField("values")),
         }
     }
 }
 
 impl InterpMethods for Interpolator {
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self) -> Result<(), ValidateError> {
         match self {
             Self::Interp0D(_) => Ok(()),
             Self::Interp1D(interp) => interp.validate(),
@@ -643,26 +641,26 @@ impl InterpMethods for Interpolator {
 
     /// Interpolate at supplied point, after checking point validity.
     /// Length of supplied point must match interpolator dimensionality.
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         self.validate_point(point)?;
         match self {
             Self::Interp0D(value) => Ok(*value),
             Self::Interp1D(interp) => {
                 if !(interp.x.first().unwrap()..=interp.x.last().unwrap()).contains(&&point[0]) {
                     match interp.extrapolate {
-                        Extrapolate::FillValue(value) => return Ok(value),
+                        Extrapolate::Fill(value) => return Ok(value),
                         Extrapolate::Clamp => {
                             let clamped_point = &[point[0]
                                 .clamp(*interp.x.first().unwrap(), *interp.x.last().unwrap())];
                             return interp.interpolate(clamped_point);
                         }
                         Extrapolate::Error => {
-                            return Err(InterpolationError::ExtrapolationError(format!(
+                            return Err(InterpolateError::ExtrapolateError(format!(
                                 "\n    point[0] = {:?} is out of bounds for x-grid = {:?}",
                                 point[0], interp.x
                             )))
                         }
-                        _ => {}
+                        Extrapolate::Enable => {}
                     }
                 };
                 interp.interpolate(point)
@@ -676,7 +674,7 @@ impl InterpMethods for Interpolator {
                         .contains(&&point[dim])
                     {
                         match interp.extrapolate {
-                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Fill(value) => return Ok(value),
                             Extrapolate::Clamp => {
                                 let clamped_point = &[
                                     point[0].clamp(
@@ -696,12 +694,12 @@ impl InterpMethods for Interpolator {
                                     point[dim], grid_names[dim], grid[dim],
                                 ));
                             }
-                            _ => {}
+                            Extrapolate::Enable => {}
                         };
                     }
                 }
                 if !errors.is_empty() {
-                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                    return Err(InterpolateError::ExtrapolateError(errors.join("")));
                 }
                 interp.interpolate(point)
             }
@@ -714,7 +712,7 @@ impl InterpMethods for Interpolator {
                         .contains(&&point[dim])
                     {
                         match interp.extrapolate {
-                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Fill(value) => return Ok(value),
                             Extrapolate::Clamp => {
                                 let clamped_point = &[
                                     point[0].clamp(
@@ -738,12 +736,12 @@ impl InterpMethods for Interpolator {
                                     point[dim], grid_names[dim], grid[dim],
                                 ));
                             }
-                            _ => {}
+                            Extrapolate::Enable => {}
                         };
                     }
                 }
                 if !errors.is_empty() {
-                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                    return Err(InterpolateError::ExtrapolateError(errors.join("")));
                 }
                 interp.interpolate(point)
             }
@@ -754,7 +752,7 @@ impl InterpMethods for Interpolator {
                         .contains(&&point[dim])
                     {
                         match interp.extrapolate {
-                            Extrapolate::FillValue(value) => return Ok(value),
+                            Extrapolate::Fill(value) => return Ok(value),
                             Extrapolate::Clamp => {
                                 let clamped_point: Vec<f64> = point
                                     .iter()
@@ -775,12 +773,12 @@ impl InterpMethods for Interpolator {
                                     interp.grid[dim],
                                 ));
                             }
-                            _ => {}
+                            Extrapolate::Enable => {}
                         };
                     }
                 }
                 if !errors.is_empty() {
-                    return Err(InterpolationError::ExtrapolationError(errors.join("")));
+                    return Err(InterpolateError::ExtrapolateError(errors.join("")));
                 }
                 interp.interpolate(point)
             }
@@ -789,7 +787,7 @@ impl InterpMethods for Interpolator {
 }
 
 /// Interpolation strategy
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Strategy {
     /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
@@ -810,7 +808,7 @@ pub enum Strategy {
 ///
 /// Controls what happens if supplied interpolant point
 /// is outside the bounds of the interpolation grid.
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate {
     /// Evaluate beyond the limits of the interpolation grid.
@@ -818,7 +816,7 @@ pub enum Extrapolate {
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
     /// If point is beyond grid limits, return this value instead.
-    FillValue(f64),
+    Fill(f64),
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,
@@ -836,7 +834,8 @@ mod tests {
         assert_eq!(interp.interpolate(&[]).unwrap(), expected);
         assert!(matches!(
             interp.interpolate(&[0.]).unwrap_err(),
-            InterpolationError::InvalidPoint(_)
+            InterpolateError::InvalidPoint(_)
         ));
+        assert!(matches!(interp.x().unwrap_err(), Error::NoSuchField("x")));
     }
 }

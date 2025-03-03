@@ -16,7 +16,7 @@ pub(crate) struct Interp3D {
 }
 
 impl Linear for Interp3D {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
@@ -60,7 +60,7 @@ impl Linear for Interp3D {
 }
 
 impl Nearest for Interp3D {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         // x
         let x_l = find_nearest_index(&self.x, point[0]);
         let x_u = x_l + 1;
@@ -82,17 +82,17 @@ impl Nearest for Interp3D {
 }
 
 impl InterpMethods for Interp3D {
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
         match (&self.strategy, &self.extrapolate) {
             // inapplicable strategies
-            (Strategy::LeftNearest | Strategy::RightNearest, _) => Err(
-                ValidationError::StrategySelection(format!("{:?}", self.strategy)),
-            ),
+            (Strategy::LeftNearest | Strategy::RightNearest, _) => {
+                Err(ValidateError::StrategySelection(self.strategy))
+            }
             // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => Err(
-                ValidationError::ExtrapolationSelection(format!("{:?}", self.extrapolate)),
-            ),
+            (Strategy::Nearest, Extrapolate::Enable) => {
+                Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+            }
             _ => Ok(()),
         }?;
 
@@ -102,13 +102,13 @@ impl InterpMethods for Interp3D {
 
         // Check that each grid dimension has elements
         if x_grid_len == 0 {
-            return Err(ValidationError::EmptyGrid("x".into()));
+            return Err(ValidateError::EmptyGrid("x".into()));
         }
         if y_grid_len == 0 {
-            return Err(ValidationError::EmptyGrid("y".into()));
+            return Err(ValidateError::EmptyGrid("y".into()));
         }
         if z_grid_len == 0 {
-            return Err(ValidationError::EmptyGrid("z".into()));
+            return Err(ValidateError::EmptyGrid("z".into()));
         }
 
         // If using Extrapolate::Enable,
@@ -116,47 +116,47 @@ impl InterpMethods for Interp3D {
         if matches!(self.extrapolate, Extrapolate::Enable)
             && (x_grid_len < 2 || y_grid_len < 2 || z_grid_len < 2)
         {
-            return Err(ValidationError::Other(
+            return Err(ValidateError::Other(
                 "at least 2 data points are required for extrapolation".into(),
             ));
         }
 
         // Check that grid points are monotonically increasing
         if !self.x.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidationError::Monotonicity("x".into()));
+            return Err(ValidateError::Monotonicity("x".into()));
         }
         if !self.y.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidationError::Monotonicity("y".into()));
+            return Err(ValidateError::Monotonicity("y".into()));
         }
         if !self.z.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidationError::Monotonicity("z".into()));
+            return Err(ValidateError::Monotonicity("z".into()));
         }
 
         // Check that grid and values are compatible shapes
         if x_grid_len != self.f_xyz.len() {
-            return Err(ValidationError::IncompatibleShapes("x".into()));
+            return Err(ValidateError::IncompatibleShapes("x".into()));
         }
         if !self
             .f_xyz
             .iter()
-            .map(|y_vals| y_vals.len())
+            .map(std::vec::Vec::len)
             .all(|y_val_len| y_val_len == y_grid_len)
         {
-            return Err(ValidationError::IncompatibleShapes("y".into()));
+            return Err(ValidateError::IncompatibleShapes("y".into()));
         }
         if !self
             .f_xyz
             .iter()
-            .flat_map(|y_vals| y_vals.iter().map(|z_vals| z_vals.len()))
+            .flat_map(|y_vals| y_vals.iter().map(std::vec::Vec::len))
             .all(|z_val_len| z_val_len == z_grid_len)
         {
-            return Err(ValidationError::IncompatibleShapes("z".into()));
+            return Err(ValidateError::IncompatibleShapes("z".into()));
         }
 
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolationError> {
+    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
         match self.strategy {
             Strategy::Linear => self.linear(point),
             Strategy::Nearest => self.nearest(point),
@@ -384,7 +384,7 @@ mod tests {
                 Extrapolate::Enable,
             )
             .unwrap_err(),
-            ValidationError::ExtrapolationSelection(_)
+            ValidateError::ExtrapolateSelection(_)
         ));
         // Extrapolate::Error
         let interp = Interpolator::new_3d(
@@ -401,11 +401,11 @@ mod tests {
         .unwrap();
         assert!(matches!(
             interp.interpolate(&[-1., -1., -1.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
         assert!(matches!(
             interp.interpolate(&[2., 2., 2.]).unwrap_err(),
-            InterpolationError::ExtrapolationError(_)
+            InterpolateError::ExtrapolateError(_)
         ));
     }
 
@@ -420,10 +420,13 @@ mod tests {
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
             Strategy::Linear,
-            Extrapolate::FillValue(f64::NAN),
+            Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
-        assert_eq!(interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(), 1.7000000000000002);
+        assert_eq!(
+            interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(),
+            1.7000000000000002
+        );
         assert_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
         assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());
         assert!(interp.interpolate(&[0., 0., 2.]).unwrap().is_nan());
