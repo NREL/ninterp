@@ -121,8 +121,6 @@ impl InterpMethods for Interp1D {
 
 #[cfg(test)]
 mod tests {
-    use core::f64;
-
     use super::*;
 
     #[test]

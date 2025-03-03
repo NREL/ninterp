@@ -115,7 +115,7 @@ impl InterpMethods for Interp2D {
         if !self
             .f_xy
             .iter()
-            .map(std::vec::Vec::len)
+            .map(Vec::len)
             .all(|y_val_len| y_val_len == y_grid_len)
         {
             return Err(ValidateError::IncompatibleShapes("y".into()));

@@ -15,7 +15,6 @@
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
 //!
-//! ## Note
 //! For interpolators of dimensionality N ≥ 1:
 //! - Instantiation is done via the Interpolator enum's `new_*` methods (`new_1d`, `new_2d`, `new_3d`, `new_nd`).
 //!   These methods run a validation step that catches any potential errors early, preventing runtime panics.

@@ -292,8 +292,6 @@ impl InterpMethods for InterpND {
 
 #[cfg(test)]
 mod tests {
-    use core::f64;
-
     use super::*;
 
     #[test]

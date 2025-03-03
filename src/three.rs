@@ -139,7 +139,7 @@ impl InterpMethods for Interp3D {
         if !self
             .f_xyz
             .iter()
-            .map(std::vec::Vec::len)
+            .map(Vec::len)
             .all(|y_val_len| y_val_len == y_grid_len)
         {
             return Err(ValidateError::IncompatibleShapes("y".into()));
@@ -147,7 +147,7 @@ impl InterpMethods for Interp3D {
         if !self
             .f_xyz
             .iter()
-            .flat_map(|y_vals| y_vals.iter().map(std::vec::Vec::len))
+            .flat_map(|y_vals| y_vals.iter().map(Vec::len))
             .all(|z_val_len| z_val_len == z_grid_len)
         {
             return Err(ValidateError::IncompatibleShapes("z".into()));
