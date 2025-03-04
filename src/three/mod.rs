@@ -16,11 +16,21 @@ pub struct Interp3D {
     pub extrapolate: Extrapolate,
 }
 
+impl Interp3D {
+    pub fn set_strategy(
+        &mut self,
+        strategy: impl Interp3DStrategy + 'static,
+    ) -> Result<(), ValidateError> {
+        self.strategy = Box::new(strategy);
+        self.validate()
+    }
+}
+
 impl InterpMethods for Interp3D {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
         }
 
         let x_grid_len = self.x.len();

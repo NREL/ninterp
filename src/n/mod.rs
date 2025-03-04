@@ -18,6 +18,14 @@ pub struct InterpND {
 }
 
 impl InterpND {
+    pub fn set_strategy(
+        &mut self,
+        strategy: impl InterpNDStrategy + 'static,
+    ) -> Result<(), ValidateError> {
+        self.strategy = Box::new(strategy);
+        self.validate()
+    }
+
     /// Retrieve interpolator dimensionality.
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
@@ -31,8 +39,8 @@ impl InterpND {
 impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
         }
 
         let n = self.ndim();

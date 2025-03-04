@@ -10,7 +10,7 @@
 //!
 //! # Getting Started
 //! A prelude module has been defined: `use ninterp::prelude::*;`.
-//! This exposes the types necessary for usage: 
+//! This exposes the types necessary for usage:
 //! - The main type: [`Interpolator`]
 //! - Interpolation strategies:
 //!   - [`Linear`]

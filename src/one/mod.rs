@@ -14,11 +14,21 @@ pub struct Interp1D {
     pub extrapolate: Extrapolate,
 }
 
+impl Interp1D {
+    pub fn set_strategy(
+        &mut self,
+        strategy: impl Interp1DStrategy + 'static,
+    ) -> Result<(), ValidateError> {
+        self.strategy = Box::new(strategy);
+        self.validate()
+    }
+}
+
 impl InterpMethods for Interp1D {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
         }
 
         let x_grid_len = self.x.len();
@@ -79,8 +89,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), Linear, Extrapolate::Error)
-                .unwrap();
+            Interpolator::new_1d(x.clone(), f_x.clone(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -94,13 +103,8 @@ mod tests {
     fn test_left_nearest() {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp = Interpolator::new_1d(
-            x.clone(),
-            f_x.clone(),
-            LeftNearest,
-            Extrapolate::Error,
-        )
-        .unwrap();
+        let interp =
+            Interpolator::new_1d(x.clone(), f_x.clone(), LeftNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -114,13 +118,8 @@ mod tests {
     fn test_right_nearest() {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp = Interpolator::new_1d(
-            x.clone(),
-            f_x.clone(),
-            RightNearest,
-            Extrapolate::Error,
-        )
-        .unwrap();
+        let interp =
+            Interpolator::new_1d(x.clone(), f_x.clone(), RightNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -134,13 +133,8 @@ mod tests {
     fn test_nearest() {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp = Interpolator::new_1d(
-            x.clone(),
-            f_x.clone(),
-            Nearest,
-            Extrapolate::Error,
-        )
-        .unwrap();
+        let interp =
+            Interpolator::new_1d(x.clone(), f_x.clone(), Nearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);

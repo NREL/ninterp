@@ -32,10 +32,14 @@ impl Interp3DStrategy for Linear {
         let z_u = z_l + 1;
         let z_diff = (point[2] - interp.z[z_l]) / (interp.z[z_u] - interp.z[z_l]);
         // interpolate in the x-direction
-        let f00 = interp.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_l] * x_diff;
-        let f01 = interp.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_u] * x_diff;
-        let f10 = interp.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_l] * x_diff;
-        let f11 = interp.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_u] * x_diff;
+        let f00 =
+            interp.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_l] * x_diff;
+        let f01 =
+            interp.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_u] * x_diff;
+        let f10 =
+            interp.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_l] * x_diff;
+        let f11 =
+            interp.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_u] * x_diff;
         // interpolate in the y-direction
         let f0 = f00 * (1.0 - y_diff) + f10 * y_diff;
         let f1 = f01 * (1.0 - y_diff) + f11 * y_diff;
