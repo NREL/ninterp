@@ -169,7 +169,7 @@ impl Interpolator {
     ///         vec![0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
     ///         vec![0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
     ///     ],
-    ///     Strategy::Linear,
+    ///     Linear,
     ///     Extrapolate::Clamp, // restrict point within grid bounds
     /// )
     /// .unwrap();
@@ -222,7 +222,7 @@ impl Interpolator {
     ///         vec![0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
     ///         vec![0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
     ///     ],
-    ///     Strategy::Linear,
+    ///     Linear,
     ///     Extrapolate::Clamp, // restrict point within grid bounds
     /// )
     /// .unwrap();
@@ -284,7 +284,7 @@ impl Interpolator {
     ///             vec![1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
     ///         ],
     ///     ],
-    ///     Strategy::Linear,
+    ///     Linear,
     ///     Extrapolate::Error, // return an error when point is out of bounds
     /// )
     /// .unwrap();
@@ -349,7 +349,7 @@ impl Interpolator {
     ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
     ///         ],
     ///     ].into_dyn(),
-    ///     Strategy::Linear,
+    ///     Linear,
     ///     Extrapolate::Error, // return an error when point is out of bounds
     /// )
     /// .unwrap();
