@@ -10,7 +10,14 @@
 //!
 //! # Getting Started
 //! A prelude module has been defined: `use ninterp::prelude::*;`.
-//! This exposes the types necessary for usage: [`Interpolator`], [`Strategy`], and [`Extrapolate`].
+//! This exposes the types necessary for usage: 
+//! - The main type: [`Interpolator`]
+//! - Interpolation strategies:
+//!   - [`Linear`]
+//!   - [`Nearest`]
+//!   - [`LeftNearest`]
+//!   - [`RightNearest`]
+//! - The extrapolation setting: [`Extrapolate`]
 //!
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
@@ -21,7 +28,7 @@
 //!   - To set or get field values, use the corresponding named methods (`x`, `set_x`, etc.).
 //! - An interpolation [`Strategy`] (e.g. linear, left-nearest, etc.) must be specified.
 //!   Not all interpolation strategies are implemented for every dimensionality.
-//!   [`Strategy::Linear`] and [`Strategy::Nearest`] are implemented for all dimensionalities.
+//!   [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //! - An [`Extrapolate`] setting must be specified.
 //!   This controls what happens when a point is beyond the range of supplied coordinates.
 //!   If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
@@ -38,19 +45,24 @@
 //!
 
 pub mod prelude {
-    pub use crate::{Extrapolate, InterpMethods, Interpolator, Strategy};
+    pub use crate::{
+        strategy::{LeftNearest, Linear, Nearest, RightNearest},
+        Extrapolate, InterpMethods, Interpolator,
+    };
 }
 
 pub mod error;
 mod n;
-mod one;
-mod three;
+pub mod one;
+pub mod strategy;
+pub mod three;
 mod traits;
-mod two;
+pub mod two;
 
 pub(crate) use error::*;
 pub(crate) use n::*;
 pub(crate) use one::*;
+pub(crate) use strategy::*;
 pub(crate) use three::*;
 pub use traits::*;
 pub(crate) use two::*;
@@ -87,8 +99,7 @@ fn find_nearest_index(arr: &[f64], target: f64) -> usize {
 }
 
 /// An interpolator, with different functionality depending on variant.
-#[allow(private_interfaces)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Interpolator {
     /// Returns a constant value.
@@ -132,13 +143,13 @@ impl Interpolator {
     /// Instantiate one-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Strategy::Linear`]
-    /// - [`Strategy::LeftNearest`]
-    /// - [`Strategy::RightNearest`]
-    /// - [`Strategy::Nearest`]
+    /// - [`Linear`]
+    /// - [`LeftNearest`]
+    /// - [`RightNearest`]
+    /// - [`Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
@@ -171,13 +182,13 @@ impl Interpolator {
     pub fn new_1d(
         x: Vec<f64>,
         f_x: Vec<f64>,
-        strategy: Strategy,
+        strategy: impl Interp1DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interp = Interp1D {
             x,
             f_x,
-            strategy,
+            strategy: Box::new(strategy),
             extrapolate,
         };
         interp.validate()?;
@@ -187,11 +198,11 @@ impl Interpolator {
     /// Instantiate two-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Strategy::Linear`]
-    /// - [`Strategy::Nearest`]
+    /// - [`Linear`]
+    /// - [`Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
@@ -225,14 +236,14 @@ impl Interpolator {
         x: Vec<f64>,
         y: Vec<f64>,
         f_xy: Vec<Vec<f64>>,
-        strategy: Strategy,
+        strategy: impl Interp2DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interp = Interp2D {
             x,
             y,
             f_xy,
-            strategy,
+            strategy: Box::new(strategy),
             extrapolate,
         };
         interp.validate()?;
@@ -242,11 +253,11 @@ impl Interpolator {
     /// Instantiate three-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Strategy::Linear`]
-    /// - [`Strategy::Nearest`]
+    /// - [`Linear`]
+    /// - [`Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
@@ -289,7 +300,7 @@ impl Interpolator {
         y: Vec<f64>,
         z: Vec<f64>,
         f_xyz: Vec<Vec<Vec<f64>>>,
-        strategy: Strategy,
+        strategy: impl Interp3DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interp = Interp3D {
@@ -297,7 +308,7 @@ impl Interpolator {
             y,
             z,
             f_xyz,
-            strategy,
+            strategy: Box::new(strategy),
             extrapolate,
         };
         interp.validate()?;
@@ -307,11 +318,11 @@ impl Interpolator {
     /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Strategy::Linear`]
-    /// - [`Strategy::Nearest`]
+    /// - [`Linear`]
+    /// - [`Nearest`]
     ///
     /// Applicable extrapolation strategies:
-    /// - [`Extrapolate::Enable`] (in combination with [`Strategy::Linear`])
+    /// - [`Extrapolate::Enable`] (in combination with [`Linear`])
     /// - [`Extrapolate::Clamp`]
     /// - [`Extrapolate::Fill`]
     /// - [`Extrapolate::Error`]
@@ -352,13 +363,13 @@ impl Interpolator {
     pub fn new_nd(
         grid: Vec<Vec<f64>>,
         values: ndarray::ArrayD<f64>,
-        strategy: Strategy,
+        strategy: impl InterpNDStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interp = InterpND {
             grid,
             values,
-            strategy,
+            strategy: Box::new(strategy),
             extrapolate,
         };
         interp.validate()?;
@@ -391,43 +402,40 @@ impl Interpolator {
             Self::InterpND(interp) => interp.ndim(),
         }
     }
-}
 
-// Getters and setters
-impl Interpolator {
-    /// Get `strategy` field from any interpolator.
-    pub fn strategy(&self) -> Result<&Strategy, Error> {
-        match self {
-            Self::Interp1D(interp) => Ok(&interp.strategy),
-            Self::Interp2D(interp) => Ok(&interp.strategy),
-            Self::Interp3D(interp) => Ok(&interp.strategy),
-            Self::InterpND(interp) => Ok(&interp.strategy),
-            _ => Err(Error::NoSuchField("strategy")),
-        }
-    }
+    // /// Get `strategy` field from any interpolator.
+    // pub fn strategy(&self) -> Result<&Strategy, Error> {
+    //     match self {
+    //         Self::Interp1D(interp) => Ok(&interp.strategy),
+    //         Self::Interp2D(interp) => Ok(&interp.strategy),
+    //         Self::Interp3D(interp) => Ok(&interp.strategy),
+    //         Self::InterpND(interp) => Ok(&interp.strategy),
+    //         _ => Err(Error::NoSuchField("strategy")),
+    //     }
+    // }
 
-    /// Set `strategy` field on any interpolator.
-    pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), Error> {
-        match self {
-            Self::Interp1D(interp) => {
-                interp.strategy = strategy;
-                Ok(interp.validate()?)
-            }
-            Self::Interp2D(interp) => {
-                interp.strategy = strategy;
-                Ok(interp.validate()?)
-            }
-            Self::Interp3D(interp) => {
-                interp.strategy = strategy;
-                Ok(interp.validate()?)
-            }
-            Self::InterpND(interp) => {
-                interp.strategy = strategy;
-                Ok(interp.validate()?)
-            }
-            _ => Err(Error::NoSuchField("strategy")),
-        }
-    }
+    // /// Set `strategy` field on any interpolator.
+    // pub fn set_strategy(&mut self, strategy: Strategy) -> Result<(), Error> {
+    //     match self {
+    //         Self::Interp1D(interp) => {
+    //             interp.strategy = strategy;
+    //             Ok(interp.validate()?)
+    //         }
+    //         Self::Interp2D(interp) => {
+    //             interp.strategy = strategy;
+    //             Ok(interp.validate()?)
+    //         }
+    //         Self::Interp3D(interp) => {
+    //             interp.strategy = strategy;
+    //             Ok(interp.validate()?)
+    //         }
+    //         Self::InterpND(interp) => {
+    //             interp.strategy = strategy;
+    //             Ok(interp.validate()?)
+    //         }
+    //         _ => Err(Error::NoSuchField("strategy")),
+    //     }
+    // }
 
     /// Get `extrapolate` field from any interpolator.
     pub fn extrapolate(&self) -> Result<&Extrapolate, Error> {
@@ -787,24 +795,6 @@ impl InterpMethods for Interpolator {
             }
         }
     }
-}
-
-/// Interpolation strategy
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub enum Strategy {
-    /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
-    #[default]
-    Linear,
-    /// Left-nearest (previous value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-    LeftNearest,
-    /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-    RightNearest,
-    /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-    ///
-    /// # Note
-    /// Float imprecision may affect the value returned near midpoints.
-    Nearest,
 }
 
 /// Extrapolation strategy

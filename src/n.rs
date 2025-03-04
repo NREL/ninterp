@@ -16,15 +16,14 @@ fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
 }
 
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub(crate) struct InterpND {
-    pub(crate) grid: Vec<Vec<f64>>,
-    pub(crate) values: ArrayD<f64>,
+pub struct InterpND {
+    pub grid: Vec<Vec<f64>>,
+    pub values: ArrayD<f64>,
+    pub strategy: Box<dyn InterpNDStrategy>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) strategy: Strategy,
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) extrapolate: Extrapolate,
+    pub extrapolate: Extrapolate,
 }
 
 impl InterpND {
@@ -38,17 +37,17 @@ impl InterpND {
     }
 }
 
-impl Linear for InterpND {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+impl InterpNDStrategy for Linear {
+    fn interpolate(&self, interp: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
-        let mut n = self.values.ndim();
+        let mut n = interp.values.ndim();
 
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
         let mut point = point.to_vec();
-        let mut grid = self.grid.clone();
-        let mut values_view = self.values.view();
+        let mut grid = interp.grid.clone();
+        let mut values_view = interp.values.view();
         for dim in (0..n).rev() {
             // Range is reversed so that removal doesn't affect indexing
             if let Some(pos) = grid[dim]
@@ -116,7 +115,7 @@ impl Linear for InterpND {
                 if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
                     return Err(InterpolateError::NaNError(format!(
                         "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                        self.values
+                        interp.values
                     )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
@@ -131,19 +130,23 @@ impl Linear for InterpND {
         // return the only value contained within the 0-dimensional array
         Ok(interp_vals.first().copied().unwrap())
     }
+
+    fn allow_extrapolate(&self) -> bool {
+        true
+    }
 }
 
-impl Nearest for InterpND {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+impl InterpNDStrategy for Nearest {
+    fn interpolate(&self, interp: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
-        let mut n = self.values.ndim();
+        let mut n = interp.values.ndim();
 
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
         let mut point = point.to_vec();
-        let mut grid = self.grid.clone();
-        let mut values_view = self.values.view();
+        let mut grid = interp.grid.clone();
+        let mut values_view = interp.values.view();
         for dim in (0..n).rev() {
             // Range is reversed so that removal doesn't affect indexing
             if let Some(pos) = grid[dim]
@@ -200,7 +203,7 @@ impl Nearest for InterpND {
                 if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
                     return Err(InterpolateError::NaNError(format!(
                         "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                        self.values
+                        interp.values
                     )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
@@ -218,22 +221,18 @@ impl Nearest for InterpND {
         // return the only value contained within the 0-dimensional array
         Ok(interp_vals.first().copied().unwrap())
     }
+
+    fn allow_extrapolate(&self) -> bool {
+        false
+    }
 }
 
 impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        match (&self.strategy, &self.extrapolate) {
-            // inapplicable strategies
-            (Strategy::LeftNearest | Strategy::RightNearest, _) => {
-                Err(ValidateError::StrategySelection(self.strategy))
-            }
-            // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => {
-                Err(ValidateError::ExtrapolateSelection(self.extrapolate))
-            }
-            _ => Ok(()),
-        }?;
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        }
 
         let n = self.ndim();
 
@@ -282,11 +281,7 @@ impl InterpMethods for InterpND {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        match self.strategy {
-            Strategy::Linear => self.linear(point),
-            Strategy::Nearest => self.nearest(point),
-            _ => unreachable!(),
-        }
+        self.strategy.interpolate(self, point)
     }
 }
 
@@ -307,13 +302,8 @@ mod tests {
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
         ]
         .into_dyn();
-        let interp = Interpolator::new_nd(
-            grid.clone(),
-            values.clone(),
-            Strategy::Linear,
-            Extrapolate::Error,
-        )
-        .unwrap();
+        let interp =
+            Interpolator::new_nd(grid.clone(), values.clone(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {
@@ -360,7 +350,7 @@ mod tests {
         let interp = Interpolator::new_nd(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -376,14 +366,14 @@ mod tests {
             vec![0.05, 0.10, 0.15],
             vec![0.10, 0.20, 0.30],
             vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
         let interp_nd = Interpolator::new_nd(
             vec![vec![0.05, 0.10, 0.15], vec![0.10, 0.20, 0.30]],
             array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]].into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
@@ -440,7 +430,7 @@ mod tests {
                     vec![24., 25., 26.],
                 ],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
@@ -456,7 +446,7 @@ mod tests {
                 [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
             ]
             .into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
@@ -538,13 +528,9 @@ mod tests {
     fn test_nearest() {
         let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
-        let interp = Interpolator::new_nd(
-            grid.clone(),
-            values.clone(),
-            Strategy::Nearest,
-            Extrapolate::Error,
-        )
-        .unwrap();
+        let interp =
+            Interpolator::new_nd(grid.clone(), values.clone(), Nearest, Extrapolate::Error)
+                .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {
@@ -571,7 +557,7 @@ mod tests {
             Interpolator::new_nd(
                 vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-                Strategy::Nearest,
+                Nearest,
                 Extrapolate::Enable,
             )
             .unwrap_err(),
@@ -581,7 +567,7 @@ mod tests {
         let interp = Interpolator::new_nd(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -600,7 +586,7 @@ mod tests {
         let interp = Interpolator::new_nd(
             vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
@@ -619,7 +605,7 @@ mod tests {
         let interp = Interpolator::new_nd(
             vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Clamp,
         )
         .unwrap();

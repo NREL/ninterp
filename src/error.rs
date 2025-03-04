@@ -17,8 +17,6 @@ pub enum Error {
 /// Error types that occur from a `validate()` call, before calling `interpolate()`
 #[derive(Error, Debug, Clone)]
 pub enum ValidateError {
-    #[error("selected `Strategy` variant ({0:?}) is unimplemented/inapplicable for interpolator")]
-    StrategySelection(crate::Strategy),
     #[error(
         "selected `Extrapolate` variant ({0:?}) is unimplemented/inapplicable for interpolator"
     )]

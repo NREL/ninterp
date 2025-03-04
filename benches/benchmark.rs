@@ -20,7 +20,7 @@ fn benchmark_0D_multi() {
     let interp_0d_multi = Interpolator::new_nd(
         vec![vec![]],
         array![0.5].into_dyn(),
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -37,7 +37,7 @@ fn benchmark_1D() {
     let values_data: Vec<f64> = (0..100).map(|_| rng.random::<f64>()).collect();
     // Create a 1-D interpolator with 100 data points
     let interp_1d =
-        Interpolator::new_1d(grid_data, values_data, Strategy::Linear, Extrapolate::Error).unwrap();
+        Interpolator::new_1d(grid_data, values_data, Linear, Extrapolate::Error).unwrap();
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.random::<f64>() * 99.).collect();
     for point in points {
@@ -57,7 +57,7 @@ fn benchmark_1D_multi() {
     let interp_1d_multi = Interpolator::new_nd(
         vec![grid_data],
         ArrayD::from_shape_vec(IxDyn(&[100]), values_data).unwrap(),
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -84,7 +84,7 @@ fn benchmark_2D() {
         grid_data.clone(),
         grid_data.clone(),
         values_data,
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -109,7 +109,7 @@ fn benchmark_2D_multi() {
     let interp_2d_multi = Interpolator::new_nd(
         vec![grid_data.clone(), grid_data.clone()],
         ArrayD::from_shape_vec(IxDyn(&[100, 100]), values_data).unwrap(),
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -143,7 +143,7 @@ fn benchmark_3D() {
         grid_data.clone(),
         grid_data.clone(),
         values_data,
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -174,7 +174,7 @@ fn benchmark_3D_multi() {
     let interp_3d_multi = Interpolator::new_nd(
         vec![grid_data.clone(), grid_data.clone(), grid_data.clone()],
         ArrayD::from_shape_vec(IxDyn(&[100, 100, 100]), values_data).unwrap(),
-        Strategy::Linear,
+        Linear,
         Extrapolate::Error,
     )
     .unwrap();

@@ -2,84 +2,94 @@
 
 use super::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub(crate) struct Interp1D {
-    pub(crate) x: Vec<f64>,
-    pub(crate) f_x: Vec<f64>,
+pub struct Interp1D {
+    pub x: Vec<f64>,
+    pub f_x: Vec<f64>,
+    pub strategy: Box<dyn Interp1DStrategy>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) strategy: Strategy,
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) extrapolate: Extrapolate,
+    pub extrapolate: Extrapolate,
 }
 
-impl Linear for Interp1D {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
+impl Interp1DStrategy for Linear {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+        if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
+            return Ok(interp.f_x[i]);
         }
         // Extrapolation is checked previously in `Interpolator::interpolate`,
         // meaning:
         // - point is within grid bounds, or
         // - point is clamped, or
         // - extrapolation is enabled
-        let x_l = if &point[0] < self.x.first().unwrap() {
+        let x_l = if &point[0] < interp.x.first().unwrap() {
             0
-        } else if &point[0] > self.x.last().unwrap() {
-            self.x.len() - 2
+        } else if &point[0] > interp.x.last().unwrap() {
+            interp.x.len() - 2
         } else {
-            find_nearest_index(&self.x, point[0])
+            find_nearest_index(&interp.x, point[0])
         };
         let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
-        Ok(self.f_x[x_l] * (1.0 - x_diff) + self.f_x[x_u] * x_diff)
+        let x_diff = (point[0] - interp.x[x_l]) / (interp.x[x_u] - interp.x[x_l]);
+        Ok(interp.f_x[x_l] * (1.0 - x_diff) + interp.f_x[x_u] * x_diff)
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        true
     }
 }
 
-impl LeftNearest for Interp1D {
-    fn left_nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
+impl Interp1DStrategy for Nearest {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+        if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
+            return Ok(interp.f_x[i]);
         }
-        let x_l = find_nearest_index(&self.x, point[0]);
-        Ok(self.f_x[x_l])
-    }
-}
-
-impl RightNearest for Interp1D {
-    fn right_nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
-        let x_u = find_nearest_index(&self.x, point[0]) + 1;
-        Ok(self.f_x[x_u])
-    }
-}
-
-impl Nearest for Interp1D {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        if let Some(i) = self.x.iter().position(|&x_val| x_val == point[0]) {
-            return Ok(self.f_x[i]);
-        }
-        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_l = find_nearest_index(&interp.x, point[0]);
         let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        let x_diff = (point[0] - interp.x[x_l]) / (interp.x[x_u] - interp.x[x_l]);
         let i = if x_diff < 0.5 { x_l } else { x_u };
-        Ok(self.f_x[i])
+        Ok(interp.f_x[i])
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        false
+    }
+}
+
+impl Interp1DStrategy for LeftNearest {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+        if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
+            return Ok(interp.f_x[i]);
+        }
+        let x_l = find_nearest_index(&interp.x, point[0]);
+        Ok(interp.f_x[x_l])
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        false
+    }
+}
+
+impl Interp1DStrategy for RightNearest {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+        if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
+            return Ok(interp.f_x[i]);
+        }
+        let x_u = find_nearest_index(&interp.x, point[0]) + 1;
+        Ok(interp.f_x[x_u])
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        false
     }
 }
 
 impl InterpMethods for Interp1D {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        match (&self.strategy, &self.extrapolate) {
-            // inapplicable combinations of strategy + extrapolate
-            (
-                Strategy::LeftNearest | Strategy::RightNearest | Strategy::Nearest,
-                Extrapolate::Enable,
-            ) => Err(ValidateError::ExtrapolateSelection(self.extrapolate)),
-            _ => Ok(()),
-        }?;
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        }
 
         let x_grid_len = self.x.len();
 
@@ -110,12 +120,7 @@ impl InterpMethods for Interp1D {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        match self.strategy {
-            Strategy::Linear => self.linear(point),
-            Strategy::LeftNearest => self.left_nearest(point),
-            Strategy::RightNearest => self.right_nearest(point),
-            Strategy::Nearest => self.nearest(point),
-        }
+        self.strategy.interpolate(self, point)
     }
 }
 
@@ -128,7 +133,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -144,7 +149,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), Strategy::Linear, Extrapolate::Error)
+            Interpolator::new_1d(x.clone(), f_x.clone(), Linear, Extrapolate::Error)
                 .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
@@ -162,7 +167,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             x.clone(),
             f_x.clone(),
-            Strategy::LeftNearest,
+            LeftNearest,
             Extrapolate::Error,
         )
         .unwrap();
@@ -182,7 +187,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             x.clone(),
             f_x.clone(),
-            Strategy::RightNearest,
+            RightNearest,
             Extrapolate::Error,
         )
         .unwrap();
@@ -202,7 +207,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             x.clone(),
             f_x.clone(),
-            Strategy::Nearest,
+            Nearest,
             Extrapolate::Error,
         )
         .unwrap();
@@ -224,7 +229,7 @@ mod tests {
             Interpolator::new_1d(
                 vec![0., 1., 2., 3., 4.],
                 vec![0.2, 0.4, 0.6, 0.8, 1.0],
-                Strategy::Nearest,
+                Nearest,
                 Extrapolate::Enable,
             )
             .unwrap_err(),
@@ -235,7 +240,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -256,7 +261,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
@@ -271,7 +276,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Clamp,
         )
         .unwrap();
@@ -284,7 +289,7 @@ mod tests {
         let interp = Interpolator::new_1d(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();

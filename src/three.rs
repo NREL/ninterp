@@ -2,27 +2,26 @@
 
 use super::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub(crate) struct Interp3D {
-    pub(crate) x: Vec<f64>,
-    pub(crate) y: Vec<f64>,
-    pub(crate) z: Vec<f64>,
-    pub(crate) f_xyz: Vec<Vec<Vec<f64>>>,
+pub struct Interp3D {
+    pub x: Vec<f64>,
+    pub y: Vec<f64>,
+    pub z: Vec<f64>,
+    pub f_xyz: Vec<Vec<Vec<f64>>>,
+    pub strategy: Box<dyn Interp3DStrategy>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) strategy: Strategy,
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) extrapolate: Extrapolate,
+    pub extrapolate: Extrapolate,
 }
 
-impl Linear for Interp3D {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+impl Interp3DStrategy for Linear {
+    fn interpolate(&self, interp: &Interp3D, point: &[f64]) -> Result<f64, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
         // - point is clamped, or
         // - extrapolation is enabled
-        let grid = [&self.x, &self.y, &self.z];
+        let grid = [&interp.x, &interp.y, &interp.z];
         let lowers: Vec<usize> = (0..3)
             .map(|dim| {
                 if &point[dim] < grid[dim].first().unwrap() {
@@ -37,64 +36,64 @@ impl Linear for Interp3D {
         // x
         let x_l = lowers[0];
         let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        let x_diff = (point[0] - interp.x[x_l]) / (interp.x[x_u] - interp.x[x_l]);
         // y
         let y_l = lowers[1];
         let y_u = y_l + 1;
-        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
+        let y_diff = (point[1] - interp.y[y_l]) / (interp.y[y_u] - interp.y[y_l]);
         // z
         let z_l = lowers[2];
         let z_u = z_l + 1;
-        let z_diff = (point[2] - self.z[z_l]) / (self.z[z_u] - self.z[z_l]);
+        let z_diff = (point[2] - interp.z[z_l]) / (interp.z[z_u] - interp.z[z_l]);
         // interpolate in the x-direction
-        let f00 = self.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_l] * x_diff;
-        let f01 = self.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_l][z_u] * x_diff;
-        let f10 = self.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_l] * x_diff;
-        let f11 = self.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + self.f_xyz[x_u][y_u][z_u] * x_diff;
+        let f00 = interp.f_xyz[x_l][y_l][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_l] * x_diff;
+        let f01 = interp.f_xyz[x_l][y_l][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_l][z_u] * x_diff;
+        let f10 = interp.f_xyz[x_l][y_u][z_l] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_l] * x_diff;
+        let f11 = interp.f_xyz[x_l][y_u][z_u] * (1.0 - x_diff) + interp.f_xyz[x_u][y_u][z_u] * x_diff;
         // interpolate in the y-direction
         let f0 = f00 * (1.0 - y_diff) + f10 * y_diff;
         let f1 = f01 * (1.0 - y_diff) + f11 * y_diff;
         // interpolate in the z-direction
         Ok(f0 * (1.0 - z_diff) + f1 * z_diff)
     }
+
+    fn allow_extrapolate(&self) -> bool {
+        true
+    }
 }
 
-impl Nearest for Interp3D {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+impl Interp3DStrategy for Nearest {
+    fn interpolate(&self, interp: &Interp3D, point: &[f64]) -> Result<f64, InterpolateError> {
         // x
-        let x_l = find_nearest_index(&self.x, point[0]);
+        let x_l = find_nearest_index(&interp.x, point[0]);
         let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
+        let x_diff = (point[0] - interp.x[x_l]) / (interp.x[x_u] - interp.x[x_l]);
         let i = if x_diff < 0.5 { x_l } else { x_u };
         // y
-        let y_l = find_nearest_index(&self.y, point[1]);
+        let y_l = find_nearest_index(&interp.y, point[1]);
         let y_u = y_l + 1;
-        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
+        let y_diff = (point[1] - interp.y[y_l]) / (interp.y[y_u] - interp.y[y_l]);
         let j = if y_diff < 0.5 { y_l } else { y_u };
         // z
-        let z_l = find_nearest_index(&self.z, point[2]);
+        let z_l = find_nearest_index(&interp.z, point[2]);
         let z_u = z_l + 1;
-        let z_diff = (point[2] - self.z[z_l]) / (self.z[z_u] - self.z[z_l]);
+        let z_diff = (point[2] - interp.z[z_l]) / (interp.z[z_u] - interp.z[z_l]);
         let k = if z_diff < 0.5 { z_l } else { z_u };
 
-        Ok(self.f_xyz[i][j][k])
+        Ok(interp.f_xyz[i][j][k])
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        false
     }
 }
 
 impl InterpMethods for Interp3D {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
-        match (&self.strategy, &self.extrapolate) {
-            // inapplicable strategies
-            (Strategy::LeftNearest | Strategy::RightNearest, _) => {
-                Err(ValidateError::StrategySelection(self.strategy))
-            }
-            // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => {
-                Err(ValidateError::ExtrapolateSelection(self.extrapolate))
-            }
-            _ => Ok(()),
-        }?;
+        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() { 
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate))
+        }
 
         let x_grid_len = self.x.len();
         let y_grid_len = self.y.len();
@@ -157,11 +156,7 @@ impl InterpMethods for Interp3D {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        match self.strategy {
-            Strategy::Linear => self.linear(point),
-            Strategy::Nearest => self.nearest(point),
-            _ => unreachable!(),
-        }
+        self.strategy.interpolate(self, point)
     }
 }
 
@@ -188,7 +183,7 @@ mod tests {
             y.clone(),
             z.clone(),
             f_xyz.clone(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -244,7 +239,7 @@ mod tests {
                     vec![24., 25., 26.],
                 ],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
@@ -320,7 +315,7 @@ mod tests {
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -344,7 +339,7 @@ mod tests {
             y.clone(),
             z.clone(),
             f_xyz.clone(),
-            Strategy::Nearest,
+            Nearest,
             Extrapolate::Error,
         )
         .unwrap();
@@ -380,7 +375,7 @@ mod tests {
                     vec![vec![0., 1.], vec![2., 3.]],
                     vec![vec![4., 5.], vec![6., 7.]],
                 ],
-                Strategy::Nearest,
+                Nearest,
                 Extrapolate::Enable,
             )
             .unwrap_err(),
@@ -395,7 +390,7 @@ mod tests {
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -419,7 +414,7 @@ mod tests {
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
@@ -448,7 +443,7 @@ mod tests {
                 vec![vec![0., 1.], vec![2., 3.]],
                 vec![vec![4., 5.], vec![6., 7.]],
             ],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Clamp,
         )
         .unwrap();
