@@ -10,14 +10,14 @@ use rand::{self, rngs::StdRng, Rng, SeedableRng};
 #[allow(non_snake_case)]
 /// 0-D interpolation (hardcoded)
 fn benchmark_0D() {
-    let interp_0d = Interpolator::Interp0D(0.5);
+    let interp_0d = Interp0D(0.5);
     interp_0d.interpolate(&[]).unwrap();
 }
 
 #[allow(non_snake_case)]
 /// 0-D interpolation (multilinear interpolator)
 fn benchmark_0D_multi() {
-    let interp_0d_multi = Interpolator::new_nd(
+    let interp_0d_multi = InterpND::new(
         vec![vec![]],
         array![0.5].into_dyn(),
         Linear,
@@ -36,8 +36,7 @@ fn benchmark_1D() {
     // Generate interpolator data (same as N-D benchmark)
     let values_data: Vec<f64> = (0..100).map(|_| rng.random::<f64>()).collect();
     // Create a 1-D interpolator with 100 data points
-    let interp_1d =
-        Interpolator::new_1d(grid_data, values_data, Linear, Extrapolate::Error).unwrap();
+    let interp_1d = Interp1D::new(grid_data, values_data, Linear, Extrapolate::Error).unwrap();
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.random::<f64>() * 99.).collect();
     for point in points {
@@ -54,7 +53,7 @@ fn benchmark_1D_multi() {
     let grid_data: Vec<f64> = (0..100).map(|x| x as f64).collect();
     let values_data: Vec<f64> = (0..100).map(|_| rng.random::<f64>()).collect();
     // Create an N-D interpolator with 100x100 data (10,000 points)
-    let interp_1d_multi = Interpolator::new_nd(
+    let interp_1d_multi = InterpND::new(
         vec![grid_data],
         ArrayD::from_shape_vec(IxDyn(&[100]), values_data).unwrap(),
         Linear,
@@ -80,7 +79,7 @@ fn benchmark_2D() {
         .map(|x| values_data[(100 * x)..(100 + 100 * x)].into())
         .collect();
     // Create a 2-D interpolator with 100x100 data (10,000 points)
-    let interp_2d = Interpolator::new_2d(
+    let interp_2d = Interp2D::new(
         grid_data.clone(),
         grid_data.clone(),
         values_data,
@@ -106,7 +105,7 @@ fn benchmark_2D_multi() {
     let grid_data: Vec<f64> = (0..100).map(|x| x as f64).collect();
     let values_data: Vec<f64> = (0..10_000).map(|_| rng.random::<f64>()).collect();
     // Create an N-D interpolator with 100x100 data (10,000 points)
-    let interp_2d_multi = Interpolator::new_nd(
+    let interp_2d_multi = InterpND::new(
         vec![grid_data.clone(), grid_data.clone()],
         ArrayD::from_shape_vec(IxDyn(&[100, 100]), values_data).unwrap(),
         Linear,
@@ -138,7 +137,7 @@ fn benchmark_3D() {
         })
         .collect();
     // Create a 3-D interpolator with 100x100x100 data (1,000,000 points)
-    let interp_3d = Interpolator::new_3d(
+    let interp_3d = Interp3D::new(
         grid_data.clone(),
         grid_data.clone(),
         grid_data.clone(),
@@ -171,7 +170,7 @@ fn benchmark_3D_multi() {
     let grid_data: Vec<f64> = (0..100).map(|x| x as f64).collect();
     let values_data: Vec<f64> = (0..1_000_000).map(|_| rng.random::<f64>()).collect();
     // Create an N-D interpolator with 100x100x100 data (1,000,000 points)
-    let interp_3d_multi = Interpolator::new_nd(
+    let interp_3d_multi = InterpND::new(
         vec![grid_data.clone(), grid_data.clone(), grid_data.clone()],
         ArrayD::from_shape_vec(IxDyn(&[100, 100, 100]), values_data).unwrap(),
         Linear,

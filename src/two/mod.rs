@@ -4,6 +4,8 @@ use super::*;
 
 mod strategies;
 
+const N: usize = 2;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp2D {
@@ -16,21 +18,61 @@ pub struct Interp2D {
 }
 
 impl Interp2D {
+    pub fn new(
+        x: Vec<f64>,
+        y: Vec<f64>,
+        f_xy: Vec<Vec<f64>>,
+        strategy: impl Interp2DStrategy + 'static,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidateError> {
+        let interp = Self {
+            x,
+            y,
+            f_xy,
+            strategy: Box::new(strategy),
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(interp)
+    }
+
     pub fn set_strategy(
         &mut self,
         strategy: impl Interp2DStrategy + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
-        self.validate()
+        self.check_extrapolate(self.extrapolate)
+    }
+
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
+    }
+
+    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        // Check applicability of strategy and extrapolate setting
+        if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+        }
+        // If using Extrapolate::Enable,
+        // check that each grid dimension has at least two elements
+        if matches!(self.extrapolate, Extrapolate::Enable) && (self.x.len() < 2 || self.y.len() < 2) {
+            return Err(ValidateError::Other(
+                "at least 2 data points are required for extrapolation".into(),
+            ));
+        }
+        Ok(())
     }
 }
 
-impl InterpMethods for Interp2D {
+impl Interpolator for Interp2D {
+    fn ndim(&self) -> usize {
+        N
+    }
+
     fn validate(&self) -> Result<(), ValidateError> {
-        // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
-        }
+        self.check_extrapolate(self.extrapolate)?;
 
         let x_grid_len = self.x.len();
         let y_grid_len = self.y.len();
@@ -41,14 +83,6 @@ impl InterpMethods for Interp2D {
         }
         if y_grid_len == 0 {
             return Err(ValidateError::EmptyGrid("y".into()));
-        }
-
-        // If using Extrapolate::Enable,
-        // check that each grid dimension has at least two elements
-        if matches!(self.extrapolate, Extrapolate::Enable) && (x_grid_len < 2 || y_grid_len < 2) {
-            return Err(ValidateError::Other(
-                "at least 2 data points are required for extrapolation".into(),
-            ));
         }
 
         // Check that grid points are monotonically increasing
@@ -76,6 +110,36 @@ impl InterpMethods for Interp2D {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+        let point: &[f64; N] = point
+            .try_into()
+            .map_err(|_| InterpolateError::PointLength(N))?;
+        let grid = [&self.x, &self.y];
+        let grid_names = ["x", "y"];
+        let mut errors = Vec::new();
+        for dim in 0..N {
+            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap()).contains(&&point[dim]) {
+                match self.extrapolate {
+                    Extrapolate::Fill(value) => return Ok(value),
+                    Extrapolate::Clamp => {
+                        let clamped_point = &[
+                            point[0].clamp(*self.x.first().unwrap(), *self.x.last().unwrap()),
+                            point[1].clamp(*self.y.first().unwrap(), *self.y.last().unwrap()),
+                        ];
+                        return self.strategy.interpolate(self, clamped_point);
+                    }
+                    Extrapolate::Error => {
+                        errors.push(format!(
+                            "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
+                            point[dim], grid_names[dim], grid[dim],
+                        ));
+                    }
+                    Extrapolate::Enable => {}
+                };
+            }
+        }
+        if !errors.is_empty() {
+            return Err(InterpolateError::ExtrapolateError(errors.join("")));
+        }
         self.strategy.interpolate(self, point)
     }
 }
@@ -89,7 +153,7 @@ mod tests {
         let x = vec![0.05, 0.10, 0.15];
         let y = vec![0.10, 0.20, 0.30];
         let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             x.clone(),
             y.clone(),
             f_xy.clone(),
@@ -109,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0., 1.],
             vec![0., 1.],
             vec![vec![0., 1.], vec![2., 3.]],
@@ -125,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_linear_extrapolation() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.05, 0.10, 0.15],
             vec![0.10, 0.20, 0.30],
             vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
@@ -163,7 +227,7 @@ mod tests {
         let x = vec![0.05, 0.10, 0.15];
         let y = vec![0.10, 0.20, 0.30];
         let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             x.clone(),
             y.clone(),
             f_xy.clone(),
@@ -193,7 +257,7 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interpolator::new_2d(
+            Interp2D::new(
                 vec![0.1, 1.1],
                 vec![0.2, 1.2],
                 vec![vec![0., 1.], vec![2., 3.]],
@@ -204,7 +268,7 @@ mod tests {
             ValidateError::ExtrapolateSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
@@ -224,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_fill_value() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
@@ -242,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],

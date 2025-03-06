@@ -18,25 +18,63 @@ pub struct InterpND {
 }
 
 impl InterpND {
+    pub fn new(
+        grid: Vec<Vec<f64>>,
+        values: ArrayD<f64>,
+        strategy: impl InterpNDStrategy + 'static,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidateError> {
+        let interp = Self {
+            grid,
+            values,
+            strategy: Box::new(strategy),
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(interp)
+    }
+
     pub fn set_strategy(
         &mut self,
         strategy: impl InterpNDStrategy + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
-        self.validate()
+        self.check_extrapolate(self.extrapolate)
     }
 
-    /// Retrieve interpolator dimensionality.
-    pub fn ndim(&self) -> usize {
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
+    }
+
+    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        // Check applicability of strategy and extrapolate setting
+        if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+        }
+        // If using Extrapolate::Enable,
+        // check that each grid dimension has at least two elements
+        for i in 0..self.ndim() {
+            if matches!(self.extrapolate, Extrapolate::Enable) && self.grid[i].len() < 2 {
+                return Err(ValidateError::Other(format!(
+                    "at least 2 data points are required for extrapolation: dim {i}"
+                )));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Interpolator for InterpND {
+    fn ndim(&self) -> usize {
         if self.values.len() == 1 {
             0
         } else {
             self.values.ndim()
         }
     }
-}
 
-impl InterpMethods for InterpND {
     fn validate(&self) -> Result<(), ValidateError> {
         // Check applicablitity of strategy and extrapolate
         if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
@@ -52,14 +90,6 @@ impl InterpMethods for InterpND {
             // Indexing `grid` directly is okay because empty dimensions are caught at compilation
             if i_grid_len == 0 {
                 return Err(ValidateError::EmptyGrid(i.to_string()));
-            }
-
-            // If using Extrapolate::Enable,
-            // check that each grid dimension has at least two elements
-            if matches!(self.extrapolate, Extrapolate::Enable) && i_grid_len < 2 {
-                return Err(ValidateError::Other(format!(
-                    "at least 2 data points are required for extrapolation: dim {i}"
-                )));
             }
 
             // Check that grid points are monotonically increasing
@@ -90,6 +120,43 @@ impl InterpMethods for InterpND {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+        let n = self.ndim();
+        if point.len() != n {
+            return Err(InterpolateError::PointLength(n));
+        }
+        let mut errors = Vec::new();
+        for dim in 0..n {
+            if !(self.grid[dim].first().unwrap()..=self.grid[dim].last().unwrap())
+                .contains(&&point[dim])
+            {
+                match self.extrapolate {
+                    Extrapolate::Fill(value) => return Ok(value),
+                    Extrapolate::Clamp => {
+                        let clamped_point: Vec<f64> = point
+                            .iter()
+                            .enumerate()
+                            .map(|(dim, pt)| {
+                                pt.clamp(
+                                    *self.grid[dim].first().unwrap(),
+                                    *self.grid[dim].last().unwrap(),
+                                )
+                            })
+                            .collect();
+                        return self.strategy.interpolate(self, &clamped_point);
+                    }
+                    Extrapolate::Error => {
+                        errors.push(format!(
+                            "\n    point[{dim}] = {:?} is out of bounds for grid[{dim}] = {:?}",
+                            point[dim], self.grid[dim],
+                        ));
+                    }
+                    Extrapolate::Enable => {}
+                };
+            }
+        }
+        if !errors.is_empty() {
+            return Err(InterpolateError::ExtrapolateError(errors.join("")));
+        }
         self.strategy.interpolate(self, point)
     }
 }
@@ -112,7 +179,7 @@ mod tests {
         ]
         .into_dyn();
         let interp =
-            Interpolator::new_nd(grid.clone(), values.clone(), Linear, Extrapolate::Error).unwrap();
+            InterpND::new(grid.clone(), values.clone(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {
@@ -156,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::new_nd(
+        let interp = InterpND::new(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
@@ -171,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_linear_extrapolation_2d() {
-        let interp_2d = Interpolator::new_2d(
+        let interp_2d = crate::interpolator::Interp2D::new(
             vec![0.05, 0.10, 0.15],
             vec![0.10, 0.20, 0.30],
             vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
@@ -179,7 +246,7 @@ mod tests {
             Extrapolate::Enable,
         )
         .unwrap();
-        let interp_nd = Interpolator::new_nd(
+        let interp_nd = InterpND::new(
             vec![vec![0.05, 0.10, 0.15], vec![0.10, 0.20, 0.30]],
             array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]].into_dyn(),
             Linear,
@@ -226,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_linear_extrapolate_3d() {
-        let interp_3d = Interpolator::new_3d(
+        let interp_3d = crate::interpolator::Interp3D::new(
             vec![0.05, 0.10, 0.15],
             vec![0.10, 0.20, 0.30],
             vec![0.20, 0.40, 0.60],
@@ -243,7 +310,7 @@ mod tests {
             Extrapolate::Enable,
         )
         .unwrap();
-        let interp_nd = Interpolator::new_nd(
+        let interp_nd = InterpND::new(
             vec![
                 vec![0.05, 0.10, 0.15],
                 vec![0.10, 0.20, 0.30],
@@ -338,7 +405,7 @@ mod tests {
         let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
         let interp =
-            Interpolator::new_nd(grid.clone(), values.clone(), Nearest, Extrapolate::Error)
+            InterpND::new(grid.clone(), values.clone(), Nearest, Extrapolate::Error)
                 .unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
@@ -363,7 +430,7 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interpolator::new_nd(
+            InterpND::new(
                 vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
                 array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 Nearest,
@@ -373,7 +440,7 @@ mod tests {
             ValidateError::ExtrapolateSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::new_nd(
+        let interp = InterpND::new(
             vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
@@ -392,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_fill_value() {
-        let interp = Interpolator::new_nd(
+        let interp = InterpND::new(
             vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
@@ -411,7 +478,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::new_nd(
+        let interp = InterpND::new(
             vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,

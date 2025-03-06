@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interp2DStrategy for Linear {
-    fn interpolate(&self, interp: &Interp2D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
@@ -40,7 +40,7 @@ impl Interp2DStrategy for Linear {
 }
 
 impl Interp2DStrategy for Nearest {
-    fn interpolate(&self, interp: &Interp2D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
         // x
         let x_l = find_nearest_index(&interp.x, point[0]);
         let x_u = x_l + 1;

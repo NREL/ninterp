@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interp1DStrategy for Linear {
-    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interp.f_x[i]);
         }
@@ -28,7 +28,7 @@ impl Interp1DStrategy for Linear {
 }
 
 impl Interp1DStrategy for Nearest {
-    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interp.f_x[i]);
         }
@@ -45,7 +45,7 @@ impl Interp1DStrategy for Nearest {
 }
 
 impl Interp1DStrategy for LeftNearest {
-    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interp.f_x[i]);
         }
@@ -59,7 +59,7 @@ impl Interp1DStrategy for LeftNearest {
 }
 
 impl Interp1DStrategy for RightNearest {
-    fn interpolate(&self, interp: &Interp1D, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, interp: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interp.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interp.f_x[i]);
         }

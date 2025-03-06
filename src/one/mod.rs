@@ -4,6 +4,8 @@ use super::*;
 
 mod strategies;
 
+const N: usize = 1;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp1D {
@@ -15,35 +17,65 @@ pub struct Interp1D {
 }
 
 impl Interp1D {
+    pub fn new(
+        x: Vec<f64>,
+        f_x: Vec<f64>,
+        strategy: impl Interp1DStrategy + 'static,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidateError> {
+        let interp = Self {
+            x,
+            f_x,
+            strategy: Box::new(strategy),
+            extrapolate,
+        };
+        interp.validate()?;
+        Ok(interp)
+    }
+
     pub fn set_strategy(
         &mut self,
         strategy: impl Interp1DStrategy + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
-        self.validate()
+        self.check_extrapolate(self.extrapolate)
+    }
+
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
+    }
+
+    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        // Check applicability of strategy and extrapolate setting
+        if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+        }
+        // If using Extrapolate::Enable,
+        // check that each grid dimension has at least two elements
+        if matches!(self.extrapolate, Extrapolate::Enable) && self.x.len() < 2 {
+            return Err(ValidateError::Other(
+                "at least 2 data points are required for extrapolation".into(),
+            ));
+        }
+        Ok(())
     }
 }
 
-impl InterpMethods for Interp1D {
+impl Interpolator for Interp1D {
+    fn ndim(&self) -> usize {
+        N
+    }
+
     fn validate(&self) -> Result<(), ValidateError> {
-        // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
-        }
+        self.check_extrapolate(self.extrapolate)?;
 
         let x_grid_len = self.x.len();
 
         // Check that each grid dimension has elements
         if x_grid_len == 0 {
             return Err(ValidateError::EmptyGrid("x".into()));
-        }
-
-        // If using Extrapolate::Enable,
-        // check that each grid dimension has at least two elements
-        if matches!(self.extrapolate, Extrapolate::Enable) && x_grid_len < 2 {
-            return Err(ValidateError::Other(
-                "at least 2 data points are required for extrapolation".into(),
-            ));
         }
 
         // Check that grid points are monotonically increasing
@@ -60,6 +92,26 @@ impl InterpMethods for Interp1D {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+        let point: &[f64; N] = point
+            .try_into()
+            .map_err(|_| InterpolateError::PointLength(N))?;
+        if !(self.x.first().unwrap()..=self.x.last().unwrap()).contains(&&point[0]) {
+            match self.extrapolate {
+                Extrapolate::Fill(value) => return Ok(value),
+                Extrapolate::Clamp => {
+                    let clamped_point =
+                        &[point[0].clamp(*self.x.first().unwrap(), *self.x.last().unwrap())];
+                    return self.strategy.interpolate(self, clamped_point);
+                }
+                Extrapolate::Error => {
+                    return Err(InterpolateError::ExtrapolateError(format!(
+                        "\n    point[0] = {:?} is out of bounds for x-grid = {:?}",
+                        point[0], self.x
+                    )))
+                }
+                Extrapolate::Enable => {}
+            }
+        };
         self.strategy.interpolate(self, point)
     }
 }
@@ -70,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_invalid_args() {
-        let interp = Interpolator::new_1d(
+        let interp = Interp1D::new(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Linear,
@@ -79,7 +131,7 @@ mod tests {
         .unwrap();
         assert!(matches!(
             interp.interpolate(&[]).unwrap_err(),
-            InterpolateError::InvalidPoint(_)
+            InterpolateError::PointLength(_)
         ));
         assert_eq!(interp.interpolate(&[1.0]).unwrap(), 0.4);
     }
@@ -89,7 +141,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), Linear, Extrapolate::Error).unwrap();
+            Interp1D::new(x.clone(), f_x.clone(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -104,7 +156,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), LeftNearest, Extrapolate::Error).unwrap();
+            Interp1D::new(x.clone(), f_x.clone(), LeftNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -119,7 +171,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), RightNearest, Extrapolate::Error).unwrap();
+            Interp1D::new(x.clone(), f_x.clone(), RightNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -134,7 +186,7 @@ mod tests {
         let x = vec![0., 1., 2., 3., 4.];
         let f_x = vec![0.2, 0.4, 0.6, 0.8, 1.0];
         let interp =
-            Interpolator::new_1d(x.clone(), f_x.clone(), Nearest, Extrapolate::Error).unwrap();
+            Interp1D::new(x.clone(), f_x.clone(), Nearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -150,7 +202,7 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Incorrect extrapolation selection
         assert!(matches!(
-            Interpolator::new_1d(
+            Interp1D::new(
                 vec![0., 1., 2., 3., 4.],
                 vec![0.2, 0.4, 0.6, 0.8, 1.0],
                 Nearest,
@@ -161,7 +213,7 @@ mod tests {
         ));
 
         // Extrapolate::Error
-        let interp = Interpolator::new_1d(
+        let interp = Interp1D::new(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Linear,
@@ -182,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_fill_value() {
-        let interp = Interpolator::new_1d(
+        let interp = Interp1D::new(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Linear,
@@ -197,7 +249,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::new_1d(
+        let interp = Interp1D::new(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Linear,
@@ -210,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_extrapolate() {
-        let interp = Interpolator::new_1d(
+        let interp = Interp1D::new(
             vec![0., 1., 2., 3., 4.],
             vec![0.2, 0.4, 0.6, 0.8, 1.0],
             Linear,

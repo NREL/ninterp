@@ -32,11 +32,11 @@ This controls what happens when a point is beyond the range of supplied coordina
 If you are unsure which variant to choose, `Extrapolate::Error` is likely what you want.
 Linear extrapolation is implemented for all dimensionalities.
 
-For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interpolator::Interp0D(0.5)`
+For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interp0D(0.5)`
 
 ### Examples
-- [`Interpolator::Interp0D`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#variant.Interp0D)
-- [`Interpolator::new_1d`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_1d)
-- [`Interpolator::new_2d`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_2d)
-- [`Interpolator::new_3d`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_3d)
-- [`Interpolator::new_nd`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_nd)
+- [`Interp0D`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#variant.Interp0D)
+- [`Interp1D::new`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_1d)
+- [`Interp2D::new`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_2d)
+- [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_3d)
+- [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/enum.Interpolator.html#method.new_nd)
