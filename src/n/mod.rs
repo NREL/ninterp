@@ -24,14 +24,14 @@ impl InterpND {
         strategy: impl InterpNDStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
-        let interp = Self {
+        let interpolator = Self {
             grid,
             values,
             strategy: Box::new(strategy),
             extrapolate,
         };
-        interp.validate()?;
-        Ok(interp)
+        interpolator.validate()?;
+        Ok(interpolator)
     }
 
     pub fn set_strategy(
@@ -40,12 +40,6 @@ impl InterpND {
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)
-    }
-
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
-        self.extrapolate = extrapolate;
-        Ok(())
     }
 
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -76,14 +70,8 @@ impl Interpolator for InterpND {
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
-        // Check applicablitity of strategy and extrapolate
-        if matches!(self.extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
-        }
-
-        let n = self.ndim();
-
-        for i in 0..n {
+        self.check_extrapolate(self.extrapolate)?;
+        for i in 0..self.ndim() {
             let i_grid_len = self.grid[i].len();
 
             // Check that each grid dimension has elements
@@ -102,20 +90,6 @@ impl Interpolator for InterpND {
                 return Err(ValidateError::IncompatibleShapes(i.to_string()));
             }
         }
-
-        // // Check grid dimensionality
-        // let grid_len = if self.grid[0].is_empty() {
-        //     0
-        // } else {
-        //     self.grid.len()
-        // };
-        // if grid_len != n {
-        //     return Err(Error::ValidationError(format!(
-        //         "Length of supplied `grid` must be same as `values` dimensionality: {:?} is not {n}-dimensional",
-        //         self.grid
-        //     )));
-        // }
-
         Ok(())
     }
 
@@ -130,6 +104,7 @@ impl Interpolator for InterpND {
                 .contains(&&point[dim])
             {
                 match self.extrapolate {
+                    Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point: Vec<f64> = point
@@ -150,7 +125,6 @@ impl Interpolator for InterpND {
                             point[dim], self.grid[dim],
                         ));
                     }
-                    Extrapolate::Enable => {}
                 };
             }
         }
@@ -158,6 +132,16 @@ impl Interpolator for InterpND {
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
         self.strategy.interpolate(self, point)
+    }
+
+    fn extrapolate(&self) -> Option<Extrapolate> {
+        Some(self.extrapolate)
+    }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
     }
 }
 
@@ -405,8 +389,7 @@ mod tests {
         let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
         let interp =
-            InterpND::new(grid.clone(), values.clone(), Nearest, Extrapolate::Error)
-                .unwrap();
+            InterpND::new(grid.clone(), values.clone(), Nearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for i in 0..grid[0].len() {
             for j in 0..grid[1].len() {

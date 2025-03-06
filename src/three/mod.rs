@@ -6,6 +6,7 @@ mod strategies;
 
 const N: usize = 3;
 
+#[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp3D {
@@ -27,7 +28,7 @@ impl Interp3D {
         strategy: impl Interp3DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
-        let interp = Self {
+        let interpolator = Self {
             x,
             y,
             z,
@@ -35,8 +36,8 @@ impl Interp3D {
             strategy: Box::new(strategy),
             extrapolate,
         };
-        interp.validate()?;
-        Ok(interp)
+        interpolator.validate()?;
+        Ok(interpolator)
     }
 
     pub fn set_strategy(
@@ -45,12 +46,6 @@ impl Interp3D {
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)
-    }
-
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
-        self.extrapolate = extrapolate;
-        Ok(())
     }
 
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -72,6 +67,7 @@ impl Interp3D {
 }
 
 impl Interpolator for Interp3D {
+    /// Returns `3`
     fn ndim(&self) -> usize {
         N
     }
@@ -139,6 +135,7 @@ impl Interpolator for Interp3D {
         for dim in 0..N {
             if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap()).contains(&&point[dim]) {
                 match self.extrapolate {
+                    Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
@@ -154,7 +151,6 @@ impl Interpolator for Interp3D {
                             point[dim], grid_names[dim], grid[dim],
                         ));
                     }
-                    Extrapolate::Enable => {}
                 };
             }
         }
@@ -162,6 +158,16 @@ impl Interpolator for Interp3D {
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
         self.strategy.interpolate(self, point)
+    }
+
+    fn extrapolate(&self) -> Option<Extrapolate> {
+        Some(self.extrapolate)
+    }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
     }
 }
 

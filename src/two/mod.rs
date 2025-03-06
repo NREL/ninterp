@@ -6,6 +6,7 @@ mod strategies;
 
 const N: usize = 2;
 
+#[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp2D {
@@ -25,15 +26,15 @@ impl Interp2D {
         strategy: impl Interp2DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
-        let interp = Self {
+        let interpolator = Self {
             x,
             y,
             f_xy,
             strategy: Box::new(strategy),
             extrapolate,
         };
-        interp.validate()?;
-        Ok(interp)
+        interpolator.validate()?;
+        Ok(interpolator)
     }
 
     pub fn set_strategy(
@@ -67,6 +68,7 @@ impl Interp2D {
 }
 
 impl Interpolator for Interp2D {
+    /// Returns `2`
     fn ndim(&self) -> usize {
         N
     }
@@ -119,6 +121,7 @@ impl Interpolator for Interp2D {
         for dim in 0..N {
             if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap()).contains(&&point[dim]) {
                 match self.extrapolate {
+                    Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
@@ -133,7 +136,6 @@ impl Interpolator for Interp2D {
                             point[dim], grid_names[dim], grid[dim],
                         ));
                     }
-                    Extrapolate::Enable => {}
                 };
             }
         }
@@ -141,6 +143,16 @@ impl Interpolator for Interp2D {
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
         self.strategy.interpolate(self, point)
+    }
+
+    fn extrapolate(&self) -> Option<Extrapolate> {
+        Some(self.extrapolate)
+    }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
     }
 }
 
@@ -302,6 +314,21 @@ mod tests {
         assert!(interp.interpolate(&[0., 2.]).unwrap().is_nan());
         assert!(interp.interpolate(&[2., 0.]).unwrap().is_nan());
         assert!(interp.interpolate(&[2., 2.]).unwrap().is_nan());
+    }
+
+    #[test]
+    fn test_dyn_strategy() {
+        let mut interp = Interp2D::new(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Linear,
+            Extrapolate::Error,
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.4);
+        interp.set_strategy(Nearest).unwrap();
+        assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.);
     }
 
     #[test]

@@ -5,7 +5,11 @@ use interpolator::*;
 use std::fmt::Debug;
 
 pub trait Interp1DStrategy: Debug {
-    fn interpolate(&self, interp: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError>;
+    fn interpolate(
+        &self,
+        interpolator: &Interp1D,
+        point: &[f64; 1],
+    ) -> Result<f64, InterpolateError>;
 
     /// Does this type's [`Interp1DStrategy::interpolate`] provision for extrapolation?
     ///
@@ -14,7 +18,11 @@ pub trait Interp1DStrategy: Debug {
 }
 
 pub trait Interp2DStrategy: Debug {
-    fn interpolate(&self, interp: &Interp2D, point: &[f64; 2]) -> Result<f64, InterpolateError>;
+    fn interpolate(
+        &self,
+        interpolator: &Interp2D,
+        point: &[f64; 2],
+    ) -> Result<f64, InterpolateError>;
 
     /// Does this type's [`Interp2DStrategy::interpolate`] provision for extrapolation?
     ///
@@ -23,7 +31,11 @@ pub trait Interp2DStrategy: Debug {
 }
 
 pub trait Interp3DStrategy: Debug {
-    fn interpolate(&self, interp: &Interp3D, point: &[f64; 3]) -> Result<f64, InterpolateError>;
+    fn interpolate(
+        &self,
+        interpolator: &Interp3D,
+        point: &[f64; 3],
+    ) -> Result<f64, InterpolateError>;
 
     /// Does this type's [`Interp3DStrategy::interpolate`] provision for extrapolation?
     ///
@@ -32,7 +44,7 @@ pub trait Interp3DStrategy: Debug {
 }
 
 pub trait InterpNDStrategy: Debug {
-    fn interpolate(&self, interp: &InterpND, point: &[f64]) -> Result<f64, InterpolateError>;
+    fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError>;
 
     /// Does this type's [`InterpNDStrategy::interpolate`] provision for extrapolation?
     ///

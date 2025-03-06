@@ -6,6 +6,7 @@ mod strategies;
 
 const N: usize = 1;
 
+#[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp1D {
@@ -23,14 +24,14 @@ impl Interp1D {
         strategy: impl Interp1DStrategy + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
-        let interp = Self {
+        let interpolator = Self {
             x,
             f_x,
             strategy: Box::new(strategy),
             extrapolate,
         };
-        interp.validate()?;
-        Ok(interp)
+        interpolator.validate()?;
+        Ok(interpolator)
     }
 
     pub fn set_strategy(
@@ -39,12 +40,6 @@ impl Interp1D {
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)
-    }
-
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
-        self.extrapolate = extrapolate;
-        Ok(())
     }
 
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -64,6 +59,7 @@ impl Interp1D {
 }
 
 impl Interpolator for Interp1D {
+    /// Returns `1`
     fn ndim(&self) -> usize {
         N
     }
@@ -97,6 +93,7 @@ impl Interpolator for Interp1D {
             .map_err(|_| InterpolateError::PointLength(N))?;
         if !(self.x.first().unwrap()..=self.x.last().unwrap()).contains(&&point[0]) {
             match self.extrapolate {
+                Extrapolate::Enable => {}
                 Extrapolate::Fill(value) => return Ok(value),
                 Extrapolate::Clamp => {
                     let clamped_point =
@@ -109,10 +106,19 @@ impl Interpolator for Interp1D {
                         point[0], self.x
                     )))
                 }
-                Extrapolate::Enable => {}
             }
         };
         self.strategy.interpolate(self, point)
+    }
+
+    fn extrapolate(&self) -> Option<Extrapolate> {
+        Some(self.extrapolate)
+    }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
     }
 }
 

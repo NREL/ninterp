@@ -45,10 +45,10 @@
 //!
 
 pub mod prelude {
-    pub use crate::Interpolator;
     pub use crate::interpolator::*;
     pub use crate::strategy::{LeftNearest, Linear, Nearest, RightNearest};
     pub use crate::Extrapolate;
+    pub use crate::Interpolator;
 }
 
 pub mod error;
@@ -64,10 +64,12 @@ pub mod interpolator {
 
     pub struct Interp0D(pub f64);
     impl Interpolator for Interp0D {
+        /// Returns `0`
         fn ndim(&self) -> usize {
             0
         }
 
+        /// Returns `Ok(())`
         fn validate(&self) -> Result<(), ValidateError> {
             Ok(())
         }
@@ -77,6 +79,16 @@ pub mod interpolator {
                 return Err(InterpolateError::PointLength(0));
             }
             Ok(self.0)
+        }
+
+        /// Returns `None`
+        fn extrapolate(&self) -> Option<Extrapolate> {
+            None
+        }
+
+        /// Returns `Ok(())`
+        fn set_extrapolate(&mut self, _extrapolate: Extrapolate) -> Result<(), ValidateError> {
+            Ok(())
         }
     }
 
@@ -89,19 +101,23 @@ pub mod interpolator {
     pub use n::InterpND;
 }
 
-// use
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 pub trait Interpolator {
+    /// Interpolator dimensionality
     fn ndim(&self) -> usize;
-    /// Validate interpolator data
+    /// Validate interpolator data.
     fn validate(&self) -> Result<(), ValidateError>;
-    /// Interpolate at supplied point
+    /// Interpolate at supplied point.
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError>;
+    /// Get [`Extrapolate`] variant.
+    /// 
+    /// This does not perform extrapolation. 
+    /// Instead, call [`Interpolator::interpolate`] on an instance using [`Extrapolate::Enable`].
+    fn extrapolate(&self) -> Option<Extrapolate>;
+    /// Set [`Extrapolate`] variant, checking validity.
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError>;
 }
 
 /// Extrapolation strategy
@@ -113,10 +129,10 @@ pub trait Interpolator {
 pub enum Extrapolate {
     /// Evaluate beyond the limits of the interpolation grid.
     Enable,
-    /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
-    Clamp,
     /// If point is beyond grid limits, return this value instead.
     Fill(f64),
+    /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
+    Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,
@@ -125,7 +141,7 @@ pub enum Extrapolate {
 // This method contains code from RouteE Compass, another open-source NREL-developed tool
 // <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
 // <https://github.com/NREL/routee-compass/>
-fn find_nearest_index(arr: &[f64], target: f64) -> usize {
+pub fn find_nearest_index(arr: &[f64], target: f64) -> usize {
     if &target == arr.last().unwrap() {
         return arr.len() - 2;
     }
