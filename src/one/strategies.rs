@@ -1,6 +1,6 @@
 use super::*;
 
-impl Interp1DStrategy for Linear {
+impl Strategy1D for Linear {
     fn interpolate(&self, interpolator: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interpolator.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interpolator.f_x[i]);
@@ -27,7 +27,7 @@ impl Interp1DStrategy for Linear {
     }
 }
 
-impl Interp1DStrategy for Nearest {
+impl Strategy1D for Nearest {
     fn interpolate(&self, interpolator: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interpolator.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interpolator.f_x[i]);
@@ -44,7 +44,7 @@ impl Interp1DStrategy for Nearest {
     }
 }
 
-impl Interp1DStrategy for LeftNearest {
+impl Strategy1D for LeftNearest {
     fn interpolate(&self, interpolator: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interpolator.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interpolator.f_x[i]);
@@ -58,7 +58,7 @@ impl Interp1DStrategy for LeftNearest {
     }
 }
 
-impl Interp1DStrategy for RightNearest {
+impl Strategy1D for RightNearest {
     fn interpolate(&self, interpolator: &Interp1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
         if let Some(i) = interpolator.x.iter().position(|&x_val| x_val == point[0]) {
             return Ok(interpolator.f_x[i]);

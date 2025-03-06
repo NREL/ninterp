@@ -12,7 +12,7 @@ const N: usize = 1;
 pub struct Interp1D {
     pub x: Vec<f64>,
     pub f_x: Vec<f64>,
-    pub strategy: Box<dyn Interp1DStrategy>,
+    pub strategy: Box<dyn Strategy1D>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
@@ -21,7 +21,7 @@ impl Interp1D {
     pub fn new(
         x: Vec<f64>,
         f_x: Vec<f64>,
-        strategy: impl Interp1DStrategy + 'static,
+        strategy: impl Strategy1D + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
@@ -36,7 +36,7 @@ impl Interp1D {
 
     pub fn set_strategy(
         &mut self,
-        strategy: impl Interp1DStrategy + 'static,
+        strategy: impl Strategy1D + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)

@@ -13,7 +13,7 @@ pub struct Interp2D {
     pub x: Vec<f64>,
     pub y: Vec<f64>,
     pub f_xy: Vec<Vec<f64>>,
-    pub strategy: Box<dyn Interp2DStrategy>,
+    pub strategy: Box<dyn Strategy2D>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
@@ -23,7 +23,7 @@ impl Interp2D {
         x: Vec<f64>,
         y: Vec<f64>,
         f_xy: Vec<Vec<f64>>,
-        strategy: impl Interp2DStrategy + 'static,
+        strategy: impl Strategy2D + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
@@ -39,7 +39,7 @@ impl Interp2D {
 
     pub fn set_strategy(
         &mut self,
-        strategy: impl Interp2DStrategy + 'static,
+        strategy: impl Strategy2D + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)

@@ -13,7 +13,7 @@ fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
         .collect()
 }
 
-impl InterpNDStrategy for Linear {
+impl StrategyND for Linear {
     fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = interpolator.values.ndim();
@@ -112,7 +112,7 @@ impl InterpNDStrategy for Linear {
     }
 }
 
-impl InterpNDStrategy for Nearest {
+impl StrategyND for Nearest {
     fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = interpolator.values.ndim();

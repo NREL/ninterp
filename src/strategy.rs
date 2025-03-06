@@ -4,51 +4,43 @@ use super::*;
 use interpolator::*;
 use std::fmt::Debug;
 
-pub trait Interp1DStrategy: Debug {
+pub trait Strategy1D: Debug {
     fn interpolate(
         &self,
         interpolator: &Interp1D,
         point: &[f64; 1],
     ) -> Result<f64, InterpolateError>;
 
-    /// Does this type's [`Interp1DStrategy::interpolate`] provision for extrapolation?
-    ///
-    /// Used in [`Interp1D::validate`].
+    /// Does this type's [`Strategy1D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-pub trait Interp2DStrategy: Debug {
+pub trait Strategy2D: Debug {
     fn interpolate(
         &self,
         interpolator: &Interp2D,
         point: &[f64; 2],
     ) -> Result<f64, InterpolateError>;
 
-    /// Does this type's [`Interp2DStrategy::interpolate`] provision for extrapolation?
-    ///
-    /// Used in [`Interp2D::validate`].
+    /// Does this type's [`Strategy2D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-pub trait Interp3DStrategy: Debug {
+pub trait Strategy3D: Debug {
     fn interpolate(
         &self,
         interpolator: &Interp3D,
         point: &[f64; 3],
     ) -> Result<f64, InterpolateError>;
 
-    /// Does this type's [`Interp3DStrategy::interpolate`] provision for extrapolation?
-    ///
-    /// Used in [`Interp3D::validate`].
+    /// Does this type's [`Strategy3D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-pub trait InterpNDStrategy: Debug {
+pub trait StrategyND: Debug {
     fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError>;
 
-    /// Does this type's [`InterpNDStrategy::interpolate`] provision for extrapolation?
-    ///
-    /// Used in [`InterpND::validate`].
+    /// Does this type's [`StrategyND::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 

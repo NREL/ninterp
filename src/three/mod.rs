@@ -14,7 +14,7 @@ pub struct Interp3D {
     pub y: Vec<f64>,
     pub z: Vec<f64>,
     pub f_xyz: Vec<Vec<Vec<f64>>>,
-    pub strategy: Box<dyn Interp3DStrategy>,
+    pub strategy: Box<dyn Strategy3D>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
@@ -25,7 +25,7 @@ impl Interp3D {
         y: Vec<f64>,
         z: Vec<f64>,
         f_xyz: Vec<Vec<Vec<f64>>>,
-        strategy: impl Interp3DStrategy + 'static,
+        strategy: impl Strategy3D + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
@@ -42,7 +42,7 @@ impl Interp3D {
 
     pub fn set_strategy(
         &mut self,
-        strategy: impl Interp3DStrategy + 'static,
+        strategy: impl Strategy3D + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)

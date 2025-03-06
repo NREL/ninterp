@@ -12,7 +12,7 @@ mod strategies;
 pub struct InterpND {
     pub grid: Vec<Vec<f64>>,
     pub values: ArrayD<f64>,
-    pub strategy: Box<dyn InterpNDStrategy>,
+    pub strategy: Box<dyn StrategyND>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
@@ -21,7 +21,7 @@ impl InterpND {
     pub fn new(
         grid: Vec<Vec<f64>>,
         values: ArrayD<f64>,
-        strategy: impl InterpNDStrategy + 'static,
+        strategy: impl StrategyND + 'static,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
@@ -36,7 +36,7 @@ impl InterpND {
 
     pub fn set_strategy(
         &mut self,
-        strategy: impl InterpNDStrategy + 'static,
+        strategy: impl StrategyND + 'static,
     ) -> Result<(), ValidateError> {
         self.strategy = Box::new(strategy);
         self.check_extrapolate(self.extrapolate)

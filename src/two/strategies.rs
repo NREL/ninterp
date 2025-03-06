@@ -1,6 +1,6 @@
 use super::*;
 
-impl Interp2DStrategy for Linear {
+impl Strategy2D for Linear {
     fn interpolate(&self, interpolator: &Interp2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
@@ -39,7 +39,7 @@ impl Interp2DStrategy for Linear {
     }
 }
 
-impl Interp2DStrategy for Nearest {
+impl Strategy2D for Nearest {
     fn interpolate(&self, interpolator: &Interp2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
         // x
         let x_l = find_nearest_index(&interpolator.x, point[0]);

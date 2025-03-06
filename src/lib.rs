@@ -63,6 +63,11 @@ pub mod interpolator {
     use super::*;
 
     pub struct Interp0D(pub f64);
+    impl Interp0D {
+        pub fn new(value: f64) -> Self {
+            Self(value)
+        }
+    }
     impl Interpolator for Interp0D {
         /// Returns `0`
         fn ndim(&self) -> usize {
