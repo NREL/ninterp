@@ -43,6 +43,7 @@ impl Strategy3D for Linear {
         Ok(f0 * (1.0 - z_diff) + f1 * z_diff)
     }
 
+    /// Returns `true`
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -69,6 +70,7 @@ impl Strategy3D for Nearest {
         Ok(data.f_xyz[i][j][k])
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }

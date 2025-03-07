@@ -22,6 +22,7 @@ impl Strategy1D for Linear {
         Ok(data.f_x[x_l] * (1.0 - x_diff) + data.f_x[x_u] * x_diff)
     }
 
+    /// Returns `true`
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -39,6 +40,7 @@ impl Strategy1D for Nearest {
         Ok(data.f_x[i])
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }
@@ -53,6 +55,7 @@ impl Strategy1D for LeftNearest {
         Ok(data.f_x[x_l])
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }
@@ -67,6 +70,7 @@ impl Strategy1D for RightNearest {
         Ok(data.f_x[x_u])
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }

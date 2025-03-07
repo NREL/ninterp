@@ -34,6 +34,7 @@ impl Strategy2D for Linear {
         Ok(f0 * (1.0 - y_diff) + f1 * y_diff)
     }
 
+    /// Returns `true`
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -55,6 +56,7 @@ impl Strategy2D for Nearest {
         Ok(data.f_xy[i][j])
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }

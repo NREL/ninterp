@@ -7,6 +7,18 @@ const N: usize = 0;
 /// 0-D interpolator
 pub struct Interp0D(pub f64);
 impl Interp0D {
+    /// Instantiate constant-value 'interpolator'.
+    ///
+    /// # Example:
+    /// ```
+    /// use ninterp::prelude::*;
+    /// let const_value = 0.5;
+    /// let interp = Interp0D::new(const_value);
+    /// assert_eq!(
+    ///     interp.interpolate(&[]).unwrap(), // an empty point is required for 0-D
+    ///     const_value
+    /// );
+    /// ```
     pub fn new(value: f64) -> Self {
         Self(value)
     }

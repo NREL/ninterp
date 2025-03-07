@@ -107,6 +107,7 @@ impl StrategyND for Linear {
         Ok(interp_vals.first().copied().unwrap())
     }
 
+    /// Returns `true`
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -198,6 +199,7 @@ impl StrategyND for Nearest {
         Ok(interp_vals.first().copied().unwrap())
     }
 
+    /// Returns `false`
     fn allow_extrapolate(&self) -> bool {
         false
     }

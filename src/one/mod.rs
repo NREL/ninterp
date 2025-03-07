@@ -6,8 +6,9 @@ mod strategies;
 
 const N: usize = 1;
 
+/// Data for [`Interp1D`]
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Data1D {
     pub x: Vec<f64>,
@@ -26,6 +27,35 @@ pub struct Interp1D<S: Strategy1D> {
 }
 
 impl<S: Strategy1D> Interp1D<S> {
+    /// Instantiate one-dimensional interpolator.
+    ///
+    /// Applicable interpolation strategies:
+    /// - [`Linear`]
+    /// - [`Nearest`]
+    /// - [`LeftNearest`]
+    /// - [`RightNearest`]
+    ///
+    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    ///
+    /// # Example:
+    /// ```
+    /// use ninterp::prelude::*;
+    /// // f(x) = 0.4 * x
+    /// let interp = Interp1D::new(
+    ///     // x
+    ///     vec![0., 1., 2.], // x0, x1, x2
+    ///     // f(x)
+    ///     vec![0.0, 0.4, 0.8], // f(x0), f(x1), f(x2)
+    ///     Linear,
+    ///     Extrapolate::Enable,
+    /// )
+    /// .unwrap();
+    /// assert_eq!(interp.interpolate(&[1.4]).unwrap(), 0.56);
+    /// assert_eq!(
+    ///     interp.interpolate(&[3.6]).unwrap(),
+    ///     1.44
+    /// ); // point is restricted to within grid bounds
+    /// ```
     pub fn new(
         x: Vec<f64>,
         f_x: Vec<f64>,

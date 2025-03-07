@@ -6,8 +6,9 @@ use ndarray::prelude::*;
 
 mod strategies;
 
+/// Data for [`InterpND`]
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct DataND {
     pub grid: Vec<Vec<f64>>,
@@ -16,7 +17,7 @@ pub struct DataND {
 
 /// N-D interpolator
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct InterpND<S: StrategyND> {
     pub data: DataND,
@@ -26,6 +27,47 @@ pub struct InterpND<S: StrategyND> {
 }
 
 impl<S: StrategyND> InterpND<S> {
+    /// Instantiate N-dimensional (any dimensionality) interpolator.
+    ///
+    /// Applicable interpolation strategies:
+    /// - [`Linear`]
+    /// - [`Nearest`]
+    /// 
+    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    /// 
+    /// # Example:
+    /// ```
+    /// use ninterp::prelude::*;
+    /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
+    /// let interp = InterpND::new(
+    ///     // grid
+    ///     vec![
+    ///         vec![1., 2.], // x0, x1
+    ///         vec![1., 2.], // y0, y1
+    ///         vec![1., 2.], // z0, z1
+    ///     ],
+    ///     // values
+    ///     ndarray::array![
+    ///         [
+    ///             [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
+    ///             [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
+    ///         ],
+    ///         [
+    ///             [0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
+    ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
+    ///         ],
+    ///     ].into_dyn(),
+    ///     Linear,
+    ///     Extrapolate::Error, // return an error when point is out of bounds
+    /// )
+    /// .unwrap();
+    /// assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
+    /// // out of bounds point with `Extrapolate::Error` fails
+    /// assert!(matches!(
+    ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
+    ///     ninterp::error::InterpolateError::ExtrapolateError(_)
+    /// ));
+    /// ```
     pub fn new(
         grid: Vec<Vec<f64>>,
         values: ArrayD<f64>,

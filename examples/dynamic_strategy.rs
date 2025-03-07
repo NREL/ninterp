@@ -13,6 +13,6 @@ fn main() {
     .unwrap();
     assert_eq!(interp.interpolate(&[1.75]).unwrap(), 5.25);
     // Change strategy to `Nearest`
-    interp.strategy = Box::new(Nearest);
+    interp.set_strategy(Box::new(Nearest)).unwrap();
     assert_eq!(interp.interpolate(&[1.75]).unwrap(), 6.);
 }
