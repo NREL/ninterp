@@ -15,13 +15,13 @@
 //! A prelude module has been defined: `use ninterp::prelude::*;`
 //!
 //! This exposes a variety of interpolators:
-//! - [`Interp1`](`interpolator::Interp1D`)
-//! - [`Interp2`](`interpolator::Interp2D`)
-//! - [`Interp3`](`interpolator::Interp3D`)
-//! - [`InterpN`](`interpolator::InterpND`)
+//! - [`Interp1D`](`interpolator::Interp1D`)
+//! - [`Interp2D`](`interpolator::Interp2D`)
+//! - [`Interp3D`](`interpolator::Interp3D`)
+//! - [`InterpND`](`interpolator::InterpND`)
 //!
 //! There is also a constant-value 'interpolator':
-//! [`Interp0`](`interpolator::Interp0D`).
+//! [`Interp0D`](`interpolator::Interp0D`).
 //! This is useful when working with a `Box<dyn Interpolator>`
 //!
 //! Instantiation is done by calling an interpolator's `new` method.
@@ -34,7 +34,8 @@
 //! Not all interpolation strategies are implemented for every dimensionality.
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
-//! Custom strategies can be defined. See `examples/custom_strategy.rs` for an example.
+//! Custom strategies can be defined. See [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/custom_strategy.rs)
+//! for an example.
 //!
 //! ## Extrapolation
 //! An [`Extrapolate`] setting must be specified.
@@ -61,7 +62,8 @@
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
 //!
-//! See the `examples` directory for advanced examples.
+//! See the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
+//! directory for advanced examples.
 //!
 //! # Strategy dynamic dispatch
 //! By default, construction of interpolators uses *static dispatch*,
@@ -70,7 +72,8 @@
 //! To enable swapping strategies after instantiation,
 //! use *dynamic dispatch* by providing a trait object `Box<dyn Trait>` to the constructor.
 //!
-//! See `examples/dynamic_strategy.rs` for an example.
+//! See [`examples/dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
+//! for an example.
 
 /// The `prelude` module exposes:
 /// - All interpolator structs:
