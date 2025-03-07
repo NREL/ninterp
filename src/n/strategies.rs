@@ -14,16 +14,16 @@ fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
 }
 
 impl StrategyND for Linear {
-    fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
-        let mut n = interpolator.values.ndim();
+        let mut n = data.values.ndim();
 
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
         let mut point = point.to_vec();
-        let mut grid = interpolator.grid.clone();
-        let mut values_view = interpolator.values.view();
+        let mut grid = data.grid.clone();
+        let mut values_view = data.values.view();
         for dim in (0..n).rev() {
             // Range is reversed so that removal doesn't affect indexing
             if let Some(pos) = grid[dim]
@@ -91,7 +91,7 @@ impl StrategyND for Linear {
                 if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
                     return Err(InterpolateError::NaNError(format!(
                         "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                        interpolator.values
+                        data.values
                     )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
@@ -113,16 +113,16 @@ impl StrategyND for Linear {
 }
 
 impl StrategyND for Nearest {
-    fn interpolate(&self, interpolator: &InterpND, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
-        let mut n = interpolator.values.ndim();
+        let mut n = data.values.ndim();
 
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
         let mut point = point.to_vec();
-        let mut grid = interpolator.grid.clone();
-        let mut values_view = interpolator.values.view();
+        let mut grid = data.grid.clone();
+        let mut values_view = data.values.view();
         for dim in (0..n).rev() {
             // Range is reversed so that removal doesn't affect indexing
             if let Some(pos) = grid[dim]
@@ -179,7 +179,7 @@ impl StrategyND for Nearest {
                 if dim == 0 && (interp_vals[l].is_nan() || interp_vals[u].is_nan()) {
                     return Err(InterpolateError::NaNError(format!(
                         "\npoint = {point:?},\ngrid = {grid:?},\nvalues = {:?}",
-                        interpolator.values
+                        data.values
                     )));
                 }
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,

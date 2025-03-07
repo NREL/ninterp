@@ -9,42 +9,44 @@ const N: usize = 3;
 #[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp3D {
+pub struct Data3D {
     pub x: Vec<f64>,
     pub y: Vec<f64>,
     pub z: Vec<f64>,
     pub f_xyz: Vec<Vec<Vec<f64>>>,
-    pub strategy: Box<dyn Strategy3D>,
+}
+
+/// 3-D interpolator
+#[non_exhaustive]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct Interp3D<S: Strategy3D> {
+    pub data: Data3D,
+    pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
 
-impl Interp3D {
+impl<S: Strategy3D> Interp3D<S> {
     pub fn new(
         x: Vec<f64>,
         y: Vec<f64>,
         z: Vec<f64>,
         f_xyz: Vec<Vec<Vec<f64>>>,
-        strategy: impl Strategy3D + 'static,
+        strategy: S,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
-            x,
-            y,
-            z,
-            f_xyz,
-            strategy: Box::new(strategy),
+            data: Data3D { x, y, z, f_xyz },
+            strategy,
             extrapolate,
         };
         interpolator.validate()?;
         Ok(interpolator)
     }
 
-    pub fn set_strategy(
-        &mut self,
-        strategy: impl Strategy3D + 'static,
-    ) -> Result<(), ValidateError> {
-        self.strategy = Box::new(strategy);
+    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
+        self.strategy = strategy;
         self.check_extrapolate(self.extrapolate)
     }
 
@@ -56,7 +58,7 @@ impl Interp3D {
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
         if matches!(self.extrapolate, Extrapolate::Enable)
-            && (self.x.len() < 2 || self.y.len() < 2 || self.z.len() < 2)
+            && (self.data.x.len() < 2 || self.data.y.len() < 2 || self.data.z.len() < 2)
         {
             return Err(ValidateError::Other(
                 "at least 2 data points are required for extrapolation".into(),
@@ -66,7 +68,7 @@ impl Interp3D {
     }
 }
 
-impl Interpolator for Interp3D {
+impl<S: Strategy3D> Interpolator for Interp3D<S> {
     /// Returns `3`
     fn ndim(&self) -> usize {
         N
@@ -75,9 +77,9 @@ impl Interpolator for Interp3D {
     fn validate(&self) -> Result<(), ValidateError> {
         self.check_extrapolate(self.extrapolate)?;
 
-        let x_grid_len = self.x.len();
-        let y_grid_len = self.y.len();
-        let z_grid_len = self.z.len();
+        let x_grid_len = self.data.x.len();
+        let y_grid_len = self.data.y.len();
+        let z_grid_len = self.data.z.len();
 
         // Check that each grid dimension has elements
         if x_grid_len == 0 {
@@ -91,21 +93,22 @@ impl Interpolator for Interp3D {
         }
 
         // Check that grid points are monotonically increasing
-        if !self.x.windows(2).all(|w| w[0] <= w[1]) {
+        if !self.data.x.windows(2).all(|w| w[0] <= w[1]) {
             return Err(ValidateError::Monotonicity("x".into()));
         }
-        if !self.y.windows(2).all(|w| w[0] <= w[1]) {
+        if !self.data.y.windows(2).all(|w| w[0] <= w[1]) {
             return Err(ValidateError::Monotonicity("y".into()));
         }
-        if !self.z.windows(2).all(|w| w[0] <= w[1]) {
+        if !self.data.z.windows(2).all(|w| w[0] <= w[1]) {
             return Err(ValidateError::Monotonicity("z".into()));
         }
 
         // Check that grid and values are compatible shapes
-        if x_grid_len != self.f_xyz.len() {
+        if x_grid_len != self.data.f_xyz.len() {
             return Err(ValidateError::IncompatibleShapes("x".into()));
         }
         if !self
+            .data
             .f_xyz
             .iter()
             .map(Vec::len)
@@ -114,6 +117,7 @@ impl Interpolator for Interp3D {
             return Err(ValidateError::IncompatibleShapes("y".into()));
         }
         if !self
+            .data
             .f_xyz
             .iter()
             .flat_map(|y_vals| y_vals.iter().map(Vec::len))
@@ -129,7 +133,7 @@ impl Interpolator for Interp3D {
         let point: &[f64; N] = point
             .try_into()
             .map_err(|_| InterpolateError::PointLength(N))?;
-        let grid = [&self.x, &self.y, &self.z];
+        let grid = [&self.data.x, &self.data.y, &self.data.z];
         let grid_names = ["x", "y", "z"];
         let mut errors = Vec::new();
         for dim in 0..N {
@@ -139,11 +143,14 @@ impl Interpolator for Interp3D {
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
-                            point[0].clamp(*self.x.first().unwrap(), *self.x.last().unwrap()),
-                            point[1].clamp(*self.y.first().unwrap(), *self.y.last().unwrap()),
-                            point[2].clamp(*self.z.first().unwrap(), *self.z.last().unwrap()),
+                            point[0]
+                                .clamp(*self.data.x.first().unwrap(), *self.data.x.last().unwrap()),
+                            point[1]
+                                .clamp(*self.data.y.first().unwrap(), *self.data.y.last().unwrap()),
+                            point[2]
+                                .clamp(*self.data.z.first().unwrap(), *self.data.z.last().unwrap()),
                         ];
-                        return self.strategy.interpolate(self, clamped_point);
+                        return self.strategy.interpolate(&self.data, clamped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
@@ -157,7 +164,7 @@ impl Interpolator for Interp3D {
         if !errors.is_empty() {
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
-        self.strategy.interpolate(self, point)
+        self.strategy.interpolate(&self.data, point)
     }
 
     fn extrapolate(&self) -> Option<Extrapolate> {

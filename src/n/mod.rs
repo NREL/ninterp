@@ -9,36 +9,40 @@ mod strategies;
 #[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpND {
+pub struct DataND {
     pub grid: Vec<Vec<f64>>,
     pub values: ArrayD<f64>,
-    pub strategy: Box<dyn StrategyND>,
+}
+
+/// N-D interpolator
+#[non_exhaustive]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct InterpND<S: StrategyND> {
+    pub data: DataND,
+    pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
 }
 
-impl InterpND {
+impl<S: StrategyND> InterpND<S> {
     pub fn new(
         grid: Vec<Vec<f64>>,
         values: ArrayD<f64>,
-        strategy: impl StrategyND + 'static,
+        strategy: S,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
-            grid,
-            values,
-            strategy: Box::new(strategy),
+            data: DataND { grid, values },
+            strategy,
             extrapolate,
         };
         interpolator.validate()?;
         Ok(interpolator)
     }
 
-    pub fn set_strategy(
-        &mut self,
-        strategy: impl StrategyND + 'static,
-    ) -> Result<(), ValidateError> {
-        self.strategy = Box::new(strategy);
+    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
+        self.strategy = strategy;
         self.check_extrapolate(self.extrapolate)
     }
 
@@ -50,7 +54,7 @@ impl InterpND {
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
         for i in 0..self.ndim() {
-            if matches!(self.extrapolate, Extrapolate::Enable) && self.grid[i].len() < 2 {
+            if matches!(self.extrapolate, Extrapolate::Enable) && self.data.grid[i].len() < 2 {
                 return Err(ValidateError::Other(format!(
                     "at least 2 data points are required for extrapolation: dim {i}"
                 )));
@@ -60,19 +64,19 @@ impl InterpND {
     }
 }
 
-impl Interpolator for InterpND {
+impl<S: StrategyND> Interpolator for InterpND<S> {
     fn ndim(&self) -> usize {
-        if self.values.len() == 1 {
+        if self.data.values.len() == 1 {
             0
         } else {
-            self.values.ndim()
+            self.data.values.ndim()
         }
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
         self.check_extrapolate(self.extrapolate)?;
         for i in 0..self.ndim() {
-            let i_grid_len = self.grid[i].len();
+            let i_grid_len = self.data.grid[i].len();
 
             // Check that each grid dimension has elements
             // Indexing `grid` directly is okay because empty dimensions are caught at compilation
@@ -81,12 +85,12 @@ impl Interpolator for InterpND {
             }
 
             // Check that grid points are monotonically increasing
-            if !self.grid[i].windows(2).all(|w| w[0] <= w[1]) {
+            if !self.data.grid[i].windows(2).all(|w| w[0] <= w[1]) {
                 return Err(ValidateError::Monotonicity(i.to_string()));
             }
 
             // Check that grid and values are compatible shapes
-            if i_grid_len != self.values.shape()[i] {
+            if i_grid_len != self.data.values.shape()[i] {
                 return Err(ValidateError::IncompatibleShapes(i.to_string()));
             }
         }
@@ -100,7 +104,7 @@ impl Interpolator for InterpND {
         }
         let mut errors = Vec::new();
         for dim in 0..n {
-            if !(self.grid[dim].first().unwrap()..=self.grid[dim].last().unwrap())
+            if !(self.data.grid[dim].first().unwrap()..=self.data.grid[dim].last().unwrap())
                 .contains(&&point[dim])
             {
                 match self.extrapolate {
@@ -112,17 +116,17 @@ impl Interpolator for InterpND {
                             .enumerate()
                             .map(|(dim, pt)| {
                                 pt.clamp(
-                                    *self.grid[dim].first().unwrap(),
-                                    *self.grid[dim].last().unwrap(),
+                                    *self.data.grid[dim].first().unwrap(),
+                                    *self.data.grid[dim].last().unwrap(),
                                 )
                             })
                             .collect();
-                        return self.strategy.interpolate(self, &clamped_point);
+                        return self.strategy.interpolate(&self.data, &clamped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
                             "\n    point[{dim}] = {:?} is out of bounds for grid[{dim}] = {:?}",
-                            point[dim], self.grid[dim],
+                            point[dim], self.data.grid[dim],
                         ));
                     }
                 };
@@ -131,7 +135,7 @@ impl Interpolator for InterpND {
         if !errors.is_empty() {
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
-        self.strategy.interpolate(self, point)
+        self.strategy.interpolate(&self.data, point)
     }
 
     fn extrapolate(&self) -> Option<Extrapolate> {

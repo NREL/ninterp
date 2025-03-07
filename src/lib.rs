@@ -9,15 +9,7 @@
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
 //!
 //! # Getting Started
-//! A prelude module has been defined: `use ninterp::prelude::*;`.
-//! This exposes the types necessary for usage:
-//! - The main type: [`Interpolator`]
-//! - Interpolation strategies:
-//!   - [`Linear`]
-//!   - [`Nearest`]
-//!   - [`LeftNearest`]
-//!   - [`RightNearest`]
-//! - The extrapolation setting: [`Extrapolate`]
+//! A prelude module has been defined: `use ninterp::prelude::*;`
 //!
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
 //! The length of the supplied point slice must be equal to the interpolator dimensionality.
@@ -37,13 +29,27 @@
 //! For 0-D (constant-value) interpolators, instantiate directly, e.g. `Interp0D(0.5)`
 //!
 //! ## Examples
-//! - [`Interp0D`]
-//! - [`Interp1D::new`]
-//! - [`Interp2D::new`]
-//! - [`Interp3D::new`]
-//! - [`InterpND::new`]
+//! - [`interpolator::Interp0D`]
+//! - [`interpolator::Interp1D::new`]
+//! - [`interpolator::Interp2D::new`]
+//! - [`interpolator::Interp3D::new`]
+//! - [`interpolator::InterpND::new`]
 //!
 
+/// The `prelude` module exposes:
+/// - All interpolator structs:
+///   - [`Interp0D`]
+///   - [`Interp1D`]
+///   - [`Interp2D`]
+///   - [`Interp3D`]
+///   - [`InterpND`]
+/// - Their common trait: [`Interpolator`]
+/// - Interpolation strategies:
+///   - [`Linear`]
+///   - [`Nearest`]
+///   - [`LeftNearest`]
+///   - [`RightNearest`]
+/// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
     pub use crate::interpolator::*;
     pub use crate::strategy::{LeftNearest, Linear, Nearest, RightNearest};
@@ -54,56 +60,18 @@ pub mod prelude {
 pub mod error;
 pub mod strategy;
 
-mod n;
-mod one;
-mod three;
-mod two;
+pub mod n;
+pub mod one;
+pub mod three;
+pub mod two;
+pub mod zero;
 
 pub mod interpolator {
-    use super::*;
-
-    pub struct Interp0D(pub f64);
-    impl Interp0D {
-        pub fn new(value: f64) -> Self {
-            Self(value)
-        }
-    }
-    impl Interpolator for Interp0D {
-        /// Returns `0`
-        fn ndim(&self) -> usize {
-            0
-        }
-
-        /// Returns `Ok(())`
-        fn validate(&self) -> Result<(), ValidateError> {
-            Ok(())
-        }
-
-        fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-            if !point.is_empty() {
-                return Err(InterpolateError::PointLength(0));
-            }
-            Ok(self.0)
-        }
-
-        /// Returns `None`
-        fn extrapolate(&self) -> Option<Extrapolate> {
-            None
-        }
-
-        /// Returns `Ok(())`
-        fn set_extrapolate(&mut self, _extrapolate: Extrapolate) -> Result<(), ValidateError> {
-            Ok(())
-        }
-    }
-
-    pub use one::Interp1D;
-
-    pub use two::Interp2D;
-
-    pub use three::Interp3D;
-
-    pub use n::InterpND;
+    pub use crate::n::InterpND;
+    pub use crate::one::Interp1D;
+    pub use crate::three::Interp3D;
+    pub use crate::two::Interp2D;
+    pub use crate::zero::Interp0D;
 }
 
 pub(crate) use error::*;
@@ -117,8 +85,8 @@ pub trait Interpolator {
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError>;
     /// Get [`Extrapolate`] variant.
-    /// 
-    /// This does not perform extrapolation. 
+    ///
+    /// This does not perform extrapolation.
     /// Instead, call [`Interpolator::interpolate`] on an instance using [`Extrapolate::Enable`].
     fn extrapolate(&self) -> Option<Extrapolate>;
     /// Set [`Extrapolate`] variant, checking validity.
@@ -141,32 +109,4 @@ pub enum Extrapolate {
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,
-}
-
-// This method contains code from RouteE Compass, another open-source NREL-developed tool
-// <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
-// <https://github.com/NREL/routee-compass/>
-pub fn find_nearest_index(arr: &[f64], target: f64) -> usize {
-    if &target == arr.last().unwrap() {
-        return arr.len() - 2;
-    }
-
-    let mut low = 0;
-    let mut high = arr.len() - 1;
-
-    while low < high {
-        let mid = low + (high - low) / 2;
-
-        if arr[mid] >= target {
-            high = mid;
-        } else {
-            low = mid + 1;
-        }
-    }
-
-    if low > 0 && arr[low] >= target {
-        low - 1
-    } else {
-        low
-    }
 }

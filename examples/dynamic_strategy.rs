@@ -1,0 +1,18 @@
+use ninterp::prelude::*;
+use ninterp::strategy::Strategy1D;
+
+fn main() {
+    // Create mutable interpolator
+    let mut interp = Interp1D::new(
+        vec![0., 1., 2.],
+        vec![0., 3., 6.],
+        // Provide the strategy as a trait object
+        Box::new(Linear) as Box<dyn Strategy1D>,
+        Extrapolate::Error,
+    )
+    .unwrap();
+    assert_eq!(interp.interpolate(&[1.75]).unwrap(), 5.25);
+    // Change strategy to `Nearest`
+    interp.strategy = Box::new(Nearest);
+    assert_eq!(interp.interpolate(&[1.75]).unwrap(), 6.);
+}
