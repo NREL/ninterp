@@ -2,87 +2,121 @@
 
 use super::*;
 
-#[derive(Clone, Debug, PartialEq)]
+mod strategies;
+
+const N: usize = 2;
+
+/// Data for [`Interp2D`]
+#[non_exhaustive]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub(crate) struct Interp2D {
-    pub(crate) x: Vec<f64>,
-    pub(crate) y: Vec<f64>,
-    pub(crate) f_xy: Vec<Vec<f64>>,
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) strategy: Strategy,
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub(crate) extrapolate: Extrapolate,
+pub struct Data2D {
+    pub x: Vec<f64>,
+    pub y: Vec<f64>,
+    pub f_xy: Vec<Vec<f64>>,
 }
 
-impl Linear for Interp2D {
-    fn linear(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        // Extrapolation is checked previously in Interpolator::interpolate,
-        // meaning:
-        // - point is within grid bounds, or
-        // - point is clamped, or
-        // - extrapolation is enabled
-        let grid = [&self.x, &self.y];
-        let lowers: Vec<usize> = (0..2)
-            .map(|dim| {
-                if &point[dim] < grid[dim].first().unwrap() {
-                    0
-                } else if &point[dim] > grid[dim].last().unwrap() {
-                    grid[dim].len() - 2
-                } else {
-                    find_nearest_index(grid[dim], point[dim])
-                }
-            })
-            .collect();
-        // x
-        let x_l = lowers[0];
-        let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
-        // y
-        let y_l = lowers[1];
-        let y_u = y_l + 1;
-        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
-        // interpolate in the x-direction
-        let f0 = self.f_xy[x_l][y_l] * (1.0 - x_diff) + self.f_xy[x_u][y_l] * x_diff;
-        let f1 = self.f_xy[x_l][y_u] * (1.0 - x_diff) + self.f_xy[x_u][y_u] * x_diff;
-        // interpolate in the y-direction
-        Ok(f0 * (1.0 - y_diff) + f1 * y_diff)
+/// 2-D interpolator
+#[non_exhaustive]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct Interp2D<S: Strategy2D> {
+    pub data: Data2D,
+    pub strategy: S,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub extrapolate: Extrapolate,
+}
+
+impl<S: Strategy2D> Interp2D<S> {
+    /// Instantiate two-dimensional interpolator.
+    ///
+    /// Applicable interpolation strategies:
+    /// - [`Linear`]
+    /// - [`Nearest`]
+    /// 
+    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    ///
+    /// # Example:
+    /// ```
+    /// use ninterp::prelude::*;
+    /// // f(x, y) = 0.2 * x + 0.4 * y
+    /// let interp = Interp2D::new(
+    ///     // x
+    ///     vec![0., 1., 2.], // x0, x1, x2
+    ///     // y
+    ///     vec![0., 1., 2.], // y0, y1, y2
+    ///     // f(x, y)
+    ///     vec![
+    ///         vec![0.0, 0.4, 0.8], // f(x0, y0), f(x0, y1), f(x0, y2)
+    ///         vec![0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
+    ///         vec![0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
+    ///     ],
+    ///     Linear,
+    ///     Extrapolate::Clamp, // restrict point within grid bounds
+    /// )
+    /// .unwrap();
+    /// assert_eq!(interp.interpolate(&[1.5, 1.5]).unwrap(), 0.9);
+    /// assert_eq!(
+    ///     interp.interpolate(&[-1., 2.5]).unwrap(),
+    ///     interp.interpolate(&[0., 2.]).unwrap()
+    /// ); // point is restricted to within grid bounds
+    /// ```
+    pub fn new(
+        x: Vec<f64>,
+        y: Vec<f64>,
+        f_xy: Vec<Vec<f64>>,
+        strategy: S,
+        extrapolate: Extrapolate,
+    ) -> Result<Self, ValidateError> {
+        let interpolator = Self {
+            data: Data2D { x, y, f_xy },
+            strategy,
+            extrapolate,
+        };
+        interpolator.validate()?;
+        Ok(interpolator)
+    }
+
+    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
+        self.strategy = strategy;
+        self.check_extrapolate(self.extrapolate)
+    }
+
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
+    }
+
+    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        // Check applicability of strategy and extrapolate setting
+        if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
+            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+        }
+        // If using Extrapolate::Enable,
+        // check that each grid dimension has at least two elements
+        if matches!(self.extrapolate, Extrapolate::Enable)
+            && (self.data.x.len() < 2 || self.data.y.len() < 2)
+        {
+            return Err(ValidateError::Other(
+                "at least 2 data points are required for extrapolation".into(),
+            ));
+        }
+        Ok(())
     }
 }
 
-impl Nearest for Interp2D {
-    fn nearest(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        // x
-        let x_l = find_nearest_index(&self.x, point[0]);
-        let x_u = x_l + 1;
-        let x_diff = (point[0] - self.x[x_l]) / (self.x[x_u] - self.x[x_l]);
-        let i = if x_diff < 0.5 { x_l } else { x_u };
-        // y
-        let y_l = find_nearest_index(&self.y, point[1]);
-        let y_u = y_l + 1;
-        let y_diff = (point[1] - self.y[y_l]) / (self.y[y_u] - self.y[y_l]);
-        let j = if y_diff < 0.5 { y_l } else { y_u };
-
-        Ok(self.f_xy[i][j])
+impl<S: Strategy2D> Interpolator for Interp2D<S> {
+    /// Returns `2`
+    fn ndim(&self) -> usize {
+        N
     }
-}
 
-impl InterpMethods for Interp2D {
     fn validate(&self) -> Result<(), ValidateError> {
-        // Check applicablitity of strategy and extrapolate
-        match (&self.strategy, &self.extrapolate) {
-            // inapplicable strategies
-            (Strategy::LeftNearest | Strategy::RightNearest, _) => {
-                Err(ValidateError::StrategySelection(self.strategy))
-            }
-            // inapplicable combinations of strategy + extrapolate
-            (Strategy::Nearest, Extrapolate::Enable) => {
-                Err(ValidateError::ExtrapolateSelection(self.extrapolate))
-            }
-            _ => Ok(()),
-        }?;
+        self.check_extrapolate(self.extrapolate)?;
 
-        let x_grid_len = self.x.len();
-        let y_grid_len = self.y.len();
+        let x_grid_len = self.data.x.len();
+        let y_grid_len = self.data.y.len();
 
         // Check that each grid dimension has elements
         if x_grid_len == 0 {
@@ -92,27 +126,20 @@ impl InterpMethods for Interp2D {
             return Err(ValidateError::EmptyGrid("y".into()));
         }
 
-        // If using Extrapolate::Enable,
-        // check that each grid dimension has at least two elements
-        if matches!(self.extrapolate, Extrapolate::Enable) && (x_grid_len < 2 || y_grid_len < 2) {
-            return Err(ValidateError::Other(
-                "at least 2 data points are required for extrapolation".into(),
-            ));
-        }
-
         // Check that grid points are monotonically increasing
-        if !self.x.windows(2).all(|w| w[0] <= w[1]) {
+        if !self.data.x.windows(2).all(|w| w[0] <= w[1]) {
             return Err(ValidateError::Monotonicity("x".into()));
         }
-        if !self.y.windows(2).all(|w| w[0] <= w[1]) {
+        if !self.data.y.windows(2).all(|w| w[0] <= w[1]) {
             return Err(ValidateError::Monotonicity("y".into()));
         }
 
         // Check that grid and values are compatible shapes
-        if x_grid_len != self.f_xy.len() {
+        if x_grid_len != self.data.f_xy.len() {
             return Err(ValidateError::IncompatibleShapes("x".into()));
         }
         if !self
+            .data
             .f_xy
             .iter()
             .map(Vec::len)
@@ -125,11 +152,49 @@ impl InterpMethods for Interp2D {
     }
 
     fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        match self.strategy {
-            Strategy::Linear => self.linear(point),
-            Strategy::Nearest => self.nearest(point),
-            _ => unreachable!(),
+        let point: &[f64; N] = point
+            .try_into()
+            .map_err(|_| InterpolateError::PointLength(N))?;
+        let grid = [&self.data.x, &self.data.y];
+        let grid_names = ["x", "y"];
+        let mut errors = Vec::new();
+        for dim in 0..N {
+            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap()).contains(&&point[dim]) {
+                match self.extrapolate {
+                    Extrapolate::Enable => {}
+                    Extrapolate::Fill(value) => return Ok(value),
+                    Extrapolate::Clamp => {
+                        let clamped_point = &[
+                            point[0]
+                                .clamp(*self.data.x.first().unwrap(), *self.data.x.last().unwrap()),
+                            point[1]
+                                .clamp(*self.data.y.first().unwrap(), *self.data.y.last().unwrap()),
+                        ];
+                        return self.strategy.interpolate(&self.data, clamped_point);
+                    }
+                    Extrapolate::Error => {
+                        errors.push(format!(
+                            "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
+                            point[dim], grid_names[dim], grid[dim],
+                        ));
+                    }
+                };
+            }
         }
+        if !errors.is_empty() {
+            return Err(InterpolateError::ExtrapolateError(errors.join("")));
+        }
+        self.strategy.interpolate(&self.data, point)
+    }
+
+    fn extrapolate(&self) -> Option<Extrapolate> {
+        Some(self.extrapolate)
+    }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+        self.check_extrapolate(extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
     }
 }
 
@@ -142,11 +207,11 @@ mod tests {
         let x = vec![0.05, 0.10, 0.15];
         let y = vec![0.10, 0.20, 0.30];
         let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             x.clone(),
             y.clone(),
             f_xy.clone(),
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -162,11 +227,11 @@ mod tests {
 
     #[test]
     fn test_linear_offset() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0., 1.],
             vec![0., 1.],
             vec![vec![0., 1.], vec![2., 3.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -178,11 +243,11 @@ mod tests {
 
     #[test]
     fn test_linear_extrapolation() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.05, 0.10, 0.15],
             vec![0.10, 0.20, 0.30],
             vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Enable,
         )
         .unwrap();
@@ -216,11 +281,11 @@ mod tests {
         let x = vec![0.05, 0.10, 0.15];
         let y = vec![0.10, 0.20, 0.30];
         let f_xy = vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]];
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             x.clone(),
             y.clone(),
             f_xy.clone(),
-            Strategy::Nearest,
+            Nearest,
             Extrapolate::Error,
         )
         .unwrap();
@@ -246,22 +311,22 @@ mod tests {
     fn test_extrapolate_inputs() {
         // Extrapolate::Extrapolate
         assert!(matches!(
-            Interpolator::new_2d(
+            Interp2D::new(
                 vec![0.1, 1.1],
                 vec![0.2, 1.2],
                 vec![vec![0., 1.], vec![2., 3.]],
-                Strategy::Nearest,
+                Nearest,
                 Extrapolate::Enable,
             )
             .unwrap_err(),
             ValidateError::ExtrapolateSelection(_)
         ));
         // Extrapolate::Error
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Error,
         )
         .unwrap();
@@ -277,11 +342,11 @@ mod tests {
 
     #[test]
     fn test_extrapolate_fill_value() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
@@ -294,12 +359,27 @@ mod tests {
     }
 
     #[test]
+    fn test_dyn_strategy() {
+        let mut interp = Interp2D::new(
+            vec![0., 1.],
+            vec![0., 1.],
+            vec![vec![0., 1.], vec![2., 3.]],
+            Box::new(Linear) as Box<dyn Strategy2D>,
+            Extrapolate::Error,
+        )
+        .unwrap();
+        assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.4);
+        interp.set_strategy(Box::new(Nearest)).unwrap();
+        assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.);
+    }
+
+    #[test]
     fn test_extrapolate_clamp() {
-        let interp = Interpolator::new_2d(
+        let interp = Interp2D::new(
             vec![0.1, 1.1],
             vec![0.2, 1.2],
             vec![vec![0., 1.], vec![2., 3.]],
-            Strategy::Linear,
+            Linear,
             Extrapolate::Clamp,
         )
         .unwrap();
