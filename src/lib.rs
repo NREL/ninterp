@@ -113,6 +113,9 @@ pub mod interpolator {
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
+#[cfg(feature = "serde")]
+pub(crate) use serde::{Deserialize, Serialize};
+
 pub trait Interpolator {
     /// Interpolator dimensionality
     fn ndim(&self) -> usize;
