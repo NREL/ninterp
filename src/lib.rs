@@ -7,14 +7,45 @@
 //! A variety of interpolation strategies are implemented and exposed in the `prelude` module.
 //! Custom interpolation strategies can be defined in downstream crates.
 //!
+//! ```text
+//! cargo add ninterp
+//! ```
 //!
-//! # Feature Flags
+//! #### Feature Flags
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
+//!   ```text
+//!   cargo add ninterp --features serde
+//!   ```
 //!
-//! # Getting Started
-//! A prelude module has been defined: `use ninterp::prelude::*;`
+//! # Examples
+//! See examples in `new` method documentation:
+//! - [`Interp0D::new`](`interpolator::Interp0D::new`)
+//! - [`Interp1D::new`](`interpolator::Interp1D::new`)
+//! - [`Interp2D::new`](`interpolator::Interp2D::new`)
+//! - [`Interp3D::new`](`interpolator::Interp3D::new`)
+//! - [`InterpND::new`](`interpolator::InterpND::new`)
+//! 
+//! Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
+//! directory for advanced examples:
+//! - Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
 //!
-//! This exposes a variety of interpolators:
+//!   By default, construction of interpolators uses *static dispatch*,
+//!   meaning strategy concrete types are determined at compilation.
+//!   This gives increased performance at the cost of runtime flexibility.
+//!   To allow swapping strategies at runtime,
+//!   use *dynamic dispatch* by providing a trait object `Box<dyn Strategy1D>`/etc. to the `new` method.
+//!
+//! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/dynamic_interpolator.rs)
+//!
+//! - Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/custom_strategy.rs)
+//! 
+//! # Overview
+//! A prelude module has been defined: 
+//! ```rust,text
+//! use ninterp::prelude::*;
+//! ```
+//!
+//! This exposes all strategies and a variety of interpolators:
 //! - [`Interp1D`](`interpolator::Interp1D`)
 //! - [`Interp2D`](`interpolator::Interp2D`)
 //! - [`Interp3D`](`interpolator::Interp3D`)
@@ -25,23 +56,28 @@
 //! This is useful when working with a `Box<dyn Interpolator>`
 //!
 //! Instantiation is done by calling an interpolator's `new` method.
-//! For dimensionality N ≥ 1, this executes a validation step, preventing runtime panics.
-//! When manually editing interpolator data, call [`Interpolator::validate`] to rerun these checks.
+//! For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
+//! After editing interpolator data,
+//! call [`Interpolator::validate`]
+//! to rerun these checks.
 //! 
 //! To change the extrapolation setting, call `set_extrapolate`.
 //!
-//! To change the interpolation strategy, supply a `Box<dyn Strategy1D>`/etc. in the new method, and call `set_strategy`.
+//! To change the interpolation strategy,
+//! supply a `Box<dyn Strategy1D>`/etc. in the new method,
+//! and call `set_strategy`.
 //!
 //! ## Strategies
 //! An interpolation strategy (e.g. [`Linear`], [`Nearest`], [`LeftNearest`], [`RightNearest`]) must be specified.
 //! Not all interpolation strategies are implemented for every dimensionality.
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
-//! Custom strategies can be defined. See [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/custom_strategy.rs)
+//! Custom strategies can be defined. See
+//! [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/custom_strategy.rs)
 //! for an example.
 //!
 //! ## Extrapolation
-//! An [`Extrapolate`] setting must be specified.
+//! An [`Extrapolate`] setting must be provided in the `new` method.
 //! This controls what happens when a point is beyond the range of supplied coordinates.
 //! The following setttings are applicable for all interpolators:
 //! - [`Extrapolate::Fill(f64)`](`Extrapolate::Fill`)
@@ -53,30 +89,10 @@
 //! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
 //!
 //! ## Interpolation
-//! Interpolation is executed by calling [`interpolate`](`Interpolator::interpolate`).
+//! Interpolation is executed by calling [`Interpolator::interpolate`].
+//! 
 //! The length of the interpolant point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
-//!
-//! ## Examples
-//! See `new` method documentation:
-//! - [`Interp0D::new`](`interpolator::Interp0D::new`)
-//! - [`Interp1D::new`](`interpolator::Interp1D::new`)
-//! - [`Interp2D::new`](`interpolator::Interp2D::new`)
-//! - [`Interp3D::new`](`interpolator::Interp3D::new`)
-//! - [`InterpND::new`](`interpolator::InterpND::new`)
-//!
-//! See the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
-//! directory for advanced examples.
-//!
-//! # Strategy dynamic dispatch
-//! By default, construction of interpolators uses *static dispatch*,
-//! meaning strategy concrete types are determined at compilation.
-//! This gives increased performance at the cost of runtime flexibility.
-//! To enable swapping strategies after instantiation,
-//! use *dynamic dispatch* by providing a trait object `Box<dyn Trait>` to the constructor.
-//!
-//! See [`examples/dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
-//! for an example.
 
 /// The `prelude` module exposes:
 /// - All interpolator structs:
