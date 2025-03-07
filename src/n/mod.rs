@@ -32,9 +32,9 @@ impl<S: StrategyND> InterpND<S> {
     /// Applicable interpolation strategies:
     /// - [`Linear`]
     /// - [`Nearest`]
-    /// 
+    ///
     /// [`Extrapolate::Enable`] is valid for [`Linear`]
-    /// 
+    ///
     /// # Example:
     /// ```
     /// use ninterp::prelude::*;
@@ -81,11 +81,6 @@ impl<S: StrategyND> InterpND<S> {
         };
         interpolator.validate()?;
         Ok(interpolator)
-    }
-
-    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
-        self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
     }
 
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -188,6 +183,13 @@ impl<S: StrategyND> Interpolator for InterpND<S> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
+    }
+}
+
+impl InterpND<Box<dyn StrategyND>> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND>) -> Result<(), ValidateError> {
+        self.strategy = strategy;
+        self.check_extrapolate(self.extrapolate)
     }
 }
 

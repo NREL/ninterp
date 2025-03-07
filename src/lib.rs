@@ -27,7 +27,10 @@
 //! Instantiation is done by calling an interpolator's `new` method.
 //! For dimensionality N ≥ 1, this executes a validation step, preventing runtime panics.
 //! When manually editing interpolator data, call [`Interpolator::validate`] to rerun these checks.
-//! Utilize `set_strategy` and `set_extrapolate` methods to change the strategy and extrapolate setting.
+//! 
+//! To change the extrapolation setting, call `set_extrapolate`.
+//!
+//! To change the interpolation strategy, supply a `Box<dyn Strategy1D>`/etc. in the new method, and call `set_strategy`.
 //!
 //! ## Strategies
 //! An interpolation strategy (e.g. [`Linear`], [`Nearest`], [`LeftNearest`], [`RightNearest`]) must be specified.

@@ -36,7 +36,7 @@ impl<S: Strategy3D> Interp3D<S> {
     /// - [`Nearest`]
     ///
     /// [`Extrapolate::Enable`] is valid for [`Linear`]
-    /// 
+    ///
     /// # Example:
     /// ```
     /// use ninterp::prelude::*;
@@ -85,11 +85,6 @@ impl<S: Strategy3D> Interp3D<S> {
         };
         interpolator.validate()?;
         Ok(interpolator)
-    }
-
-    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
-        self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
     }
 
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -217,6 +212,13 @@ impl<S: Strategy3D> Interpolator for Interp3D<S> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
+    }
+}
+
+impl Interp3D<Box<dyn Strategy3D>> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy3D>) -> Result<(), ValidateError> {
+        self.strategy = strategy;
+        self.check_extrapolate(self.extrapolate)
     }
 }
 

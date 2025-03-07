@@ -33,7 +33,7 @@ impl<S: Strategy2D> Interp2D<S> {
     /// Applicable interpolation strategies:
     /// - [`Linear`]
     /// - [`Nearest`]
-    /// 
+    ///
     /// [`Extrapolate::Enable`] is valid for [`Linear`]
     ///
     /// # Example:
@@ -75,11 +75,6 @@ impl<S: Strategy2D> Interp2D<S> {
         };
         interpolator.validate()?;
         Ok(interpolator)
-    }
-
-    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
-        self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
     }
 
     pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
@@ -195,6 +190,13 @@ impl<S: Strategy2D> Interpolator for Interp2D<S> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
+    }
+}
+
+impl Interp2D<Box<dyn Strategy2D>> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy2D>) -> Result<(), ValidateError> {
+        self.strategy = strategy;
+        self.check_extrapolate(self.extrapolate)
     }
 }
 

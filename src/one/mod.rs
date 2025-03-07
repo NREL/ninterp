@@ -71,11 +71,6 @@ impl<S: Strategy1D> Interp1D<S> {
         Ok(interpolator)
     }
 
-    pub fn set_strategy(&mut self, strategy: S) -> Result<(), ValidateError> {
-        self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
-    }
-
     fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
@@ -154,6 +149,13 @@ impl<S: Strategy1D> Interpolator for Interp1D<S> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
+    }
+}
+
+impl Interp1D<Box<dyn Strategy1D>> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy1D>) -> Result<(), ValidateError> {
+        self.strategy = strategy;
+        self.check_extrapolate(self.extrapolate)
     }
 }
 
