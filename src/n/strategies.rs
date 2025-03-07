@@ -14,7 +14,7 @@ fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
 }
 
 impl StrategyND for Linear {
-    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, data: &InterpDataND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = data.values.ndim();
 
@@ -57,7 +57,7 @@ impl StrategyND for Linear {
             } else if &point[dim] > grid[dim].last().unwrap() {
                 grid[dim].len() - 2
             } else {
-                find_nearest_index(&grid[dim], point[dim])
+                find_nearest_index(grid[dim].view(), point[dim])
             };
             let interp_diff = (point[dim] - grid[dim][lower_idx])
                 / (grid[dim][lower_idx + 1] - grid[dim][lower_idx]);
@@ -114,7 +114,7 @@ impl StrategyND for Linear {
 }
 
 impl StrategyND for Nearest {
-    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, data: &InterpDataND, point: &[f64]) -> Result<f64, InterpolateError> {
         // Dimensionality
         let mut n = data.values.ndim();
 
@@ -147,7 +147,7 @@ impl StrategyND for Nearest {
         let mut lower_idxs = Vec::with_capacity(n);
         let mut interp_diffs = Vec::with_capacity(n);
         for dim in 0..n {
-            let lower_idx = find_nearest_index(&grid[dim], point[dim]);
+            let lower_idx = find_nearest_index(grid[dim].view(), point[dim]);
             let interp_diff = (point[dim] - grid[dim][lower_idx])
                 / (grid[dim][lower_idx + 1] - grid[dim][lower_idx]);
             lower_idxs.push(lower_idx);

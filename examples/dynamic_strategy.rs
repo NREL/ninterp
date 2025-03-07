@@ -1,11 +1,13 @@
+use ndarray::prelude::*;
+
 use ninterp::prelude::*;
 use ninterp::strategy::Strategy1D;
 
 fn main() {
     // Create mutable interpolator
     let mut interp = Interp1D::new(
-        vec![0., 1., 2.],
-        vec![0., 3., 6.],
+        array![0., 1., 2.],
+        array![0., 3., 6.],
         // Provide the strategy as a trait object
         Box::new(Linear) as Box<dyn Strategy1D>,
         Extrapolate::Error,

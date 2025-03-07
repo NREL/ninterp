@@ -24,7 +24,7 @@
 //! - [`Interp2D::new`](`interpolator::Interp2D::new`)
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
-//! 
+//!
 //! Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
 //! directory for advanced examples:
 //! - Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
@@ -38,9 +38,9 @@
 //! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/dynamic_interpolator.rs)
 //!
 //! - Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/custom_strategy.rs)
-//! 
+//!
 //! # Overview
-//! A prelude module has been defined: 
+//! A prelude module has been defined:
 //! ```rust,text
 //! use ninterp::prelude::*;
 //! ```
@@ -60,7 +60,7 @@
 //! After editing interpolator data,
 //! call [`Interpolator::validate`]
 //! to rerun these checks.
-//! 
+//!
 //! To change the extrapolation setting, call `set_extrapolate`.
 //!
 //! To change the interpolation strategy,
@@ -90,7 +90,7 @@
 //!
 //! ## Interpolation
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
-//! 
+//!
 //! The length of the interpolant point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
 
@@ -115,6 +115,7 @@ pub mod prelude {
     pub use crate::Interpolator;
 }
 
+pub mod data;
 pub mod error;
 pub mod strategy;
 
@@ -132,8 +133,12 @@ pub mod interpolator {
     pub use crate::zero::Interp0D;
 }
 
+pub(crate) use data::*;
 pub(crate) use error::*;
 pub(crate) use strategy::*;
+
+pub(crate) use ndarray::prelude::*;
+pub(crate) use ndarray::Ix;
 
 #[cfg(feature = "serde")]
 pub(crate) use serde::{Deserialize, Serialize};

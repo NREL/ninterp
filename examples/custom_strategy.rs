@@ -1,3 +1,5 @@
+use ndarray::prelude::*;
+
 use ninterp::prelude::*;
 use ninterp::strategy::*;
 
@@ -9,7 +11,7 @@ struct CustomStrategy;
 impl Strategy2D for CustomStrategy {
     fn interpolate(
         &self,
-        _data: &Data2D,
+        _data: &InterpData2D,
         point: &[f64; 2],
     ) -> Result<f64, ninterp::error::InterpolateError> {
         // Dummy interpolation strategy, product of all point components
@@ -29,9 +31,9 @@ impl Strategy2D for CustomStrategy {
 
 fn main() {
     let interp = Interp2D::new(
-        vec![0., 2., 4.],
-        vec![0., 4., 8.],
-        vec![vec![0., 0., 0.], vec![0., 0., 0.], vec![0., 0., 0.]],
+        array![0., 2., 4.],
+        array![0., 4., 8.],
+        array![[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
         CustomStrategy,
         Extrapolate::Error,
     )

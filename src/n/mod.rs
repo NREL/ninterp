@@ -6,21 +6,12 @@ use ndarray::prelude::*;
 
 mod strategies;
 
-/// Data for [`InterpND`]
-#[non_exhaustive]
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct DataND {
-    pub grid: Vec<Vec<f64>>,
-    pub values: ArrayD<f64>,
-}
-
 /// N-D interpolator
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct InterpND<S: StrategyND> {
-    pub data: DataND,
+    pub data: InterpDataND,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate,
@@ -37,17 +28,18 @@ impl<S: StrategyND> InterpND<S> {
     ///
     /// # Example:
     /// ```
+    /// use ndarray::prelude::*;
     /// use ninterp::prelude::*;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     /// let interp = InterpND::new(
     ///     // grid
     ///     vec![
-    ///         vec![1., 2.], // x0, x1
-    ///         vec![1., 2.], // y0, y1
-    ///         vec![1., 2.], // z0, z1
+    ///         array![1., 2.], // x0, x1
+    ///         array![1., 2.], // y0, y1
+    ///         array![1., 2.], // z0, z1
     ///     ],
     ///     // values
-    ///     ndarray::array![
+    ///     array![
     ///         [
     ///             [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
     ///             [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
@@ -69,13 +61,13 @@ impl<S: StrategyND> InterpND<S> {
     /// ));
     /// ```
     pub fn new(
-        grid: Vec<Vec<f64>>,
+        grid: Vec<Array1<f64>>,
         values: ArrayD<f64>,
         strategy: S,
         extrapolate: Extrapolate,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
-            data: DataND { grid, values },
+            data: InterpDataND::new(grid, values)?,
             strategy,
             extrapolate,
         };
@@ -103,34 +95,12 @@ impl<S: StrategyND> InterpND<S> {
 
 impl<S: StrategyND> Interpolator for InterpND<S> {
     fn ndim(&self) -> usize {
-        if self.data.values.len() == 1 {
-            0
-        } else {
-            self.data.values.ndim()
-        }
+        self.data.ndim()
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
         self.check_extrapolate(self.extrapolate)?;
-        for i in 0..self.ndim() {
-            let i_grid_len = self.data.grid[i].len();
-
-            // Check that each grid dimension has elements
-            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
-            if i_grid_len == 0 {
-                return Err(ValidateError::EmptyGrid(i.to_string()));
-            }
-
-            // Check that grid points are monotonically increasing
-            if !self.data.grid[i].windows(2).all(|w| w[0] <= w[1]) {
-                return Err(ValidateError::Monotonicity(i.to_string()));
-            }
-
-            // Check that grid and values are compatible shapes
-            if i_grid_len != self.data.values.shape()[i] {
-                return Err(ValidateError::IncompatibleShapes(i.to_string()));
-            }
-        }
+        self.data.validate()?;
         Ok(())
     }
 
@@ -200,9 +170,9 @@ mod tests {
     #[test]
     fn test_linear() {
         let grid = vec![
-            vec![0.05, 0.10, 0.15],
-            vec![0.10, 0.20, 0.30],
-            vec![0.20, 0.40, 0.60],
+            array![0.05, 0.10, 0.15],
+            array![0.10, 0.20, 0.30],
+            array![0.20, 0.40, 0.60],
         ];
         let values = array![
             [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
@@ -256,7 +226,7 @@ mod tests {
     #[test]
     fn test_linear_offset() {
         let interp = InterpND::new(
-            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            vec![array![0., 1.], array![0., 1.], array![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
             Extrapolate::Error,
@@ -271,15 +241,15 @@ mod tests {
     #[test]
     fn test_linear_extrapolation_2d() {
         let interp_2d = crate::interpolator::Interp2D::new(
-            vec![0.05, 0.10, 0.15],
-            vec![0.10, 0.20, 0.30],
-            vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
+            array![0.05, 0.10, 0.15],
+            array![0.10, 0.20, 0.30],
+            array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
             Linear,
             Extrapolate::Enable,
         )
         .unwrap();
         let interp_nd = InterpND::new(
-            vec![vec![0.05, 0.10, 0.15], vec![0.10, 0.20, 0.30]],
+            vec![array![0.05, 0.10, 0.15], array![0.10, 0.20, 0.30]],
             array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]].into_dyn(),
             Linear,
             Extrapolate::Enable,
@@ -326,17 +296,13 @@ mod tests {
     #[test]
     fn test_linear_extrapolate_3d() {
         let interp_3d = crate::interpolator::Interp3D::new(
-            vec![0.05, 0.10, 0.15],
-            vec![0.10, 0.20, 0.30],
-            vec![0.20, 0.40, 0.60],
-            vec![
-                vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
-                vec![vec![9., 10., 11.], vec![12., 13., 14.], vec![15., 16., 17.]],
-                vec![
-                    vec![18., 19., 20.],
-                    vec![21., 22., 23.],
-                    vec![24., 25., 26.],
-                ],
+            array![0.05, 0.10, 0.15],
+            array![0.10, 0.20, 0.30],
+            array![0.20, 0.40, 0.60],
+            array![
+                [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
+                [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
+                [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
             ],
             Linear,
             Extrapolate::Enable,
@@ -344,9 +310,9 @@ mod tests {
         .unwrap();
         let interp_nd = InterpND::new(
             vec![
-                vec![0.05, 0.10, 0.15],
-                vec![0.10, 0.20, 0.30],
-                vec![0.20, 0.40, 0.60],
+                array![0.05, 0.10, 0.15],
+                array![0.10, 0.20, 0.30],
+                array![0.20, 0.40, 0.60],
             ],
             array![
                 [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
@@ -434,7 +400,7 @@ mod tests {
 
     #[test]
     fn test_nearest() {
-        let grid = vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]];
+        let grid = vec![array![0., 1.], array![0., 1.], array![0., 1.]];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
         let interp =
             InterpND::new(grid.clone(), values.clone(), Nearest, Extrapolate::Error).unwrap();
@@ -462,7 +428,7 @@ mod tests {
         // Extrapolate::Extrapolate
         assert!(matches!(
             InterpND::new(
-                vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+                vec![array![0., 1.], array![0., 1.], array![0., 1.]],
                 array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
                 Nearest,
                 Extrapolate::Enable,
@@ -472,7 +438,7 @@ mod tests {
         ));
         // Extrapolate::Error
         let interp = InterpND::new(
-            vec![vec![0., 1.], vec![0., 1.], vec![0., 1.]],
+            vec![array![0., 1.], array![0., 1.], array![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
             Extrapolate::Error,
@@ -491,7 +457,7 @@ mod tests {
     #[test]
     fn test_extrapolate_fill_value() {
         let interp = InterpND::new(
-            vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
+            vec![array![0.1, 1.1], array![0.2, 1.2], array![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
             Extrapolate::Fill(f64::NAN),
@@ -510,7 +476,7 @@ mod tests {
     #[test]
     fn test_extrapolate_clamp() {
         let interp = InterpND::new(
-            vec![vec![0.1, 1.1], vec![0.2, 1.2], vec![0.3, 1.3]],
+            vec![array![0.1, 1.1], array![0.2, 1.2], array![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
             Linear,
             Extrapolate::Clamp,

@@ -12,11 +12,11 @@ pub enum ValidateError {
     )]
     ExtrapolateSelection(crate::Extrapolate),
     #[error("supplied grid coordinates cannot be empty: dim {0}")]
-    EmptyGrid(String),
+    EmptyGrid(usize),
     #[error("supplied coordinates must be sorted and non-repeating: dim {0}")]
-    Monotonicity(String),
+    Monotonicity(usize),
     #[error("supplied grid and values are not compatible shapes: dim {0}")]
-    IncompatibleShapes(String),
+    IncompatibleShapes(usize),
     #[error("{0}")]
     Other(String),
 }
