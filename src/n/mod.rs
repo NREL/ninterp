@@ -6,19 +6,21 @@ use ndarray::prelude::*;
 
 mod strategies;
 /// Interpolator data where N is determined at runtime
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpDataND<T>
+pub struct InterpDataND<D>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    pub grid: Vec<Array1<T>>,
-    pub values: ArrayD<T>,
+    pub grid: Vec<ArrayBase<D, Ix1>>,
+    pub values: ArrayBase<D, IxDyn>,
 }
-validate_impl!(InterpDataND<T>);
-impl<T> InterpDataND<T>
+validate_impl!(InterpDataND<D>);
+impl<D> InterpDataND<D>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
@@ -27,7 +29,10 @@ where
             self.values.ndim()
         }
     }
-    pub fn new(grid: Vec<Array1<T>>, values: ArrayD<T>) -> Result<Self, ValidateError> {
+    pub fn new(
+        grid: Vec<ArrayBase<D, Ix1>>,
+        values: ArrayBase<D, IxDyn>,
+    ) -> Result<Self, ValidateError> {
         let data = Self { grid, values };
         data.validate()?;
         Ok(data)
@@ -36,23 +41,25 @@ where
 
 /// N-D interpolator
 #[non_exhaustive]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpND<T, S>
+pub struct InterpND<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<D>,
 {
-    pub data: InterpDataND<T>,
+    pub data: InterpDataND<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate<T>,
+    pub extrapolate: Extrapolate<D::Elem>,
 }
 
-impl<T, S> InterpND<T, S>
+impl<D, S> InterpND<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<D>,
 {
     /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
@@ -97,10 +104,10 @@ where
     /// ));
     /// ```
     pub fn new(
-        grid: Vec<Array1<T>>,
-        values: ArrayD<T>,
+        grid: Vec<ArrayBase<D, Ix1>>,
+        values: ArrayBase<D, IxDyn>,
         strategy: S,
-        extrapolate: Extrapolate<T>,
+        extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
             data: InterpDataND::new(grid, values)?,
@@ -111,7 +118,7 @@ where
         Ok(interpolator)
     }
 
-    fn check_extrapolate(&self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
+    fn check_extrapolate(&self, extrapolate: &Extrapolate<D::Elem>) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
             return Err(ValidateError::ExtrapolateSelection(format!(
@@ -132,22 +139,23 @@ where
     }
 }
 
-impl<T, S> Interpolator<T> for InterpND<T, S>
+impl<D, S> Interpolator<D::Elem> for InterpND<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<D>,
 {
     fn ndim(&self) -> usize {
         self.data.ndim()
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
-        self.check_extrapolate(self.extrapolate)?;
+        self.check_extrapolate(&self.extrapolate)?;
         self.data.validate()?;
         Ok(())
     }
 
-    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
+    fn interpolate(&self, point: &[D::Elem]) -> Result<D::Elem, InterpolateError> {
         let n = self.ndim();
         if point.len() != n {
             return Err(InterpolateError::PointLength(n));
@@ -157,15 +165,15 @@ where
             if !(self.data.grid[dim].first().unwrap()..=self.data.grid[dim].last().unwrap())
                 .contains(&&point[dim])
             {
-                match self.extrapolate {
+                match &self.extrapolate {
                     Extrapolate::Enable => {}
-                    Extrapolate::Fill(value) => return Ok(value),
+                    Extrapolate::Fill(value) => return Ok(*value),
                     Extrapolate::Clamp => {
                         let clamped_point: Vec<_> = point
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
-                                *num::clamp(
+                                *clamp(
                                     pt,
                                     self.data.grid[dim].first().unwrap(),
                                     self.data.grid[dim].last().unwrap(),
@@ -189,24 +197,25 @@ where
         self.strategy.interpolate(&self.data, point)
     }
 
-    fn extrapolate(&self) -> Option<Extrapolate<T>> {
+    fn extrapolate(&self) -> Option<Extrapolate<D::Elem>> {
         Some(self.extrapolate)
     }
 
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
+        self.check_extrapolate(&extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 }
 
-impl<T> InterpND<T, Box<dyn StrategyND<T>>>
+impl<D> InterpND<D, Box<dyn StrategyND<D>>>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND<T>>) -> Result<(), ValidateError> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND<D>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
+        self.check_extrapolate(&self.extrapolate)
     }
 }
 

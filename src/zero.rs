@@ -28,7 +28,7 @@ where
 }
 impl<T> Interpolator<T> for Interp0D<T>
 where
-    T: Copy + Debug,
+    T: Num + PartialOrd + Copy + Debug,
 {
     /// Returns `0`
     fn ndim(&self) -> usize {

@@ -1,6 +1,8 @@
 use super::*;
 
 use itertools::Itertools;
+// TODO: any way to remove `RawDataClone`?
+use ndarray::RawDataClone;
 
 pub fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
     if shape.is_empty() {
@@ -13,11 +15,17 @@ pub fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
         .collect()
 }
 
-impl<T> StrategyND<T> for Linear
+impl<D> StrategyND<D> for Linear
 where
-    T: Num + PartialOrd + Copy + Debug,
+    // TODO: any way to remove the `RawDataClone` bound?
+    D: Data + RawDataClone,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    fn interpolate(&self, data: &InterpDataND<T>, point: &[T]) -> Result<T, InterpolateError> {
+    fn interpolate(
+        &self,
+        data: &InterpDataND<D>,
+        point: &[D::Elem],
+    ) -> Result<D::Elem, InterpolateError> {
         // Dimensionality
         let mut n = data.values.ndim();
 
@@ -94,7 +102,7 @@ where
                 // This calculation happens 2^(n-1) times in the first iteration of the outer loop,
                 // 2^(n-2) times in the second iteration, etc.
                 intermediate_arr[next_idxs[i].as_slice()] =
-                    interp_vals[l] * (T::one() - diff) + interp_vals[u] * diff;
+                    interp_vals[l] * (D::Elem::one() - diff) + interp_vals[u] * diff;
             }
             index_permutations = next_idxs;
             interp_vals = intermediate_arr;
@@ -110,11 +118,17 @@ where
     }
 }
 
-impl<T> StrategyND<T> for Nearest
+impl<D> StrategyND<D> for Nearest
 where
-    T: Num + PartialOrd + Copy + Debug,
+    // TODO: any way to remove the `RawDataClone` bound?
+    D: Data + RawDataClone,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    fn interpolate(&self, data: &InterpDataND<T>, point: &[T]) -> Result<T, InterpolateError> {
+    fn interpolate(
+        &self,
+        data: &InterpDataND<D>,
+        point: &[D::Elem],
+    ) -> Result<D::Elem, InterpolateError> {
         // Dimensionality
         let mut n = data.values.ndim();
 
@@ -148,7 +162,8 @@ where
         let mut lower_closers = Vec::with_capacity(n);
         for dim in 0..n {
             let lower_idx = find_nearest_index(grid[dim].view(), point[dim]);
-            let lower_closer = point[dim] - grid[dim][lower_idx] < grid[dim][lower_idx + 1] - point[dim];
+            let lower_closer =
+                point[dim] - grid[dim][lower_idx] < grid[dim][lower_idx + 1] - point[dim];
             lower_idxs.push(lower_idx);
             lower_closers.push(lower_closer);
         }

@@ -7,9 +7,7 @@ use thiserror::Error;
 pub enum ValidateError {
     #[error("selected `Strategy` ({0}) is unimplemented/inapplicable for interpolator")]
     StrategySelection(&'static str),
-    #[error(
-        "selected `Extrapolate` variant ({0}) is unimplemented/inapplicable for interpolator"
-    )]
+    #[error("selected `Extrapolate` variant ({0}) is unimplemented/inapplicable for interpolator")]
     ExtrapolateSelection(String),
     #[error("supplied grid coordinates cannot be empty: dim {0}")]
     EmptyGrid(usize),

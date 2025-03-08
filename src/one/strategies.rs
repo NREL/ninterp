@@ -1,7 +1,15 @@
 use super::*;
 
-impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Linear {
-    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
+impl<D> Strategy1D<D> for Linear
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
@@ -19,7 +27,7 @@ impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Linear {
         };
         let x_u = x_l + 1;
         let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
-        Ok(data.values[x_l] * (T::one() - x_diff) + data.values[x_u] * x_diff)
+        Ok(data.values[x_l] * (D::Elem::one() - x_diff) + data.values[x_u] * x_diff)
     }
 
     /// Returns `true`
@@ -28,8 +36,16 @@ impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Linear {
     }
 }
 
-impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Nearest {
-    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
+impl<D> Strategy1D<D> for Nearest
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
@@ -49,8 +65,16 @@ impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Nearest {
     }
 }
 
-impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for LeftNearest {
-    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
+impl<D> Strategy1D<D> for LeftNearest
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
@@ -64,11 +88,16 @@ impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for LeftNearest {
     }
 }
 
-impl<T> Strategy1D<T> for RightNearest
+impl<D> Strategy1D<D> for RightNearest
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }

@@ -8,20 +8,25 @@ const N: usize = 1;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpData1D<T> {
-    pub grid: [Array1<T>; N],
-    pub values: Array1<T>,
-}
-validate_impl!(InterpData1D<T>);
-impl<T> InterpData1D<T>
+pub struct InterpData1D<D>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    pub grid: [ArrayBase<D, Ix1>; N],
+    pub values: ArrayBase<D, Ix1>,
+}
+validate_impl!(InterpData1D<D>);
+impl<D> InterpData1D<D>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Returns `1`
     pub const fn ndim(&self) -> usize {
         N
     }
-    pub fn new(x: Array1<T>, f_x: Array1<T>) -> Result<Self, ValidateError> {
+    pub fn new(x: ArrayBase<D, Ix1>, f_x: ArrayBase<D, Ix1>) -> Result<Self, ValidateError> {
         let data = Self {
             grid: [x],
             values: f_x,
@@ -34,21 +39,23 @@ where
 /// 1-D interpolator
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp1D<T, S>
+pub struct Interp1D<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy1D<D>,
 {
-    pub data: InterpData1D<T>,
+    pub data: InterpData1D<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate<T>,
+    pub extrapolate: Extrapolate<D::Elem>,
 }
 
-impl<T, S> Interp1D<T, S>
+impl<D, S> Interp1D<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy1D<D>,
 {
     /// Instantiate one-dimensional interpolator.
     ///
@@ -81,10 +88,10 @@ where
     /// ); // point is restricted to within grid bounds
     /// ```
     pub fn new(
-        x: Array1<T>,
-        f_x: Array1<T>,
+        x: ArrayBase<D, Ix1>,
+        f_x: ArrayBase<D, Ix1>,
         strategy: S,
-        extrapolate: Extrapolate<T>,
+        extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
             data: InterpData1D::new(x, f_x)?,
@@ -95,7 +102,7 @@ where
         Ok(interpolator)
     }
 
-    fn check_extrapolate(&self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
+    fn check_extrapolate(&self, extrapolate: &Extrapolate<D::Elem>) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
             return Err(ValidateError::ExtrapolateSelection(format!(
@@ -114,10 +121,11 @@ where
     }
 }
 
-impl<T, S> Interpolator<T> for Interp1D<T, S>
+impl<D, S> Interpolator<D::Elem> for Interp1D<D, S>
 where
-    T: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<T>,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy1D<D>,
 {
     /// Returns `1`
     fn ndim(&self) -> usize {
@@ -125,13 +133,13 @@ where
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
-        self.check_extrapolate(self.extrapolate)?;
+        self.check_extrapolate(&self.extrapolate)?;
         self.data.validate()?;
         Ok(())
     }
 
-    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
-        let point: &[T; N] = point
+    fn interpolate(&self, point: &[D::Elem]) -> Result<D::Elem, InterpolateError> {
+        let point: &[D::Elem; N] = point
             .try_into()
             .map_err(|_| InterpolateError::PointLength(N))?;
         if !(self.data.grid[0].first().unwrap()..=self.data.grid[0].last().unwrap())
@@ -141,7 +149,7 @@ where
                 Extrapolate::Enable => {}
                 Extrapolate::Fill(value) => return Ok(value),
                 Extrapolate::Clamp => {
-                    let clamped_point = &[num::clamp(
+                    let clamped_point = &[clamp(
                         point[0],
                         *self.data.grid[0].first().unwrap(),
                         *self.data.grid[0].last().unwrap(),
@@ -150,7 +158,7 @@ where
                 }
                 Extrapolate::Error => {
                     return Err(InterpolateError::ExtrapolateError(format!(
-                        "\n    point[0] = {:?} is out of bounds for x-grid = {:?}",
+                        "\n    point[0] = {:?} is out of bounds for grid dim 0 = {:?}",
                         point[0], self.data.grid[0]
                     )))
                 }
@@ -159,24 +167,25 @@ where
         self.strategy.interpolate(&self.data, point)
     }
 
-    fn extrapolate(&self) -> Option<Extrapolate<T>> {
+    fn extrapolate(&self) -> Option<Extrapolate<D::Elem>> {
         Some(self.extrapolate)
     }
 
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
+        self.check_extrapolate(&extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 }
 
-impl<T> Interp1D<T, Box<dyn Strategy1D<T>>>
+impl<D> Interp1D<D, Box<dyn Strategy1D<D>>>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy1D<T>>) -> Result<(), ValidateError> {
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy1D<D>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
+        self.check_extrapolate(&self.extrapolate)
     }
 }
 

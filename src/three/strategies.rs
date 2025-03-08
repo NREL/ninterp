@@ -1,10 +1,15 @@
 use super::*;
 
-impl<T> Strategy3D<T> for Linear
+impl<D> Strategy3D<D> for Linear
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    fn interpolate(&self, data: &InterpData3D<T>, point: &[T; 3]) -> Result<T, InterpolateError> {
+    fn interpolate(
+        &self,
+        data: &InterpData3D<D>,
+        point: &[D::Elem; 3],
+    ) -> Result<D::Elem, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
@@ -34,19 +39,19 @@ where
         let z_u = z_l + 1;
         let z_diff = (point[2] - data.grid[2][z_l]) / (data.grid[2][z_u] - data.grid[2][z_l]);
         // interpolate in the x-direction
-        let f00 = data.values[[x_l, y_l, z_l]] * (T::one() - x_diff)
+        let f00 = data.values[[x_l, y_l, z_l]] * (D::Elem::one() - x_diff)
             + data.values[[x_u, y_l, z_l]] * x_diff;
-        let f01 = data.values[[x_l, y_l, z_u]] * (T::one() - x_diff)
+        let f01 = data.values[[x_l, y_l, z_u]] * (D::Elem::one() - x_diff)
             + data.values[[x_u, y_l, z_u]] * x_diff;
-        let f10 = data.values[[x_l, y_u, z_l]] * (T::one() - x_diff)
+        let f10 = data.values[[x_l, y_u, z_l]] * (D::Elem::one() - x_diff)
             + data.values[[x_u, y_u, z_l]] * x_diff;
-        let f11 = data.values[[x_l, y_u, z_u]] * (T::one() - x_diff)
+        let f11 = data.values[[x_l, y_u, z_u]] * (D::Elem::one() - x_diff)
             + data.values[[x_u, y_u, z_u]] * x_diff;
         // interpolate in the y-direction
-        let f0 = f00 * (T::one() - y_diff) + f10 * y_diff;
-        let f1 = f01 * (T::one() - y_diff) + f11 * y_diff;
+        let f0 = f00 * (D::Elem::one() - y_diff) + f10 * y_diff;
+        let f1 = f01 * (D::Elem::one() - y_diff) + f11 * y_diff;
         // interpolate in the z-direction
-        Ok(f0 * (T::one() - z_diff) + f1 * z_diff)
+        Ok(f0 * (D::Elem::one() - z_diff) + f1 * z_diff)
     }
 
     /// Returns `true`
@@ -55,11 +60,16 @@ where
     }
 }
 
-impl<T> Strategy3D<T> for Nearest
+impl<D> Strategy3D<D> for Nearest
 where
-    T: Num + PartialOrd + Copy + Debug,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    fn interpolate(&self, data: &InterpData3D<T>, point: &[T; 3]) -> Result<T, InterpolateError> {
+    fn interpolate(
+        &self,
+        data: &InterpData3D<D>,
+        point: &[D::Elem; 3],
+    ) -> Result<D::Elem, InterpolateError> {
         // x
         let x_l = find_nearest_index(data.grid[0].view(), point[0]);
         let x_u = x_l + 1;

@@ -138,14 +138,20 @@ pub(crate) use strategy::*;
 pub(crate) use std::fmt::Debug;
 
 pub(crate) use ndarray::prelude::*;
-pub(crate) use ndarray::{Data, Ix, *};
+pub(crate) use ndarray::{Data, Ix};
 
-pub(crate) use num::traits::Num;
+pub(crate) use num::clamp;
+pub(crate) use num::traits::{Num, One};
 
 #[cfg(feature = "serde")]
 pub(crate) use serde::{Deserialize, Serialize};
 
-pub trait Interpolator<T: Copy + Debug> {
+/// An interpolator of data type `T`
+///
+/// This trait is dyn-compatible, meaning you can use:
+/// `Box<dyn Interpolator<_>>`
+/// and swap the contained interpolator at runtime.
+pub trait Interpolator<T> {
     /// Interpolator dimensionality
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
@@ -161,7 +167,7 @@ pub trait Interpolator<T: Copy + Debug> {
     fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError>;
 }
 
-impl<T: Num + PartialOrd + Copy + Debug> Interpolator<T> for Box<dyn Interpolator<T>> {
+impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
         (**self).ndim()
     }
@@ -199,7 +205,10 @@ pub enum Extrapolate<T> {
 
 macro_rules! validate_impl {
     ($($data:ty)*) => ($(
-        impl<T: Num + PartialOrd + Copy + Debug> $data {
+        impl<D> $data where
+            D: Data,
+            D::Elem: Num + PartialOrd + Copy + Debug
+        {
             pub fn validate(&self) -> Result<(), ValidateError> {
                 let n = self.ndim();
                 if (self.grid.len() != n) && !(n == 0 && self.grid.iter().all(|g| g.is_empty())) {
