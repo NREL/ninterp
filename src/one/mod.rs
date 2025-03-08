@@ -216,7 +216,7 @@ mod tests {
     fn test_linear() {
         let x = array![0., 1., 2., 3., 4.];
         let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp = Interp1D::new(x.clone(), f_x.clone(), Linear, Extrapolate::Error).unwrap();
+        let interp = Interp1D::new(x.view(), f_x.view(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -230,8 +230,7 @@ mod tests {
     fn test_left_nearest() {
         let x = array![0., 1., 2., 3., 4.];
         let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp =
-            Interp1D::new(x.clone(), f_x.clone(), LeftNearest, Extrapolate::Error).unwrap();
+        let interp = Interp1D::new(x.view(), f_x.view(), LeftNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -245,8 +244,7 @@ mod tests {
     fn test_right_nearest() {
         let x = array![0., 1., 2., 3., 4.];
         let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp =
-            Interp1D::new(x.clone(), f_x.clone(), RightNearest, Extrapolate::Error).unwrap();
+        let interp = Interp1D::new(x.view(), f_x.view(), RightNearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -260,7 +258,7 @@ mod tests {
     fn test_nearest() {
         let x = array![0., 1., 2., 3., 4.];
         let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-        let interp = Interp1D::new(x.clone(), f_x.clone(), Nearest, Extrapolate::Error).unwrap();
+        let interp = Interp1D::new(x.view(), f_x.view(), Nearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
         for (i, x_i) in x.iter().enumerate() {
             assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -344,10 +342,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(interp.interpolate(&[-1.]).unwrap(), 0.0);
-        assert_eq!(
-            interp.interpolate(&[-0.75]).unwrap(),
-            0.04999999999999999 // 0.05
-        );
+        assert_approx_eq!(interp.interpolate(&[-0.75]).unwrap(), 0.05);
         assert_eq!(interp.interpolate(&[5.]).unwrap(), 1.2);
     }
 }

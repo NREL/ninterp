@@ -244,58 +244,34 @@ mod tests {
 
     #[test]
     fn test_linear() {
-        let grid = vec![
-            array![0.05, 0.10, 0.15],
-            array![0.10, 0.20, 0.30],
-            array![0.20, 0.40, 0.60],
-        ];
+        let x = array![0.05, 0.10, 0.15];
+        let y = array![0.10, 0.20, 0.30];
+        let z = array![0.20, 0.40, 0.60];
+        let grid = vec![x.view(), y.view(), z.view()];
         let values = array![
             [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
             [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
         ]
         .into_dyn();
-        let interp =
-            InterpND::new(grid.clone(), values.clone(), Linear, Extrapolate::Error).unwrap();
+        let interp = InterpND::new(grid, values.view(), Linear, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
-        for i in 0..grid[0].len() {
-            for j in 0..grid[1].len() {
-                for k in 0..grid[2].len() {
+        for i in 0..x.len() {
+            for j in 0..y.len() {
+                for k in 0..z.len() {
                     assert_eq!(
-                        &interp
-                            .interpolate(&[grid[0][i], grid[1][j], grid[2][k]])
-                            .unwrap(),
+                        &interp.interpolate(&[x[i], y[j], z[k]]).unwrap(),
                         values.slice(s![i, j, k]).first().unwrap()
                     );
                 }
             }
         }
-        assert_eq!(
-            interp.interpolate(&[grid[0][0], grid[1][0], 0.3]).unwrap(),
-            0.4999999999999999 // 0.5
-        );
-        assert_eq!(
-            interp.interpolate(&[grid[0][0], 0.15, grid[2][0]]).unwrap(),
-            1.4999999999999996 // 1.5
-        );
-        assert_eq!(
-            interp.interpolate(&[grid[0][0], 0.15, 0.3]).unwrap(),
-            1.9999999999999996 // 2.0
-        );
-        assert_eq!(
-            interp
-                .interpolate(&[0.075, grid[1][0], grid[2][0]])
-                .unwrap(),
-            4.499999999999999 // 4.5
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, grid[1][0], 0.3]).unwrap(),
-            4.999999999999999 // 5.0
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, 0.15, grid[2][0]]).unwrap(),
-            5.999999999999998 // 6.0
-        );
+        assert_approx_eq!(interp.interpolate(&[x[0], y[0], 0.3]).unwrap(), 0.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, z[0]]).unwrap(), 1.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, 0.3]).unwrap(), 2.0);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], z[0]]).unwrap(), 4.5);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], 0.3]).unwrap(), 5.);
+        assert_approx_eq!(interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(), 6.);
     }
 
     #[test]
@@ -307,10 +283,7 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(
-            interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
-            3.1999999999999997
-        ) // 3.2
+        assert_approx_eq!(interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(), 3.2)
     }
 
     #[test]
@@ -475,18 +448,18 @@ mod tests {
 
     #[test]
     fn test_nearest() {
-        let grid = vec![array![0., 1.], array![0., 1.], array![0., 1.]];
+        let x = array![0., 1.];
+        let y = array![0., 1.];
+        let z = array![0., 1.];
+        let grid = vec![x.view(), y.view(), z.view()];
         let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
-        let interp =
-            InterpND::new(grid.clone(), values.clone(), Nearest, Extrapolate::Error).unwrap();
+        let interp = InterpND::new(grid, values.view(), Nearest, Extrapolate::Error).unwrap();
         // Check that interpolating at grid points just retrieves the value
-        for i in 0..grid[0].len() {
-            for j in 0..grid[1].len() {
-                for k in 0..grid[2].len() {
+        for i in 0..x.len() {
+            for j in 0..y.len() {
+                for k in 0..z.len() {
                     assert_eq!(
-                        &interp
-                            .interpolate(&[grid[0][i], grid[1][j], grid[2][k]])
-                            .unwrap(),
+                        &interp.interpolate(&[x[i], y[j], z[k]]).unwrap(),
                         values.slice(s![i, j, k]).first().unwrap()
                     );
                 }

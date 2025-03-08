@@ -1,7 +1,7 @@
 //! Benchmarks for 0/1/2/3/N-dimensional linear interpolation
 //! Run these with `cargo bench`
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use ndarray::prelude::*;
 use ninterp::prelude::*;
@@ -29,7 +29,7 @@ fn benchmark_0D_multi() {
         Extrapolate::Error,
     )
     .unwrap();
-    interp_0d_multi.interpolate(&[]).unwrap();
+    interp_0d_multi.interpolate(black_box(&[])).unwrap();
 }
 
 #[allow(non_snake_case)]
@@ -44,7 +44,7 @@ fn benchmark_1D() {
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.gen::<f64>() * 99.).collect();
     for point in points {
-        interp_1d.interpolate(&[point]).unwrap();
+        interp_1d.interpolate(black_box(&[point])).unwrap();
     }
 }
 
@@ -61,7 +61,7 @@ fn benchmark_1D_multi() {
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.gen::<f64>() * 99.).collect();
     for point in points {
-        interp_1d_multi.interpolate(&[point]).unwrap();
+        interp_1d_multi.interpolate(black_box(&[point])).unwrap();
     }
 }
 
@@ -73,9 +73,9 @@ fn benchmark_2D() {
     let values_data = Array2::random_using((100, 100), Uniform::new(0., 1.), &mut rng);
     // Create a 2-D interpolator with 100x100 data (10,000 points)
     let interp_2d = Interp2D::new(
-        grid_data.clone(),
-        grid_data.clone(),
-        values_data,
+        grid_data.view(),
+        grid_data.view(),
+        values_data.view(),
         Linear,
         Extrapolate::Error,
     )
@@ -85,7 +85,7 @@ fn benchmark_2D() {
         .map(|_| vec![rng.gen::<f64>() * 99., rng.gen::<f64>() * 99.])
         .collect();
     for point in points {
-        interp_2d.interpolate(&point).unwrap();
+        interp_2d.interpolate(black_box(&point)).unwrap();
     }
 }
 
@@ -98,8 +98,8 @@ fn benchmark_2D_multi() {
     let values_data = Array2::random_using((100, 100), Uniform::new(0., 1.), &mut rng).into_dyn();
     // Create an N-D interpolator with 100x100 data (10,000 points)
     let interp_2d_multi = InterpND::new(
-        vec![grid_data.clone(), grid_data.clone()],
-        values_data,
+        vec![grid_data.view(), grid_data.view()],
+        values_data.view(),
         Linear,
         Extrapolate::Error,
     )
@@ -109,7 +109,7 @@ fn benchmark_2D_multi() {
         .map(|_| vec![rng.gen::<f64>() * 99., rng.gen::<f64>() * 99.])
         .collect();
     for point in points {
-        interp_2d_multi.interpolate(&point).unwrap();
+        interp_2d_multi.interpolate(black_box(&point)).unwrap();
     }
 }
 
@@ -122,10 +122,10 @@ fn benchmark_3D() {
     let values_data = Array3::random_using((100, 100, 100), Uniform::new(0., 1.), &mut rng);
     // Create a 3-D interpolator with 100x100x100 data (1,000,000 points)
     let interp_3d = Interp3D::new(
-        grid_data.clone(),
-        grid_data.clone(),
-        grid_data.clone(),
-        values_data,
+        grid_data.view(),
+        grid_data.view(),
+        grid_data.view(),
+        values_data.view(),
         Linear,
         Extrapolate::Error,
     )
@@ -141,7 +141,7 @@ fn benchmark_3D() {
         })
         .collect();
     for point in points {
-        interp_3d.interpolate(&point).unwrap();
+        interp_3d.interpolate(black_box(&point)).unwrap();
     }
 }
 
@@ -155,8 +155,8 @@ fn benchmark_3D_multi() {
         Array3::random_using((100, 100, 100), Uniform::new(0., 1.), &mut rng).into_dyn();
     // Create an N-D interpolator with 100x100x100 data (1,000,000 points)
     let interp_3d_multi = InterpND::new(
-        vec![grid_data.clone(), grid_data.clone(), grid_data.clone()],
-        values_data,
+        vec![grid_data.view(), grid_data.view(), grid_data.view()],
+        values_data.view(),
         Linear,
         Extrapolate::Error,
     )
@@ -172,7 +172,7 @@ fn benchmark_3D_multi() {
         })
         .collect();
     for point in points {
-        interp_3d_multi.interpolate(&point).unwrap();
+        interp_3d_multi.interpolate(black_box(&point)).unwrap();
     }
 }
 

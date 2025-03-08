@@ -24,6 +24,7 @@ thiserror = "1.0.64"
 [dev-dependencies]
 criterion = "0.5.1"
 ndarray-rand = "0.15.0"
+approx = "0.5.1"
 
 [[bench]]
 name = "benchmark"

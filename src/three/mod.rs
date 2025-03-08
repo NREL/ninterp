@@ -249,10 +249,10 @@ mod tests {
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
         ];
         let interp = Interp3D::new(
-            x.clone(),
-            y.clone(),
-            z.clone(),
-            f_xyz.clone(),
+            x.view(),
+            y.view(),
+            z.view(),
+            f_xyz.view(),
             Linear,
             Extrapolate::Error,
         )
@@ -268,30 +268,12 @@ mod tests {
                 }
             }
         }
-        assert_eq!(
-            interp.interpolate(&[x[0], y[0], 0.3]).unwrap(),
-            0.4999999999999999 // 0.5
-        );
-        assert_eq!(
-            interp.interpolate(&[x[0], 0.15, z[0]]).unwrap(),
-            1.4999999999999996 // 1.5
-        );
-        assert_eq!(
-            interp.interpolate(&[x[0], 0.15, 0.3]).unwrap(),
-            1.9999999999999996 // 2.0
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, y[0], z[0]]).unwrap(),
-            4.499999999999999 // 4.5
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, y[0], 0.3]).unwrap(),
-            4.999999999999999 // 5.0
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(),
-            5.999999999999998 // 6.0
-        );
+        assert_approx_eq!(interp.interpolate(&[x[0], y[0], 0.3]).unwrap(), 0.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, z[0]]).unwrap(), 1.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, 0.3]).unwrap(), 2.);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], z[0]]).unwrap(), 4.5);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], 0.3]).unwrap(), 5.);
+        assert_approx_eq!(interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(), 6.);
     }
 
     #[test]
@@ -310,65 +292,29 @@ mod tests {
         )
         .unwrap();
         // below x, below y, below z
-        assert_eq!(interp.interpolate(&[0.01, 0.06, 0.17]).unwrap(), -8.55);
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.08, 0.19]).unwrap(),
-            -6.050000000000001
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.06, 0.17]).unwrap(), -8.55);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.08, 0.19]).unwrap(), -6.05);
         // below x, below y, above z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.06, 0.63]).unwrap(),
-            -6.249999999999999
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.08, 0.65]).unwrap(),
-            -3.749999999999999
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.06, 0.63]).unwrap(), -6.25);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.08, 0.65]).unwrap(), -3.75);
         // below x, above y, below z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.33, 0.17]).unwrap(),
-            -0.44999999999999785
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.36, 0.19]).unwrap(),
-            2.3500000000000014
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.33, 0.17]).unwrap(), -0.45);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.36, 0.19]).unwrap(), 2.35);
         // below x, above y, above z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.33, 0.63]).unwrap(),
-            1.8499999999999994
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.36, 0.65]).unwrap(),
-            4.650000000000003
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.33, 0.63]).unwrap(), 1.85);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.36, 0.65]).unwrap(), 4.65);
         // above x, below y, below z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.06, 0.17]).unwrap(),
-            20.250000000000004
-        );
-        assert_eq!(interp.interpolate(&[0.19, 0.08, 0.19]).unwrap(), 24.55);
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.06, 0.17]).unwrap(), 20.25);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.08, 0.19]).unwrap(), 24.55);
         // above x, below y, above z
-        assert_eq!(interp.interpolate(&[0.17, 0.06, 0.63]).unwrap(), 22.55);
-        assert_eq!(
-            interp.interpolate(&[0.19, 0.08, 0.65]).unwrap(),
-            26.849999999999994
-        );
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.06, 0.63]).unwrap(), 22.55);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.08, 0.65]).unwrap(), 26.85);
         // above x, above y, below z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.33, 0.17]).unwrap(),
-            28.349999999999998
-        );
-        assert_eq!(
-            interp.interpolate(&[0.19, 0.36, 0.19]).unwrap(),
-            32.949999999999996
-        );
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.33, 0.17]).unwrap(), 28.35);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.36, 0.19]).unwrap(), 32.95);
         // above x, above y, above z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.33, 0.63]).unwrap(),
-            30.650000000000006
-        );
-        assert_eq!(interp.interpolate(&[0.19, 0.36, 0.65]).unwrap(), 35.25);
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.33, 0.63]).unwrap(), 30.65);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.36, 0.65]).unwrap(), 35.25);
     }
 
     #[test]
@@ -382,10 +328,7 @@ mod tests {
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(
-            interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
-            3.1999999999999997
-        ); // 3.2
+        assert_approx_eq!(interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(), 3.2);
     }
 
     #[test]
@@ -395,10 +338,10 @@ mod tests {
         let z = array![0., 1.];
         let f_xyz = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],];
         let interp = Interp3D::new(
-            x.clone(),
-            y.clone(),
-            z.clone(),
-            f_xyz.clone(),
+            x.view(),
+            y.view(),
+            z.view(),
+            f_xyz.view(),
             Nearest,
             Extrapolate::Error,
         )
@@ -469,11 +412,8 @@ mod tests {
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
-        assert_eq!(
-            interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(),
-            1.7000000000000002
-        );
-        assert_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
+        assert_approx_eq!(interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(), 1.7);
+        assert_approx_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
         assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());
         assert!(interp.interpolate(&[0., 0., 2.]).unwrap().is_nan());
         assert!(interp.interpolate(&[0., 2., 0.]).unwrap().is_nan());

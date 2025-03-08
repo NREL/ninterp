@@ -148,6 +148,19 @@ pub(crate) use ndarray::DataOwned;
 #[cfg(feature = "serde")]
 pub(crate) use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+#[cfg(test)]
+/// Alias for [`approx::assert_abs_diff_eq`] with `epsilon = 1e-6`
+macro_rules! assert_approx_eq {
+    ($a:expr, $b:expr $(,)?) => {
+        approx::assert_abs_diff_eq!($a, $b, epsilon = 1e-6)
+    };
+    ($a:expr, $b:expr, $eps:expr $(,)?) => {
+        approx::assert_abs_diff_eq!($a, $b, epsilon = $eps)
+    };
+}
+#[cfg(test)]
+pub(crate) use assert_approx_eq;
+
 /// An interpolator of data type `T`
 ///
 /// This trait is dyn-compatible, meaning you can use:
@@ -214,7 +227,6 @@ where
 /// is outside the bounds of the interpolation grid.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-// #[cfg_attr(feature = "serde", serde(bound = "T: Serialize + DeserializeOwned"))]
 pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
     Enable,
