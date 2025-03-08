@@ -187,6 +187,27 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        Dim<[usize; N]>: Serialize + DeserializeOwned,
+        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
+    ")
+)]
+pub struct InterpData<D, const N: usize>
+where
+    Dim<[Ix; N]>: Dimension,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    pub grid: [ArrayBase<D, Ix1>; N],
+    pub values: ArrayBase<D, Dim<[Ix; N]>>,
+}
+
 /// Extrapolation strategy
 ///
 /// Controls what happens if supplied interpolant point

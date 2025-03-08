@@ -6,23 +6,7 @@ mod strategies;
 
 const N: usize = 3;
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-    ")
-)]
-pub struct InterpData3D<D>
-where
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub grid: [ArrayBase<D, Ix1>; N],
-    pub values: ArrayBase<D, Dim<[Ix; N]>>,
-}
+pub type InterpData3D<D> = InterpData<D, N>;
 validate_impl!(InterpData3D<D>);
 impl<D> InterpData3D<D>
 where

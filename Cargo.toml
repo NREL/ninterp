@@ -30,5 +30,4 @@ name = "benchmark"
 harness = false
 
 [features]
-default = ["serde"]
 serde = ["dep:serde", "ndarray/serde"]
