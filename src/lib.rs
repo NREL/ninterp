@@ -144,7 +144,9 @@ pub(crate) use num::clamp;
 pub(crate) use num::traits::{Num, One};
 
 #[cfg(feature = "serde")]
-pub(crate) use serde::{Deserialize, Serialize};
+pub(crate) use ndarray::DataOwned;
+#[cfg(feature = "serde")]
+pub(crate) use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// An interpolator of data type `T`
 ///
@@ -191,6 +193,7 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
 /// is outside the bounds of the interpolation grid.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+// #[cfg_attr(feature = "serde", serde(bound = "T: Serialize + DeserializeOwned"))]
 pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
     Enable,

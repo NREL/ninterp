@@ -8,6 +8,13 @@ const N: usize = 1;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+    ")
+)]
 pub struct InterpData1D<D>
 where
     D: Data,
@@ -39,6 +46,14 @@ where
 /// 1-D interpolator
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        S: Serialize + DeserializeOwned
+    ")
+)]
 pub struct Interp1D<D, S>
 where
     D: Data,
@@ -48,6 +63,10 @@ where
     pub data: InterpData1D<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound = "D::Elem: Serialize + DeserializeOwned")
+    )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
 

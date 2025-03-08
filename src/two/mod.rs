@@ -8,6 +8,13 @@ const N: usize = 2;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+    ")
+)]
 pub struct InterpData2D<D>
 where
     D: Data,
@@ -44,6 +51,14 @@ where
 #[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        S: Serialize + DeserializeOwned
+    ")
+)]
 pub struct Interp2D<D, S>
 where
     D: Data,

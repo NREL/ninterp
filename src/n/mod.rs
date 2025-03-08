@@ -8,6 +8,13 @@ mod strategies;
 /// Interpolator data where N is determined at runtime
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+    ")
+)]
 pub struct InterpDataND<D>
 where
     D: Data,
@@ -43,6 +50,14 @@ where
 #[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        S: Serialize + DeserializeOwned
+    ")
+)]
 pub struct InterpND<D, S>
 where
     D: Data,
@@ -52,6 +67,10 @@ where
     pub data: InterpDataND<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound = "D::Elem: Serialize + DeserializeOwned")
+    )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
 
