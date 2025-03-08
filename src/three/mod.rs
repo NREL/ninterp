@@ -6,6 +6,32 @@ mod strategies;
 
 const N: usize = 3;
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct InterpData3D {
+    pub grid: [Array1<f64>; N],
+    pub values: Array<f64, Dim<[Ix; N]>>,
+}
+validate_impl!(InterpData3D);
+impl InterpData3D {
+    /// Returns `3`
+    pub const fn ndim(&self) -> usize {N}
+    pub fn new(
+        x: Array1<f64>,
+        y: Array1<f64>,
+        z: Array1<f64>,
+        f_xyz: Array3<f64>,
+    ) -> Result<Self, ValidateError> {
+        let data = Self {
+            grid: [x, y, z],
+            values: f_xyz,
+        };
+        data.validate()?;
+        Ok(data)
+    }
+}
+
+
 /// 3-D interpolator
 #[non_exhaustive]
 #[derive(Debug, Clone)]

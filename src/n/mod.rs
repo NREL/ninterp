@@ -5,6 +5,28 @@ use super::*;
 use ndarray::prelude::*;
 
 mod strategies;
+/// Interpolator data where N is determined at runtime
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct InterpDataND {
+    pub grid: Vec<Array1<f64>>,
+    pub values: ArrayD<f64>,
+}
+validate_impl!(InterpDataND);
+impl InterpDataND {
+    pub fn ndim(&self) -> usize {
+        if self.values.len() == 1 {
+            0
+        } else {
+            self.values.ndim()
+        }
+    }
+    pub fn new(grid: Vec<Array1<f64>>, values: ArrayD<f64>) -> Result<Self, ValidateError> {
+        let data = Self { grid, values };
+        data.validate()?;
+        Ok(data)
+    }
+}
 
 /// N-D interpolator
 #[non_exhaustive]
@@ -484,5 +506,40 @@ mod tests {
         .unwrap();
         assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
         assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
+    }
+
+    #[test]
+    fn test_mismatched_grid() {
+        assert!(matches!(
+            InterpND::new(
+                // 3-D grid
+                vec![array![0., 1.], array![0., 1.], array![0., 1.]],
+                // 2-D values
+                array![[0., 1.], [2., 3.]].into_dyn(),
+                Linear,
+                Extrapolate::Error,
+            )
+            .unwrap_err(),
+            ValidateError::Other(_)
+        ));
+        assert!(InterpND::new(
+            vec![array![]],
+            array![0.].into_dyn(),
+            Linear,
+            Extrapolate::Error,
+        )
+        .is_ok(),);
+        assert!(matches!(
+            InterpND::new(
+                // non-empty grid
+                vec![array![1.]],
+                // 0-D values
+                array![0.].into_dyn(),
+                Linear,
+                Extrapolate::Error,
+            )
+            .unwrap_err(),
+            ValidateError::Other(_)
+        ));
     }
 }

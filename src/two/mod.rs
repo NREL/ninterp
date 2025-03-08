@@ -6,6 +6,26 @@ mod strategies;
 
 const N: usize = 2;
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct InterpData2D {
+    pub grid: [Array1<f64>; N],
+    pub values: Array<f64, Dim<[Ix; N]>>,
+}
+validate_impl!(InterpData2D);
+impl InterpData2D {
+    /// Returns `2`
+    pub const fn ndim(&self) -> usize {N}
+    pub fn new(x: Array1<f64>, y: Array1<f64>, f_xy: Array2<f64>) -> Result<Self, ValidateError> {
+        let data = Self {
+            grid: [x, y],
+            values: f_xy,
+        };
+        data.validate()?;
+        Ok(data)
+    }
+}
+
 /// 2-D interpolator
 #[non_exhaustive]
 #[derive(Debug, Clone)]

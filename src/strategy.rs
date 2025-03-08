@@ -3,7 +3,10 @@
 use super::*;
 use std::fmt::Debug;
 
-pub use data::{InterpData1D, InterpData2D, InterpData3D, InterpDataND};
+pub use crate::one::InterpData1D;
+pub use crate::two::InterpData2D;
+pub use crate::three::InterpData3D;
+pub use crate::n::InterpDataND;
 
 pub trait Strategy1D: Debug {
     fn interpolate(&self, data: &InterpData1D, point: &[f64; 1]) -> Result<f64, InterpolateError>;
