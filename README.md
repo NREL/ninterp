@@ -5,6 +5,7 @@
 The `ninterp` crate provides [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid) over rectilinear grids of any dimensionality.
 
 There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
+All interpolators work with both owned and borrowed arrays (array views) of various types.
 
 A variety of interpolation strategies are implemented and exposed in the `prelude` module.
 Custom interpolation strategies can be defined in downstream crates.
@@ -27,8 +28,8 @@ See examples in `new` method documentation:
 - [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html#method.new)
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html#method.new)
 
-Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples) directory for advanced examples:
-- Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
+Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c285919baae609089dee287dc3842/examples) directory for advanced examples:
+- Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
 
   By default, construction of interpolators uses *static dispatch*,
   meaning strategy concrete types are determined at compilation.
@@ -36,9 +37,9 @@ Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2
   To allow swapping strategies at runtime,
   use *dynamic dispatch* by providing a trait object `Box<dyn Strategy1D>`/etc. to the `new` method.
 
-- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/dynamic_interpolator.rs)
+- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
 
-- Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/custom_strategy.rs)
+- Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
 
 ## Overview
 A prelude module has been defined: 
@@ -78,7 +79,7 @@ Not all interpolation strategies are implemented for every dimensionality.
 `Linear` and `Nearest` are implemented for all dimensionalities.
 
 Custom strategies can be defined. See
-[`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/custom_strategy.rs)
+[`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
 for an example.
 
 ### Extrapolation

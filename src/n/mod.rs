@@ -232,6 +232,7 @@ where
     D: Data,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
+    /// Update strategy dynamically.
     pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND<D>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
         self.check_extrapolate(&self.extrapolate)

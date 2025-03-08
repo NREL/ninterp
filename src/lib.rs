@@ -3,6 +3,7 @@
 //! over rectilinear grids of any dimensionality.
 //!
 //! There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
+//! All interpolators work with both owned and borrowed arrays (array views) of various types.
 //!
 //! A variety of interpolation strategies are implemented and exposed in the `prelude` module.
 //! Custom interpolation strategies can be defined in downstream crates.
@@ -11,7 +12,7 @@
 //! cargo add ninterp
 //! ```
 //!
-//! #### Feature Flags
+//! ### Cargo Features
 //! - `serde`: support for [`serde`](https://crates.io/crates/serde)
 //!   ```text
 //!   cargo add ninterp --features serde
@@ -25,9 +26,10 @@
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
 //!
-//! Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
+//! Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c285919baae609089dee287dc3842/examples)
 //! directory for advanced examples:
-//! - Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
+//! - Strategy dynamic dispatch:
+//! [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
 //!
 //!   By default, construction of interpolators uses *static dispatch*,
 //!   meaning strategy concrete types are determined at compilation.
@@ -35,9 +37,11 @@
 //!   To allow swapping strategies at runtime,
 //!   use *dynamic dispatch* by providing a trait object `Box<dyn Strategy1D>`/etc. to the `new` method.
 //!
-//! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/dynamic_interpolator.rs)
+//! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`:
+//! [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
 //!
-//! - Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/custom_strategy.rs)
+//! - Defining custom strategies:
+//! [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
 //!
 //! # Overview
 //! A prelude module has been defined:
@@ -73,7 +77,7 @@
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
 //! Custom strategies can be defined. See
-//! [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/custom_strategy.rs)
+//! [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
 //! for an example.
 //!
 //! ## Extrapolation
@@ -94,7 +98,7 @@
 //! The length of the interpolant point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
 
-/// The `prelude` module exposes:
+/// The `prelude` module exposes a variety of types:
 /// - All interpolator structs:
 ///   - [`Interp0D`](`interpolator::Interp0D`)
 ///   - [`Interp1D`](`interpolator::Interp1D`)
