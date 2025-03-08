@@ -24,7 +24,7 @@
 //! - [`Interp2D::new`](`interpolator::Interp2D::new`)
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
-//! 
+//!
 //! Also see the [`examples`](https://github.com/NREL/ninterp/tree/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples)
 //! directory for advanced examples:
 //! - Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/a26c77caeac9e4ba2c5e8a4dbd652ce00b5747f3/examples/dynamic_strategy.rs)
@@ -38,9 +38,9 @@
 //! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/dynamic_interpolator.rs)
 //!
 //! - Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/46d8436c4ac389e778392a28048fb9e32a80b8e0/examples/custom_strategy.rs)
-//! 
+//!
 //! # Overview
-//! A prelude module has been defined: 
+//! A prelude module has been defined:
 //! ```rust,text
 //! use ninterp::prelude::*;
 //! ```
@@ -60,7 +60,7 @@
 //! After editing interpolator data,
 //! call [`Interpolator::validate`]
 //! to rerun these checks.
-//! 
+//!
 //! To change the extrapolation setting, call `set_extrapolate`.
 //!
 //! To change the interpolation strategy,
@@ -90,7 +90,7 @@
 //!
 //! ## Interpolation
 //! Interpolation is executed by calling [`Interpolator::interpolate`].
-//! 
+//!
 //! The length of the interpolant point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
 
@@ -135,41 +135,90 @@ pub mod interpolator {
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
-#[cfg(feature = "serde")]
-pub(crate) use serde::{Deserialize, Serialize};
+pub(crate) use std::fmt::Debug;
 
-pub trait Interpolator {
+pub(crate) use ndarray::prelude::*;
+pub(crate) use ndarray::{Data, Ix};
+
+pub(crate) use num::clamp;
+pub(crate) use num::traits::{Num, One};
+
+#[cfg(feature = "serde")]
+pub(crate) use ndarray::DataOwned;
+#[cfg(feature = "serde")]
+pub(crate) use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+#[cfg(test)]
+/// Alias for [`approx::assert_abs_diff_eq`] with `epsilon = 1e-6`
+macro_rules! assert_approx_eq {
+    ($a:expr, $b:expr $(,)?) => {
+        approx::assert_abs_diff_eq!($a, $b, epsilon = 1e-6)
+    };
+    ($a:expr, $b:expr, $eps:expr $(,)?) => {
+        approx::assert_abs_diff_eq!($a, $b, epsilon = $eps)
+    };
+}
+#[cfg(test)]
+pub(crate) use assert_approx_eq;
+
+/// An interpolator of data type `T`
+///
+/// This trait is dyn-compatible, meaning you can use:
+/// `Box<dyn Interpolator<_>>`
+/// and swap the contained interpolator at runtime.
+pub trait Interpolator<T> {
     /// Interpolator dimensionality
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
     fn validate(&self) -> Result<(), ValidateError>;
     /// Interpolate at supplied point.
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError>;
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
     /// Get [`Extrapolate`] variant.
     ///
     /// This does not perform extrapolation.
     /// Instead, call [`Interpolator::interpolate`] on an instance using [`Extrapolate::Enable`].
-    fn extrapolate(&self) -> Option<Extrapolate>;
+    fn extrapolate(&self) -> Option<Extrapolate<T>>;
     /// Set [`Extrapolate`] variant, checking validity.
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError>;
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError>;
 }
 
-impl Interpolator for Box<dyn Interpolator> {
+impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
         (**self).ndim()
     }
     fn validate(&self) -> Result<(), ValidateError> {
         (**self).validate()
     }
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
     }
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<T>> {
         (**self).extrapolate()
     }
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         (**self).set_extrapolate(extrapolate)
     }
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        Dim<[usize; N]>: Serialize + DeserializeOwned,
+        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
+    ")
+)]
+pub struct InterpData<D, const N: usize>
+where
+    Dim<[Ix; N]>: Dimension,
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    pub grid: [ArrayBase<D, Ix1>; N],
+    pub values: ArrayBase<D, Dim<[Ix; N]>>,
 }
 
 /// Extrapolation strategy
@@ -178,14 +227,53 @@ impl Interpolator for Box<dyn Interpolator> {
 /// is outside the bounds of the interpolation grid.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub enum Extrapolate {
+pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
     Enable,
     /// If point is beyond grid limits, return this value instead.
-    Fill(f64),
+    Fill(T),
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,
 }
+
+macro_rules! validate_impl {
+    ($($data:ty)*) => ($(
+        impl<D> $data where
+            D: Data,
+            D::Elem: Num + PartialOrd + Copy + Debug
+        {
+            pub fn validate(&self) -> Result<(), ValidateError> {
+                let n = self.ndim();
+                if (self.grid.len() != n) && !(n == 0 && self.grid.iter().all(|g| g.is_empty())) {
+                    // Only possible for `InterpDataND`
+                    return Err(ValidateError::Other(format!(
+                        "grid length {} does not match dimensionality {}",
+                        self.grid.len(),
+                        n,
+                    )));
+                }
+                for i in 0..n {
+                    let i_grid_len = self.grid[i].len();
+                    // Check that each grid dimension has elements
+                    // Indexing `grid` directly is okay because empty dimensions are caught at compilation
+                    if i_grid_len == 0 {
+                        return Err(ValidateError::EmptyGrid(i));
+                    }
+                    // Check that grid points are monotonically increasing
+                    if !self.grid[i].windows(2).into_iter().all(|w| w[0] <= w[1]) {
+                        return Err(ValidateError::Monotonicity(i));
+                    }
+                    // Check that grid and values are compatible shapes
+                    if i_grid_len != self.values.shape()[i] {
+                        return Err(ValidateError::IncompatibleShapes(i));
+                    }
+                }
+                Ok(())
+            }
+        }
+    )*)
+}
+pub(crate) use validate_impl;

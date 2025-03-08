@@ -6,29 +6,66 @@ mod strategies;
 
 const N: usize = 3;
 
-/// Data for [`Interp3D`]
-#[non_exhaustive]
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Data3D {
-    pub x: Vec<f64>,
-    pub y: Vec<f64>,
-    pub z: Vec<f64>,
-    pub f_xyz: Vec<Vec<Vec<f64>>>,
+pub type InterpData3D<D> = InterpData<D, N>;
+validate_impl!(InterpData3D<D>);
+impl<D> InterpData3D<D>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    /// Returns `3`
+    pub const fn ndim(&self) -> usize {
+        N
+    }
+    pub fn new(
+        x: ArrayBase<D, Ix1>,
+        y: ArrayBase<D, Ix1>,
+        z: ArrayBase<D, Ix1>,
+        f_xyz: ArrayBase<D, Ix3>,
+    ) -> Result<Self, ValidateError> {
+        let data = Self {
+            grid: [x, y, z],
+            values: f_xyz,
+        };
+        data.validate()?;
+        Ok(data)
+    }
 }
 
 /// 3-D interpolator
 #[non_exhaustive]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp3D<S: Strategy3D> {
-    pub data: Data3D,
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "
+        D: DataOwned,
+        D::Elem: Serialize + DeserializeOwned,
+        S: Serialize + DeserializeOwned
+    ")
+)]
+pub struct Interp3D<D, S>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy3D<D>,
+{
+    pub data: InterpData3D<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound = "D::Elem: Serialize + DeserializeOwned")
+    )]
+    pub extrapolate: Extrapolate<D::Elem>,
 }
 
-impl<S: Strategy3D> Interp3D<S> {
+impl<D, S> Interp3D<D, S>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy3D<D>,
+{
     /// Instantiate three-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
@@ -39,24 +76,25 @@ impl<S: Strategy3D> Interp3D<S> {
     ///
     /// # Example:
     /// ```
+    /// use ndarray::prelude::*;
     /// use ninterp::prelude::*;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
     /// let interp = Interp3D::new(
     ///     // x
-    ///     vec![1., 2.], // x0, x1
+    ///     array![1., 2.], // x0, x1
     ///     // y
-    ///     vec![1., 2.], // y0, y1
+    ///     array![1., 2.], // y0, y1
     ///     // z
-    ///     vec![1., 2.], // z0, z1
+    ///     array![1., 2.], // z0, z1
     ///     // f(x, y, z)
-    ///     vec![
-    ///         vec![
-    ///             vec![0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
-    ///             vec![0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
+    ///     array![
+    ///         [
+    ///             [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
+    ///             [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
     ///         ],
-    ///         vec![
-    ///             vec![0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
-    ///             vec![1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
+    ///         [
+    ///             [0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
+    ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
     ///         ],
     ///     ],
     ///     Linear,
@@ -71,15 +109,15 @@ impl<S: Strategy3D> Interp3D<S> {
     /// ));
     /// ```
     pub fn new(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        z: Vec<f64>,
-        f_xyz: Vec<Vec<Vec<f64>>>,
+        x: ArrayBase<D, Ix1>,
+        y: ArrayBase<D, Ix1>,
+        z: ArrayBase<D, Ix1>,
+        f_xyz: ArrayBase<D, Ix3>,
         strategy: S,
-        extrapolate: Extrapolate,
+        extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
-            data: Data3D { x, y, z, f_xyz },
+            data: InterpData3D::new(x, y, z, f_xyz)?,
             strategy,
             extrapolate,
         };
@@ -87,15 +125,20 @@ impl<S: Strategy3D> Interp3D<S> {
         Ok(interpolator)
     }
 
-    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn check_extrapolate(&self, extrapolate: &Extrapolate<D::Elem>) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+            return Err(ValidateError::ExtrapolateSelection(format!(
+                "{:?}",
+                self.extrapolate
+            )));
         }
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
         if matches!(self.extrapolate, Extrapolate::Enable)
-            && (self.data.x.len() < 2 || self.data.y.len() < 2 || self.data.z.len() < 2)
+            && (self.data.grid[0].len() < 2
+                || self.data.grid[1].len() < 2
+                || self.data.grid[2].len() < 2)
         {
             return Err(ValidateError::Other(
                 "at least 2 data points are required for extrapolation".into(),
@@ -105,94 +148,59 @@ impl<S: Strategy3D> Interp3D<S> {
     }
 }
 
-impl<S: Strategy3D> Interpolator for Interp3D<S> {
+impl<D, S> Interpolator<D::Elem> for Interp3D<D, S>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    S: Strategy3D<D>,
+{
     /// Returns `3`
     fn ndim(&self) -> usize {
         N
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
-        self.check_extrapolate(self.extrapolate)?;
-
-        let x_grid_len = self.data.x.len();
-        let y_grid_len = self.data.y.len();
-        let z_grid_len = self.data.z.len();
-
-        // Check that each grid dimension has elements
-        if x_grid_len == 0 {
-            return Err(ValidateError::EmptyGrid("x".into()));
-        }
-        if y_grid_len == 0 {
-            return Err(ValidateError::EmptyGrid("y".into()));
-        }
-        if z_grid_len == 0 {
-            return Err(ValidateError::EmptyGrid("z".into()));
-        }
-
-        // Check that grid points are monotonically increasing
-        if !self.data.x.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidateError::Monotonicity("x".into()));
-        }
-        if !self.data.y.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidateError::Monotonicity("y".into()));
-        }
-        if !self.data.z.windows(2).all(|w| w[0] <= w[1]) {
-            return Err(ValidateError::Monotonicity("z".into()));
-        }
-
-        // Check that grid and values are compatible shapes
-        if x_grid_len != self.data.f_xyz.len() {
-            return Err(ValidateError::IncompatibleShapes("x".into()));
-        }
-        if !self
-            .data
-            .f_xyz
-            .iter()
-            .map(Vec::len)
-            .all(|y_val_len| y_val_len == y_grid_len)
-        {
-            return Err(ValidateError::IncompatibleShapes("y".into()));
-        }
-        if !self
-            .data
-            .f_xyz
-            .iter()
-            .flat_map(|y_vals| y_vals.iter().map(Vec::len))
-            .all(|z_val_len| z_val_len == z_grid_len)
-        {
-            return Err(ValidateError::IncompatibleShapes("z".into()));
-        }
-
+        self.check_extrapolate(&self.extrapolate)?;
+        self.data.validate()?;
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        let point: &[f64; N] = point
+    fn interpolate(&self, point: &[D::Elem]) -> Result<D::Elem, InterpolateError> {
+        let point: &[D::Elem; N] = point
             .try_into()
             .map_err(|_| InterpolateError::PointLength(N))?;
-        let grid = [&self.data.x, &self.data.y, &self.data.z];
-        let grid_names = ["x", "y", "z"];
         let mut errors = Vec::new();
         for dim in 0..N {
-            if !(grid[dim].first().unwrap()..=grid[dim].last().unwrap()).contains(&&point[dim]) {
+            if !(self.data.grid[dim].first().unwrap()..=self.data.grid[dim].last().unwrap())
+                .contains(&&point[dim])
+            {
                 match self.extrapolate {
                     Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
-                            point[0]
-                                .clamp(*self.data.x.first().unwrap(), *self.data.x.last().unwrap()),
-                            point[1]
-                                .clamp(*self.data.y.first().unwrap(), *self.data.y.last().unwrap()),
-                            point[2]
-                                .clamp(*self.data.z.first().unwrap(), *self.data.z.last().unwrap()),
+                            clamp(
+                                point[0],
+                                *self.data.grid[0].first().unwrap(),
+                                *self.data.grid[0].last().unwrap(),
+                            ),
+                            clamp(
+                                point[1],
+                                *self.data.grid[1].first().unwrap(),
+                                *self.data.grid[1].last().unwrap(),
+                            ),
+                            clamp(
+                                point[2],
+                                *self.data.grid[2].first().unwrap(),
+                                *self.data.grid[2].last().unwrap(),
+                            ),
                         ];
                         return self.strategy.interpolate(&self.data, clamped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
-                            "\n    point[{dim}] = {:?} is out of bounds for {}-grid = {:?}",
-                            point[dim], grid_names[dim], grid[dim],
+                            "\n    point[{dim}] = {:?} is out of bounds for grid dim {dim}= {:?}",
+                            point[dim], self.data.grid[dim],
                         ));
                     }
                 };
@@ -204,21 +212,25 @@ impl<S: Strategy3D> Interpolator for Interp3D<S> {
         self.strategy.interpolate(&self.data, point)
     }
 
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<D::Elem>> {
         Some(self.extrapolate)
     }
 
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
-        self.check_extrapolate(extrapolate)?;
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
+        self.check_extrapolate(&extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 }
 
-impl Interp3D<Box<dyn Strategy3D>> {
-    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy3D>) -> Result<(), ValidateError> {
+impl<D> Interp3D<D, Box<dyn Strategy3D<D>>>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy3D<D>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
-        self.check_extrapolate(self.extrapolate)
+        self.check_extrapolate(&self.extrapolate)
     }
 }
 
@@ -228,23 +240,19 @@ mod tests {
 
     #[test]
     fn test_linear() {
-        let x = vec![0.05, 0.10, 0.15];
-        let y = vec![0.10, 0.20, 0.30];
-        let z = vec![0.20, 0.40, 0.60];
-        let f_xyz = vec![
-            vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
-            vec![vec![9., 10., 11.], vec![12., 13., 14.], vec![15., 16., 17.]],
-            vec![
-                vec![18., 19., 20.],
-                vec![21., 22., 23.],
-                vec![24., 25., 26.],
-            ],
+        let x = array![0.05, 0.10, 0.15];
+        let y = array![0.10, 0.20, 0.30];
+        let z = array![0.20, 0.40, 0.60];
+        let f_xyz = array![
+            [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
+            [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
+            [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
         ];
         let interp = Interp3D::new(
-            x.clone(),
-            y.clone(),
-            z.clone(),
-            f_xyz.clone(),
+            x.view(),
+            y.view(),
+            z.view(),
+            f_xyz.view(),
             Linear,
             Extrapolate::Error,
         )
@@ -255,152 +263,85 @@ mod tests {
                 for (k, z_k) in z.iter().enumerate() {
                     assert_eq!(
                         interp.interpolate(&[*x_i, *y_j, *z_k]).unwrap(),
-                        f_xyz[i][j][k]
+                        f_xyz[[i, j, k]]
                     );
                 }
             }
         }
-        assert_eq!(
-            interp.interpolate(&[x[0], y[0], 0.3]).unwrap(),
-            0.4999999999999999 // 0.5
-        );
-        assert_eq!(
-            interp.interpolate(&[x[0], 0.15, z[0]]).unwrap(),
-            1.4999999999999996 // 1.5
-        );
-        assert_eq!(
-            interp.interpolate(&[x[0], 0.15, 0.3]).unwrap(),
-            1.9999999999999996 // 2.0
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, y[0], z[0]]).unwrap(),
-            4.499999999999999 // 4.5
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, y[0], 0.3]).unwrap(),
-            4.999999999999999 // 5.0
-        );
-        assert_eq!(
-            interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(),
-            5.999999999999998 // 6.0
-        );
+        assert_approx_eq!(interp.interpolate(&[x[0], y[0], 0.3]).unwrap(), 0.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, z[0]]).unwrap(), 1.5);
+        assert_approx_eq!(interp.interpolate(&[x[0], 0.15, 0.3]).unwrap(), 2.);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], z[0]]).unwrap(), 4.5);
+        assert_approx_eq!(interp.interpolate(&[0.075, y[0], 0.3]).unwrap(), 5.);
+        assert_approx_eq!(interp.interpolate(&[0.075, 0.15, z[0]]).unwrap(), 6.);
     }
 
     #[test]
     fn test_linear_extrapolation() {
         let interp = Interp3D::new(
-            vec![0.05, 0.10, 0.15],
-            vec![0.10, 0.20, 0.30],
-            vec![0.20, 0.40, 0.60],
-            vec![
-                vec![vec![0., 1., 2.], vec![3., 4., 5.], vec![6., 7., 8.]],
-                vec![vec![9., 10., 11.], vec![12., 13., 14.], vec![15., 16., 17.]],
-                vec![
-                    vec![18., 19., 20.],
-                    vec![21., 22., 23.],
-                    vec![24., 25., 26.],
-                ],
+            array![0.05, 0.10, 0.15],
+            array![0.10, 0.20, 0.30],
+            array![0.20, 0.40, 0.60],
+            array![
+                [[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
+                [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
+                [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
             ],
             Linear,
             Extrapolate::Enable,
         )
         .unwrap();
         // below x, below y, below z
-        assert_eq!(interp.interpolate(&[0.01, 0.06, 0.17]).unwrap(), -8.55);
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.08, 0.19]).unwrap(),
-            -6.050000000000001
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.06, 0.17]).unwrap(), -8.55);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.08, 0.19]).unwrap(), -6.05);
         // below x, below y, above z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.06, 0.63]).unwrap(),
-            -6.249999999999999
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.08, 0.65]).unwrap(),
-            -3.749999999999999
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.06, 0.63]).unwrap(), -6.25);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.08, 0.65]).unwrap(), -3.75);
         // below x, above y, below z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.33, 0.17]).unwrap(),
-            -0.44999999999999785
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.36, 0.19]).unwrap(),
-            2.3500000000000014
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.33, 0.17]).unwrap(), -0.45);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.36, 0.19]).unwrap(), 2.35);
         // below x, above y, above z
-        assert_eq!(
-            interp.interpolate(&[0.01, 0.33, 0.63]).unwrap(),
-            1.8499999999999994
-        );
-        assert_eq!(
-            interp.interpolate(&[0.02, 0.36, 0.65]).unwrap(),
-            4.650000000000003
-        );
+        assert_approx_eq!(interp.interpolate(&[0.01, 0.33, 0.63]).unwrap(), 1.85);
+        assert_approx_eq!(interp.interpolate(&[0.02, 0.36, 0.65]).unwrap(), 4.65);
         // above x, below y, below z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.06, 0.17]).unwrap(),
-            20.250000000000004
-        );
-        assert_eq!(interp.interpolate(&[0.19, 0.08, 0.19]).unwrap(), 24.55);
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.06, 0.17]).unwrap(), 20.25);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.08, 0.19]).unwrap(), 24.55);
         // above x, below y, above z
-        assert_eq!(interp.interpolate(&[0.17, 0.06, 0.63]).unwrap(), 22.55);
-        assert_eq!(
-            interp.interpolate(&[0.19, 0.08, 0.65]).unwrap(),
-            26.849999999999994
-        );
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.06, 0.63]).unwrap(), 22.55);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.08, 0.65]).unwrap(), 26.85);
         // above x, above y, below z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.33, 0.17]).unwrap(),
-            28.349999999999998
-        );
-        assert_eq!(
-            interp.interpolate(&[0.19, 0.36, 0.19]).unwrap(),
-            32.949999999999996
-        );
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.33, 0.17]).unwrap(), 28.35);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.36, 0.19]).unwrap(), 32.95);
         // above x, above y, above z
-        assert_eq!(
-            interp.interpolate(&[0.17, 0.33, 0.63]).unwrap(),
-            30.650000000000006
-        );
-        assert_eq!(interp.interpolate(&[0.19, 0.36, 0.65]).unwrap(), 35.25);
+        assert_approx_eq!(interp.interpolate(&[0.17, 0.33, 0.63]).unwrap(), 30.65);
+        assert_approx_eq!(interp.interpolate(&[0.19, 0.36, 0.65]).unwrap(), 35.25);
     }
 
     #[test]
     fn test_linear_offset() {
         let interp = Interp3D::new(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
+            array![0., 1.],
+            array![0., 1.],
+            array![0., 1.],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
             Linear,
             Extrapolate::Error,
         )
         .unwrap();
-        assert_eq!(
-            interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(),
-            3.1999999999999997
-        ); // 3.2
+        assert_approx_eq!(interp.interpolate(&[0.25, 0.65, 0.9]).unwrap(), 3.2);
     }
 
     #[test]
     fn test_nearest() {
-        let x = vec![0., 1.];
-        let y = vec![0., 1.];
-        let z = vec![0., 1.];
-        let f_xyz = vec![
-            vec![vec![0., 1.], vec![2., 3.]],
-            vec![vec![4., 5.], vec![6., 7.]],
-        ];
+        let x = array![0., 1.];
+        let y = array![0., 1.];
+        let z = array![0., 1.];
+        let f_xyz = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],];
         let interp = Interp3D::new(
-            x.clone(),
-            y.clone(),
-            z.clone(),
-            f_xyz.clone(),
+            x.view(),
+            y.view(),
+            z.view(),
+            f_xyz.view(),
             Nearest,
             Extrapolate::Error,
         )
@@ -411,7 +352,7 @@ mod tests {
                 for (k, z_k) in z.iter().enumerate() {
                     assert_eq!(
                         interp.interpolate(&[*x_i, *y_j, *z_k]).unwrap(),
-                        f_xyz[i][j][k]
+                        f_xyz[[i, j, k]]
                     );
                 }
             }
@@ -430,13 +371,10 @@ mod tests {
         // Extrapolate::Extrapolate
         assert!(matches!(
             Interp3D::new(
-                vec![0.1, 1.1],
-                vec![0.2, 1.2],
-                vec![0.3, 1.3],
-                vec![
-                    vec![vec![0., 1.], vec![2., 3.]],
-                    vec![vec![4., 5.], vec![6., 7.]],
-                ],
+                array![0.1, 1.1],
+                array![0.2, 1.2],
+                array![0.3, 1.3],
+                array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
                 Nearest,
                 Extrapolate::Enable,
             )
@@ -445,13 +383,10 @@ mod tests {
         ));
         // Extrapolate::Error
         let interp = Interp3D::new(
-            vec![0.1, 1.1],
-            vec![0.2, 1.2],
-            vec![0.3, 1.3],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
+            array![0.1, 1.1],
+            array![0.2, 1.2],
+            array![0.3, 1.3],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
             Linear,
             Extrapolate::Error,
         )
@@ -469,22 +404,16 @@ mod tests {
     #[test]
     fn test_extrapolate_fill_value() {
         let interp = Interp3D::new(
-            vec![0.1, 1.1],
-            vec![0.2, 1.2],
-            vec![0.3, 1.3],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
+            array![0.1, 1.1],
+            array![0.2, 1.2],
+            array![0.3, 1.3],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
             Linear,
             Extrapolate::Fill(f64::NAN),
         )
         .unwrap();
-        assert_eq!(
-            interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(),
-            1.7000000000000002
-        );
-        assert_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
+        assert_approx_eq!(interp.interpolate(&[0.4, 0.4, 0.4]).unwrap(), 1.7);
+        assert_approx_eq!(interp.interpolate(&[0.8, 0.8, 0.8]).unwrap(), 4.5);
         assert!(interp.interpolate(&[0., 0., 0.]).unwrap().is_nan());
         assert!(interp.interpolate(&[0., 0., 2.]).unwrap().is_nan());
         assert!(interp.interpolate(&[0., 2., 0.]).unwrap().is_nan());
@@ -498,13 +427,10 @@ mod tests {
     #[test]
     fn test_extrapolate_clamp() {
         let interp = Interp3D::new(
-            vec![0.1, 1.1],
-            vec![0.2, 1.2],
-            vec![0.3, 1.3],
-            vec![
-                vec![vec![0., 1.], vec![2., 3.]],
-                vec![vec![4., 5.], vec![6., 7.]],
-            ],
+            array![0.1, 1.1],
+            array![0.2, 1.2],
+            array![0.3, 1.3],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
             Linear,
             Extrapolate::Clamp,
         )

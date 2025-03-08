@@ -5,18 +5,26 @@ edition = "2021"
 description = "Numerical interpolation for N-dimensional rectilinear grids"
 repository = "https://github.com/NREL/ninterp"
 license = "BSD-3-Clause"
-keywords = ["interpolation", "multidimensional", "multilinear", "numerical", "approximation"]
+keywords = [
+    "interpolation",
+    "multidimensional",
+    "multilinear",
+    "numerical",
+    "approximation",
+]
 categories = ["mathematics"]
 
 [dependencies]
 itertools = "0.13.0"
 ndarray = "0.16.1"
+num = "0.4.3"
 serde = { version = "1.0.210", optional = true, features = ["derive"] }
 thiserror = "1.0.64"
 
 [dev-dependencies]
 criterion = "0.5.1"
-rand = "0.9.0"
+ndarray-rand = "0.15.0"
+approx = "0.5.1"
 
 [[bench]]
 name = "benchmark"

@@ -1,21 +1,36 @@
 //! Pre-defined interpolation strategies and traits for custom strategies
 
 use super::*;
-use std::fmt::Debug;
 
-pub use n::DataND;
-pub use one::Data1D;
-pub use three::Data3D;
-pub use two::Data2D;
+pub use crate::n::InterpDataND;
+pub use crate::one::InterpData1D;
+pub use crate::three::InterpData3D;
+pub use crate::two::InterpData2D;
 
-pub trait Strategy1D: Debug {
-    fn interpolate(&self, data: &Data1D, point: &[f64; 1]) -> Result<f64, InterpolateError>;
+pub trait Strategy1D<D>: Debug
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError>;
     /// Does this type's [`Strategy1D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-impl Strategy1D for Box<dyn Strategy1D> {
-    fn interpolate(&self, data: &Data1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
+impl<D> Strategy1D<D> for Box<dyn Strategy1D<D>>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
     fn allow_extrapolate(&self) -> bool {
@@ -23,14 +38,30 @@ impl Strategy1D for Box<dyn Strategy1D> {
     }
 }
 
-pub trait Strategy2D: Debug {
-    fn interpolate(&self, data: &Data2D, point: &[f64; 2]) -> Result<f64, InterpolateError>;
+pub trait Strategy2D<D>: Debug
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData2D<D>,
+        point: &[D::Elem; 2],
+    ) -> Result<D::Elem, InterpolateError>;
     /// Does this type's [`Strategy2D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-impl Strategy2D for Box<dyn Strategy2D> {
-    fn interpolate(&self, data: &Data2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
+impl<D> Strategy2D<D> for Box<dyn Strategy2D<D>>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData2D<D>,
+        point: &[D::Elem; 2],
+    ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
     fn allow_extrapolate(&self) -> bool {
@@ -38,15 +69,30 @@ impl Strategy2D for Box<dyn Strategy2D> {
     }
 }
 
-pub trait Strategy3D: Debug {
-    fn interpolate(&self, interpolator: &Data3D, point: &[f64; 3])
-        -> Result<f64, InterpolateError>;
+pub trait Strategy3D<D>: Debug
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData3D<D>,
+        point: &[D::Elem; 3],
+    ) -> Result<D::Elem, InterpolateError>;
     /// Does this type's [`Strategy3D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-impl Strategy3D for Box<dyn Strategy3D> {
-    fn interpolate(&self, data: &Data3D, point: &[f64; 3]) -> Result<f64, InterpolateError> {
+impl<D> Strategy3D<D> for Box<dyn Strategy3D<D>>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData3D<D>,
+        point: &[D::Elem; 3],
+    ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
     fn allow_extrapolate(&self) -> bool {
@@ -54,14 +100,30 @@ impl Strategy3D for Box<dyn Strategy3D> {
     }
 }
 
-pub trait StrategyND: Debug {
-    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError>;
+pub trait StrategyND<D>: Debug
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpDataND<D>,
+        point: &[D::Elem],
+    ) -> Result<D::Elem, InterpolateError>;
     /// Does this type's [`StrategyND::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
 
-impl StrategyND for Box<dyn StrategyND> {
-    fn interpolate(&self, data: &DataND, point: &[f64]) -> Result<f64, InterpolateError> {
+impl<D> StrategyND<D> for Box<dyn StrategyND<D>>
+where
+    D: Data,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpDataND<D>,
+        point: &[D::Elem],
+    ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
     fn allow_extrapolate(&self) -> bool {
@@ -72,7 +134,7 @@ impl StrategyND for Box<dyn StrategyND> {
 // This method contains code from RouteE Compass, another open-source NREL-developed tool
 // <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
 // <https://github.com/NREL/routee-compass/>
-pub fn find_nearest_index(arr: &[f64], target: f64) -> usize {
+pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize {
     if &target == arr.last().unwrap() {
         return arr.len() - 2;
     }

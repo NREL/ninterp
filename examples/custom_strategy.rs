@@ -1,3 +1,5 @@
+use ndarray::prelude::*;
+
 use ninterp::prelude::*;
 use ninterp::strategy::*;
 
@@ -5,14 +7,23 @@ use ninterp::strategy::*;
 #[derive(Debug)]
 struct CustomStrategy;
 
-// Implement strategy for 2-D interpolation
-impl Strategy2D for CustomStrategy {
+// Implement strategy for 2-D f32 interpolation
+impl<D> Strategy2D<D> for CustomStrategy
+where
+    // Implement for any 2-D interpolator where the contained type is `f32`
+    // e.g. `Array2<f32>`, `ArrayView2<f32>`, `CowArray<<'a, f32>, Ix2>`, etc.
+    // For a more generic bound, consider introducing a bound for D::Elem
+    // e.g. D::Elem: num_traits::Num + PartialOrd
+    D: ndarray::Data<Elem = f32>,
+{
     fn interpolate(
         &self,
-        _data: &Data2D,
-        point: &[f64; 2],
-    ) -> Result<f64, ninterp::error::InterpolateError> {
+        _data: &InterpData2D<D>,
+        point: &[f32; 2],
+    ) -> Result<f32, ninterp::error::InterpolateError> {
         // Dummy interpolation strategy, product of all point components
+        // Here we could access the `InterpData2D` instead,
+        // but this is just an example.
         Ok(point.iter().fold(1., |acc, x| acc * x))
     }
 
@@ -29,9 +40,9 @@ impl Strategy2D for CustomStrategy {
 
 fn main() {
     let interp = Interp2D::new(
-        vec![0., 2., 4.],
-        vec![0., 4., 8.],
-        vec![vec![0., 0., 0.], vec![0., 0., 0.], vec![0., 0., 0.]],
+        array![0., 2., 4.],
+        array![0., 4., 8.],
+        array![[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
         CustomStrategy,
         Extrapolate::Error,
     )

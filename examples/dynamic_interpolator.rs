@@ -1,12 +1,14 @@
+use ndarray::prelude::*;
+
 use ninterp::prelude::*;
 
 fn main() {
     // Create `Interpolator` trait object
-    let mut boxed: Box<dyn Interpolator> = Box::new(
+    let mut boxed: Box<dyn Interpolator<_>> = Box::new(
         Interp2D::new(
-            vec![0., 1.],
-            vec![0., 1.],
-            vec![vec![2., 4.], vec![4., 16.]],
+            array![0., 1.],
+            array![0., 1.],
+            array![[2., 4.], [4., 16.]],
             Linear,
             Extrapolate::Enable,
         )
@@ -16,8 +18,8 @@ fn main() {
     // Change underlying interpolator
     boxed = Box::new(
         Interp1D::new(
-            vec![0., 1., 2.],
-            vec![0., 4., 8.],
+            array![0., 1., 2.],
+            array![0., 4., 8.],
             Nearest,
             Extrapolate::Error,
         )
