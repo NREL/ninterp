@@ -7,11 +7,11 @@ use ninterp::strategy::*;
 #[derive(Debug)]
 struct CustomStrategy;
 
-// Implement strategy for 2-D interpolation
-impl Strategy2D for CustomStrategy {
+// Implement strategy for 2-D f64 interpolation
+impl Strategy2D<f64> for CustomStrategy {
     fn interpolate(
         &self,
-        _data: &InterpData2D,
+        _data: &InterpData2D<f64>,
         point: &[f64; 2],
     ) -> Result<f64, ninterp::error::InterpolateError> {
         // Dummy interpolation strategy, product of all point components

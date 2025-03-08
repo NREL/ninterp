@@ -1,7 +1,10 @@
 use super::*;
 
-impl Strategy3D for Linear {
-    fn interpolate(&self, data: &InterpData3D, point: &[f64; 3]) -> Result<f64, InterpolateError> {
+impl<T> Strategy3D<T> for Linear
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(&self, data: &InterpData3D<T>, point: &[T; 3]) -> Result<T, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
@@ -31,19 +34,19 @@ impl Strategy3D for Linear {
         let z_u = z_l + 1;
         let z_diff = (point[2] - data.grid[2][z_l]) / (data.grid[2][z_u] - data.grid[2][z_l]);
         // interpolate in the x-direction
-        let f00 =
-            data.values[[x_l, y_l, z_l]] * (1.0 - x_diff) + data.values[[x_u, y_l, z_l]] * x_diff;
-        let f01 =
-            data.values[[x_l, y_l, z_u]] * (1.0 - x_diff) + data.values[[x_u, y_l, z_u]] * x_diff;
-        let f10 =
-            data.values[[x_l, y_u, z_l]] * (1.0 - x_diff) + data.values[[x_u, y_u, z_l]] * x_diff;
-        let f11 =
-            data.values[[x_l, y_u, z_u]] * (1.0 - x_diff) + data.values[[x_u, y_u, z_u]] * x_diff;
+        let f00 = data.values[[x_l, y_l, z_l]] * (T::one() - x_diff)
+            + data.values[[x_u, y_l, z_l]] * x_diff;
+        let f01 = data.values[[x_l, y_l, z_u]] * (T::one() - x_diff)
+            + data.values[[x_u, y_l, z_u]] * x_diff;
+        let f10 = data.values[[x_l, y_u, z_l]] * (T::one() - x_diff)
+            + data.values[[x_u, y_u, z_l]] * x_diff;
+        let f11 = data.values[[x_l, y_u, z_u]] * (T::one() - x_diff)
+            + data.values[[x_u, y_u, z_u]] * x_diff;
         // interpolate in the y-direction
-        let f0 = f00 * (1.0 - y_diff) + f10 * y_diff;
-        let f1 = f01 * (1.0 - y_diff) + f11 * y_diff;
+        let f0 = f00 * (T::one() - y_diff) + f10 * y_diff;
+        let f1 = f01 * (T::one() - y_diff) + f11 * y_diff;
         // interpolate in the z-direction
-        Ok(f0 * (1.0 - z_diff) + f1 * z_diff)
+        Ok(f0 * (T::one() - z_diff) + f1 * z_diff)
     }
 
     /// Returns `true`
@@ -52,23 +55,35 @@ impl Strategy3D for Linear {
     }
 }
 
-impl Strategy3D for Nearest {
-    fn interpolate(&self, data: &InterpData3D, point: &[f64; 3]) -> Result<f64, InterpolateError> {
+impl<T> Strategy3D<T> for Nearest
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(&self, data: &InterpData3D<T>, point: &[T; 3]) -> Result<T, InterpolateError> {
         // x
         let x_l = find_nearest_index(data.grid[0].view(), point[0]);
         let x_u = x_l + 1;
-        let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
-        let i = if x_diff < 0.5 { x_l } else { x_u };
+        let i = if point[0] - data.grid[0][x_l] < data.grid[0][x_u] - point[0] {
+            x_l
+        } else {
+            x_u
+        };
         // y
         let y_l = find_nearest_index(data.grid[1].view(), point[1]);
         let y_u = y_l + 1;
-        let y_diff = (point[1] - data.grid[1][y_l]) / (data.grid[1][y_u] - data.grid[1][y_l]);
-        let j = if y_diff < 0.5 { y_l } else { y_u };
+        let j = if point[1] - data.grid[1][y_l] < data.grid[1][y_u] - point[1] {
+            y_l
+        } else {
+            y_u
+        };
         // z
         let z_l = find_nearest_index(data.grid[2].view(), point[2]);
         let z_u = z_l + 1;
-        let z_diff = (point[2] - data.grid[2][z_l]) / (data.grid[2][z_u] - data.grid[2][z_l]);
-        let k = if z_diff < 0.5 { z_l } else { z_u };
+        let k = if point[2] - data.grid[2][z_l] < data.grid[2][z_u] - point[2] {
+            z_l
+        } else {
+            z_u
+        };
 
         Ok(data.values[[i, j, k]])
     }

@@ -1,7 +1,7 @@
 use super::*;
 
-impl Strategy1D for Linear {
-    fn interpolate(&self, data: &InterpData1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
+impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Linear {
+    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
@@ -19,7 +19,7 @@ impl Strategy1D for Linear {
         };
         let x_u = x_l + 1;
         let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
-        Ok(data.values[x_l] * (1.0 - x_diff) + data.values[x_u] * x_diff)
+        Ok(data.values[x_l] * (T::one() - x_diff) + data.values[x_u] * x_diff)
     }
 
     /// Returns `true`
@@ -28,15 +28,18 @@ impl Strategy1D for Linear {
     }
 }
 
-impl Strategy1D for Nearest {
-    fn interpolate(&self, data: &InterpData1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
+impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for Nearest {
+    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
         let x_l = find_nearest_index(data.grid[0].view(), point[0]);
         let x_u = x_l + 1;
-        let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
-        let i = if x_diff < 0.5 { x_l } else { x_u };
+        let i = if point[0] - data.grid[0][x_l] < data.grid[0][x_u] - point[0] {
+            x_l
+        } else {
+            x_u
+        };
         Ok(data.values[i])
     }
 
@@ -46,8 +49,8 @@ impl Strategy1D for Nearest {
     }
 }
 
-impl Strategy1D for LeftNearest {
-    fn interpolate(&self, data: &InterpData1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
+impl<T: Num + PartialOrd + Copy + Debug> Strategy1D<T> for LeftNearest {
+    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
@@ -61,8 +64,11 @@ impl Strategy1D for LeftNearest {
     }
 }
 
-impl Strategy1D for RightNearest {
-    fn interpolate(&self, data: &InterpData1D, point: &[f64; 1]) -> Result<f64, InterpolateError> {
+impl<T> Strategy1D<T> for RightNearest
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(&self, data: &InterpData1D<T>, point: &[T; 1]) -> Result<T, InterpolateError> {
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }

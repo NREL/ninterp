@@ -8,15 +8,17 @@ const N: usize = 2;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpData2D {
-    pub grid: [Array1<f64>; N],
-    pub values: Array<f64, Dim<[Ix; N]>>,
+pub struct InterpData2D<T> {
+    pub grid: [Array1<T>; N],
+    pub values: Array<T, Dim<[Ix; N]>>,
 }
-validate_impl!(InterpData2D);
-impl InterpData2D {
+validate_impl!(InterpData2D<T>);
+impl<T: Num + PartialOrd + Copy + Debug> InterpData2D<T> {
     /// Returns `2`
-    pub const fn ndim(&self) -> usize {N}
-    pub fn new(x: Array1<f64>, y: Array1<f64>, f_xy: Array2<f64>) -> Result<Self, ValidateError> {
+    pub const fn ndim(&self) -> usize {
+        N
+    }
+    pub fn new(x: Array1<T>, y: Array1<T>, f_xy: Array2<T>) -> Result<Self, ValidateError> {
         let data = Self {
             grid: [x, y],
             values: f_xy,
@@ -30,14 +32,22 @@ impl InterpData2D {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Interp2D<S: Strategy2D> {
-    pub data: InterpData2D,
+pub struct Interp2D<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: Strategy2D<T>,
+{
+    pub data: InterpData2D<T>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    pub extrapolate: Extrapolate<T>,
 }
 
-impl<S: Strategy2D> Interp2D<S> {
+impl<T, S> Interp2D<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: Strategy2D<T>,
+{
     /// Instantiate two-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
@@ -73,11 +83,11 @@ impl<S: Strategy2D> Interp2D<S> {
     /// ); // point is restricted to within grid bounds
     /// ```
     pub fn new(
-        x: Array1<f64>,
-        y: Array1<f64>,
-        f_xy: Array2<f64>,
+        x: Array1<T>,
+        y: Array1<T>,
+        f_xy: Array2<T>,
         strategy: S,
-        extrapolate: Extrapolate,
+        extrapolate: Extrapolate<T>,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
             data: InterpData2D::new(x, y, f_xy)?,
@@ -88,16 +98,16 @@ impl<S: Strategy2D> Interp2D<S> {
         Ok(interpolator)
     }
 
-    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    pub fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 
-    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn check_extrapolate(&self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+            return Err(ValidateError::ExtrapolateSelection(format!("{:?}", self.extrapolate)));
         }
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
@@ -112,7 +122,11 @@ impl<S: Strategy2D> Interp2D<S> {
     }
 }
 
-impl<S: Strategy2D> Interpolator for Interp2D<S> {
+impl<T, S> Interpolator<T> for Interp2D<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: Strategy2D<T>,
+{
     /// Returns `2`
     fn ndim(&self) -> usize {
         N
@@ -124,8 +138,8 @@ impl<S: Strategy2D> Interpolator for Interp2D<S> {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
-        let point: &[f64; N] = point
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
+        let point: &[T; N] = point
             .try_into()
             .map_err(|_| InterpolateError::PointLength(N))?;
         let grid = [&self.data.grid[0], &self.data.grid[1]];
@@ -138,11 +152,13 @@ impl<S: Strategy2D> Interpolator for Interp2D<S> {
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
-                            point[0].clamp(
+                            num::clamp(
+                                point[0],
                                 *self.data.grid[0].first().unwrap(),
                                 *self.data.grid[0].last().unwrap(),
                             ),
-                            point[1].clamp(
+                            num::clamp(
+                                point[1],
                                 *self.data.grid[1].first().unwrap(),
                                 *self.data.grid[1].last().unwrap(),
                             ),
@@ -164,19 +180,22 @@ impl<S: Strategy2D> Interpolator for Interp2D<S> {
         self.strategy.interpolate(&self.data, point)
     }
 
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<T>> {
         Some(self.extrapolate)
     }
 
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 }
 
-impl Interp2D<Box<dyn Strategy2D>> {
-    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy2D>) -> Result<(), ValidateError> {
+impl<T> Interp2D<T, Box<dyn Strategy2D<T>>>
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    pub fn set_strategy(&mut self, strategy: Box<dyn Strategy2D<T>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
         self.check_extrapolate(self.extrapolate)
     }
@@ -348,7 +367,7 @@ mod tests {
             array![0., 1.],
             array![0., 1.],
             array![[0., 1.], [2., 3.]],
-            Box::new(Linear) as Box<dyn Strategy2D>,
+            Box::new(Linear) as Box<dyn Strategy2D<_>>,
             Extrapolate::Error,
         )
         .unwrap();

@@ -9,7 +9,7 @@ fn main() {
         array![0., 1., 2.],
         array![0., 3., 6.],
         // Provide the strategy as a trait object
-        Box::new(Linear) as Box<dyn Strategy1D>,
+        Box::new(Linear) as Box<dyn Strategy1D<_>>,
         Extrapolate::Error,
     )
     .unwrap();

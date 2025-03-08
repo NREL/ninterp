@@ -8,9 +8,9 @@ pub enum ValidateError {
     #[error("selected `Strategy` ({0}) is unimplemented/inapplicable for interpolator")]
     StrategySelection(&'static str),
     #[error(
-        "selected `Extrapolate` variant ({0:?}) is unimplemented/inapplicable for interpolator"
+        "selected `Extrapolate` variant ({0}) is unimplemented/inapplicable for interpolator"
     )]
-    ExtrapolateSelection(crate::Extrapolate),
+    ExtrapolateSelection(String),
     #[error("supplied grid coordinates cannot be empty: dim {0}")]
     EmptyGrid(usize),
     #[error("supplied coordinates must be sorted and non-repeating: dim {0}")]
@@ -26,8 +26,6 @@ pub enum ValidateError {
 pub enum InterpolateError {
     #[error("attempted to interpolate at point beyond grid data: {0}")]
     ExtrapolateError(String),
-    #[error("surrounding values cannot be NaN: {0}")]
-    NaNError(String),
     #[error("supplied point slice should have length {0} for {0}-D interpolation")]
     PointLength(usize),
     #[error("{0}")]

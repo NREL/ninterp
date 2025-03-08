@@ -8,12 +8,18 @@ mod strategies;
 /// Interpolator data where N is determined at runtime
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpDataND {
-    pub grid: Vec<Array1<f64>>,
-    pub values: ArrayD<f64>,
+pub struct InterpDataND<T>
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    pub grid: Vec<Array1<T>>,
+    pub values: ArrayD<T>,
 }
-validate_impl!(InterpDataND);
-impl InterpDataND {
+validate_impl!(InterpDataND<T>);
+impl<T> InterpDataND<T>
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
             0
@@ -21,7 +27,7 @@ impl InterpDataND {
             self.values.ndim()
         }
     }
-    pub fn new(grid: Vec<Array1<f64>>, values: ArrayD<f64>) -> Result<Self, ValidateError> {
+    pub fn new(grid: Vec<Array1<T>>, values: ArrayD<T>) -> Result<Self, ValidateError> {
         let data = Self { grid, values };
         data.validate()?;
         Ok(data)
@@ -32,14 +38,22 @@ impl InterpDataND {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct InterpND<S: StrategyND> {
-    pub data: InterpDataND,
+pub struct InterpND<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<T>,
+{
+    pub data: InterpDataND<T>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub extrapolate: Extrapolate,
+    pub extrapolate: Extrapolate<T>,
 }
 
-impl<S: StrategyND> InterpND<S> {
+impl<T, S> InterpND<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<T>,
+{
     /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
     /// Applicable interpolation strategies:
@@ -83,10 +97,10 @@ impl<S: StrategyND> InterpND<S> {
     /// ));
     /// ```
     pub fn new(
-        grid: Vec<Array1<f64>>,
-        values: ArrayD<f64>,
+        grid: Vec<Array1<T>>,
+        values: ArrayD<T>,
         strategy: S,
-        extrapolate: Extrapolate,
+        extrapolate: Extrapolate<T>,
     ) -> Result<Self, ValidateError> {
         let interpolator = Self {
             data: InterpDataND::new(grid, values)?,
@@ -97,10 +111,13 @@ impl<S: StrategyND> InterpND<S> {
         Ok(interpolator)
     }
 
-    fn check_extrapolate(&self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn check_extrapolate(&self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         // Check applicability of strategy and extrapolate setting
         if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(self.extrapolate));
+            return Err(ValidateError::ExtrapolateSelection(format!(
+                "{:?}",
+                self.extrapolate
+            )));
         }
         // If using Extrapolate::Enable,
         // check that each grid dimension has at least two elements
@@ -115,7 +132,11 @@ impl<S: StrategyND> InterpND<S> {
     }
 }
 
-impl<S: StrategyND> Interpolator for InterpND<S> {
+impl<T, S> Interpolator<T> for InterpND<T, S>
+where
+    T: Num + PartialOrd + Copy + Debug,
+    S: StrategyND<T>,
+{
     fn ndim(&self) -> usize {
         self.data.ndim()
     }
@@ -126,7 +147,7 @@ impl<S: StrategyND> Interpolator for InterpND<S> {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         let n = self.ndim();
         if point.len() != n {
             return Err(InterpolateError::PointLength(n));
@@ -140,13 +161,14 @@ impl<S: StrategyND> Interpolator for InterpND<S> {
                     Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value),
                     Extrapolate::Clamp => {
-                        let clamped_point: Vec<f64> = point
+                        let clamped_point: Vec<_> = point
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
-                                pt.clamp(
-                                    *self.data.grid[dim].first().unwrap(),
-                                    *self.data.grid[dim].last().unwrap(),
+                                *num::clamp(
+                                    pt,
+                                    self.data.grid[dim].first().unwrap(),
+                                    self.data.grid[dim].last().unwrap(),
                                 )
                             })
                             .collect();
@@ -167,19 +189,22 @@ impl<S: StrategyND> Interpolator for InterpND<S> {
         self.strategy.interpolate(&self.data, point)
     }
 
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<T>> {
         Some(self.extrapolate)
     }
 
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         self.check_extrapolate(extrapolate)?;
         self.extrapolate = extrapolate;
         Ok(())
     }
 }
 
-impl InterpND<Box<dyn StrategyND>> {
-    pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND>) -> Result<(), ValidateError> {
+impl<T> InterpND<T, Box<dyn StrategyND<T>>>
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND<T>>) -> Result<(), ValidateError> {
         self.strategy = strategy;
         self.check_extrapolate(self.extrapolate)
     }

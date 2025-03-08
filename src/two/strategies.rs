@@ -1,7 +1,10 @@
 use super::*;
 
-impl Strategy2D for Linear {
-    fn interpolate(&self, data: &InterpData2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
+impl<T> Strategy2D<T> for Linear
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(&self, data: &InterpData2D<T>, point: &[T; 2]) -> Result<T, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning:
         // - point is within grid bounds, or
@@ -27,10 +30,10 @@ impl Strategy2D for Linear {
         let y_u = y_l + 1;
         let y_diff = (point[1] - data.grid[1][y_l]) / (data.grid[1][y_u] - data.grid[1][y_l]);
         // interpolate in the x-direction
-        let f0 = data.values[[x_l, y_l]] * (1.0 - x_diff) + data.values[[x_u, y_l]] * x_diff;
-        let f1 = data.values[[x_l, y_u]] * (1.0 - x_diff) + data.values[[x_u, y_u]] * x_diff;
+        let f0 = data.values[[x_l, y_l]] * (T::one() - x_diff) + data.values[[x_u, y_l]] * x_diff;
+        let f1 = data.values[[x_l, y_u]] * (T::one() - x_diff) + data.values[[x_u, y_u]] * x_diff;
         // interpolate in the y-direction
-        Ok(f0 * (1.0 - y_diff) + f1 * y_diff)
+        Ok(f0 * (T::one() - y_diff) + f1 * y_diff)
     }
 
     /// Returns `true`
@@ -39,18 +42,27 @@ impl Strategy2D for Linear {
     }
 }
 
-impl Strategy2D for Nearest {
-    fn interpolate(&self, data: &InterpData2D, point: &[f64; 2]) -> Result<f64, InterpolateError> {
+impl<T> Strategy2D<T> for Nearest
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(&self, data: &InterpData2D<T>, point: &[T; 2]) -> Result<T, InterpolateError> {
         // x
         let x_l = find_nearest_index(data.grid[0].view(), point[0]);
         let x_u = x_l + 1;
-        let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
-        let i = if x_diff < 0.5 { x_l } else { x_u };
+        let i = if point[0] - data.grid[0][x_l] < data.grid[0][x_u] - point[0] {
+            x_l
+        } else {
+            x_u
+        };
         // y
         let y_l = find_nearest_index(data.grid[1].view(), point[1]);
         let y_u = y_l + 1;
-        let y_diff = (point[1] - data.grid[1][y_l]) / (data.grid[1][y_u] - data.grid[1][y_l]);
-        let j = if y_diff < 0.5 { y_l } else { y_u };
+        let j = if point[1] - data.grid[1][y_l] < data.grid[1][y_u] - point[1] {
+            y_l
+        } else {
+            y_u
+        };
 
         Ok(data.values[[i, j]])
     }

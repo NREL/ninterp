@@ -135,42 +135,46 @@ pub mod interpolator {
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
+pub(crate) use std::fmt::Debug;
+
 pub(crate) use ndarray::prelude::*;
-pub(crate) use ndarray::Ix;
+pub(crate) use ndarray::{Data, Ix, *};
+
+pub(crate) use num::traits::Num;
 
 #[cfg(feature = "serde")]
 pub(crate) use serde::{Deserialize, Serialize};
 
-pub trait Interpolator {
+pub trait Interpolator<T: Copy + Debug> {
     /// Interpolator dimensionality
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
     fn validate(&self) -> Result<(), ValidateError>;
     /// Interpolate at supplied point.
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError>;
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
     /// Get [`Extrapolate`] variant.
     ///
     /// This does not perform extrapolation.
     /// Instead, call [`Interpolator::interpolate`] on an instance using [`Extrapolate::Enable`].
-    fn extrapolate(&self) -> Option<Extrapolate>;
+    fn extrapolate(&self) -> Option<Extrapolate<T>>;
     /// Set [`Extrapolate`] variant, checking validity.
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError>;
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError>;
 }
 
-impl Interpolator for Box<dyn Interpolator> {
+impl<T: Num + PartialOrd + Copy + Debug> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
         (**self).ndim()
     }
     fn validate(&self) -> Result<(), ValidateError> {
         (**self).validate()
     }
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
     }
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<T>> {
         (**self).extrapolate()
     }
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         (**self).set_extrapolate(extrapolate)
     }
 }
@@ -181,11 +185,11 @@ impl Interpolator for Box<dyn Interpolator> {
 /// is outside the bounds of the interpolation grid.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub enum Extrapolate {
+pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
     Enable,
     /// If point is beyond grid limits, return this value instead.
-    Fill(f64),
+    Fill(T),
     /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
     Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
@@ -195,7 +199,7 @@ pub enum Extrapolate {
 
 macro_rules! validate_impl {
     ($($data:ty)*) => ($(
-        impl $data {
+        impl<T: Num + PartialOrd + Copy + Debug> $data {
             pub fn validate(&self) -> Result<(), ValidateError> {
                 let n = self.ndim();
                 if (self.grid.len() != n) && !(n == 0 && self.grid.iter().all(|g| g.is_empty())) {

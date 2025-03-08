@@ -5,8 +5,11 @@ use super::*;
 const N: usize = 0;
 
 /// 0-D interpolator
-pub struct Interp0D(pub f64);
-impl Interp0D {
+pub struct Interp0D<T>(pub T);
+impl<T> Interp0D<T>
+where
+    T: Num + PartialOrd + Copy + Debug,
+{
     /// Instantiate constant-value 'interpolator'.
     ///
     /// # Example:
@@ -19,11 +22,14 @@ impl Interp0D {
     ///     const_value
     /// );
     /// ```
-    pub fn new(value: f64) -> Self {
+    pub fn new(value: T) -> Self {
         Self(value)
     }
 }
-impl Interpolator for Interp0D {
+impl<T> Interpolator<T> for Interp0D<T>
+where
+    T: Copy + Debug,
+{
     /// Returns `0`
     fn ndim(&self) -> usize {
         N
@@ -34,20 +40,20 @@ impl Interpolator for Interp0D {
         Ok(())
     }
 
-    fn interpolate(&self, point: &[f64]) -> Result<f64, InterpolateError> {
+    fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         if !point.is_empty() {
-            return Err(InterpolateError::PointLength(0));
+            return Err(InterpolateError::PointLength(N));
         }
         Ok(self.0)
     }
 
     /// Returns `None`
-    fn extrapolate(&self) -> Option<Extrapolate> {
+    fn extrapolate(&self) -> Option<Extrapolate<T>> {
         None
     }
 
     /// Returns `Ok(())`
-    fn set_extrapolate(&mut self, _extrapolate: Extrapolate) -> Result<(), ValidateError> {
+    fn set_extrapolate(&mut self, _extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
         Ok(())
     }
 }

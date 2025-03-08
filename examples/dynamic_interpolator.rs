@@ -4,7 +4,7 @@ use ninterp::prelude::*;
 
 fn main() {
     // Create `Interpolator` trait object
-    let mut boxed: Box<dyn Interpolator> = Box::new(
+    let mut boxed: Box<dyn Interpolator<_>> = Box::new(
         Interp2D::new(
             array![0., 1.],
             array![0., 1.],
