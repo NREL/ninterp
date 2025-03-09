@@ -112,7 +112,7 @@ where
         Ok(interp_vals.first().copied().unwrap())
     }
 
-    /// Returns `true`
+    /// Returns `true`.
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -207,7 +207,7 @@ where
         Ok(interp_vals.first().copied().unwrap())
     }
 
-    /// Returns `false`
+    /// Returns `false`.
     fn allow_extrapolate(&self) -> bool {
         false
     }

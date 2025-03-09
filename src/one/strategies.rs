@@ -30,7 +30,7 @@ where
         Ok(data.values[x_l] * (D::Elem::one() - x_diff) + data.values[x_u] * x_diff)
     }
 
-    /// Returns `true`
+    /// Returns `true`.
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -59,7 +59,7 @@ where
         Ok(data.values[i])
     }
 
-    /// Returns `false`
+    /// Returns `false`.
     fn allow_extrapolate(&self) -> bool {
         false
     }
@@ -82,7 +82,7 @@ where
         Ok(data.values[x_l])
     }
 
-    /// Returns `false`
+    /// Returns `false`.
     fn allow_extrapolate(&self) -> bool {
         false
     }
@@ -105,7 +105,7 @@ where
         Ok(data.values[x_u])
     }
 
-    /// Returns `false`
+    /// Returns `false`.
     fn allow_extrapolate(&self) -> bool {
         false
     }

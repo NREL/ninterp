@@ -68,7 +68,7 @@
 //! To change the extrapolation setting, call `set_extrapolate`.
 //!
 //! To change the interpolation strategy,
-//! supply a `Box<dyn Strategy1D>`/etc. in the new method,
+//! supply a `Box<dyn Strategy1D>`/etc. upon instantiation,
 //! and call `set_strategy`.
 //!
 //! ## Strategies
@@ -170,19 +170,12 @@ pub(crate) use assert_approx_eq;
 /// `Box<dyn Interpolator<_>>`
 /// and swap the contained interpolator at runtime.
 pub trait Interpolator<T> {
-    /// Interpolator dimensionality
+    /// Interpolator dimensionality.
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
     fn validate(&self) -> Result<(), ValidateError>;
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
-    /// Get [`Extrapolate`] variant.
-    ///
-    /// This does not perform extrapolation.
-    /// Instead, call [`Interpolator::interpolate`] on an instance using [`Extrapolate::Enable`].
-    fn extrapolate(&self) -> Option<Extrapolate<T>>;
-    /// Set [`Extrapolate`] variant, checking validity.
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError>;
 }
 
 impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
@@ -194,12 +187,6 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
-    }
-    fn extrapolate(&self) -> Option<Extrapolate<T>> {
-        (**self).extrapolate()
-    }
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
-        (**self).set_extrapolate(extrapolate)
     }
 }
 
@@ -268,3 +255,59 @@ pub enum Extrapolate<T> {
     #[default]
     Error,
 }
+
+macro_rules! extrapolate_impl {
+    ($InterpType:ident, $Strategy:ident) => {
+        impl<D, S> $InterpType<D, S>
+        where
+            D: Data,
+            D::Elem: Num + PartialOrd + Copy + Debug,
+            S: $Strategy<D>,
+        {
+            /// Set [`Extrapolate`] variant, checking validity.
+            pub fn set_extrapolate(
+                &mut self,
+                extrapolate: Extrapolate<D::Elem>,
+            ) -> Result<(), ValidateError> {
+                self.check_extrapolate(&extrapolate)?;
+                self.extrapolate = extrapolate;
+                Ok(())
+            }
+
+            pub fn check_extrapolate(
+                &self,
+                extrapolate: &Extrapolate<D::Elem>,
+            ) -> Result<(), ValidateError> {
+                // Check applicability of strategy and extrapolate setting
+                if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate()
+                {
+                    return Err(ValidateError::ExtrapolateSelection(format!(
+                        "{:?}",
+                        self.extrapolate
+                    )));
+                }
+                // If using Extrapolate::Enable,
+                // check that each grid dimension has at least two elements
+                if matches!(self.extrapolate, Extrapolate::Enable) {
+                    for (i, g) in self.data.grid.iter().enumerate() {
+                        if g.len() < 2 {
+                            return Err(ValidateError::Other(format!(
+                                "at least 2 data points are required for extrapolation: dim {i}",
+                            )));
+                        }
+                    }
+                }
+
+                if matches!(self.extrapolate, Extrapolate::Enable)
+                    && self.data.grid.iter().any(|g| g.len() < 2)
+                {
+                    return Err(ValidateError::Other(
+                        "at least 2 data points are required for extrapolation".into(),
+                    ));
+                }
+                Ok(())
+            }
+        }
+    };
+}
+pub(crate) use extrapolate_impl;

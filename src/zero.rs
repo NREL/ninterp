@@ -30,30 +30,23 @@ impl<T> Interpolator<T> for Interp0D<T>
 where
     T: Num + PartialOrd + Copy + Debug,
 {
-    /// Returns `0`
+    /// Returns `0`.
     fn ndim(&self) -> usize {
         N
     }
 
-    /// Returns `Ok(())`
+    /// Returns `Ok(())`.
     fn validate(&self) -> Result<(), ValidateError> {
         Ok(())
     }
 
+    /// Returns the contained value [`Interp0D::0`].
+    ///
+    /// Errors if `!point.is_empty()`.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         if !point.is_empty() {
             return Err(InterpolateError::PointLength(N));
         }
         Ok(self.0)
-    }
-
-    /// Returns `None`
-    fn extrapolate(&self) -> Option<Extrapolate<T>> {
-        None
-    }
-
-    /// Returns `Ok(())`
-    fn set_extrapolate(&mut self, _extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
-        Ok(())
     }
 }

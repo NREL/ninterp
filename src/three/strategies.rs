@@ -54,7 +54,7 @@ where
         Ok(f0 * (D::Elem::one() - z_diff) + f1 * z_diff)
     }
 
-    /// Returns `true`
+    /// Returns `true`.
     fn allow_extrapolate(&self) -> bool {
         true
     }
@@ -98,7 +98,7 @@ where
         Ok(data.values[[i, j, k]])
     }
 
-    /// Returns `false`
+    /// Returns `false`.
     fn allow_extrapolate(&self) -> bool {
         false
     }

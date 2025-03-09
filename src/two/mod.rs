@@ -49,6 +49,8 @@ where
     pub extrapolate: Extrapolate<D::Elem>,
 }
 
+extrapolate_impl!(Interp2D, Strategy2D);
+
 impl<D, S> Interp2D<D, S>
 where
     D: Data,
@@ -104,26 +106,6 @@ where
         interpolator.validate()?;
         Ok(interpolator)
     }
-
-    fn check_extrapolate(&self, extrapolate: &Extrapolate<D::Elem>) -> Result<(), ValidateError> {
-        // Check applicability of strategy and extrapolate setting
-        if matches!(extrapolate, Extrapolate::Enable) && !self.strategy.allow_extrapolate() {
-            return Err(ValidateError::ExtrapolateSelection(format!(
-                "{:?}",
-                self.extrapolate
-            )));
-        }
-        // If using Extrapolate::Enable,
-        // check that each grid dimension has at least two elements
-        if matches!(self.extrapolate, Extrapolate::Enable)
-            && (self.data.grid[0].len() < 2 || self.data.grid[1].len() < 2)
-        {
-            return Err(ValidateError::Other(
-                "at least 2 data points are required for extrapolation".into(),
-            ));
-        }
-        Ok(())
-    }
 }
 
 impl<D, S> Interpolator<D::Elem> for Interp2D<D, S>
@@ -132,7 +114,7 @@ where
     D::Elem: Num + PartialOrd + Copy + Debug,
     S: Strategy2D<D>,
 {
-    /// Returns `2`
+    /// Returns `2`.
     fn ndim(&self) -> usize {
         N
     }
@@ -183,16 +165,6 @@ where
             return Err(InterpolateError::ExtrapolateError(errors.join("")));
         }
         self.strategy.interpolate(&self.data, point)
-    }
-
-    fn extrapolate(&self) -> Option<Extrapolate<D::Elem>> {
-        Some(self.extrapolate)
-    }
-
-    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
-        self.check_extrapolate(&extrapolate)?;
-        self.extrapolate = extrapolate;
-        Ok(())
     }
 }
 
