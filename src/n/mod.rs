@@ -47,7 +47,6 @@ where
 }
 
 /// N-D interpolator
-#[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(

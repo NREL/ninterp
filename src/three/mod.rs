@@ -33,7 +33,6 @@ where
 }
 
 /// 3-D interpolator
-#[non_exhaustive]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
