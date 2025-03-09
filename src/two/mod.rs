@@ -7,16 +7,11 @@ mod strategies;
 const N: usize = 2;
 
 pub type InterpData2D<D> = InterpData<D, N>;
-validate_impl!(InterpData2D<D>);
 impl<D> InterpData2D<D>
 where
     D: Data,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    /// Returns `2`
-    pub const fn ndim(&self) -> usize {
-        N
-    }
     pub fn new(
         x: ArrayBase<D, Ix1>,
         y: ArrayBase<D, Ix1>,

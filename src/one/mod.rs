@@ -7,16 +7,11 @@ mod strategies;
 const N: usize = 1;
 
 pub type InterpData1D<D> = InterpData<D, N>;
-validate_impl!(InterpData1D<D>);
 impl<D> InterpData1D<D>
 where
     D: Data,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    /// Returns `1`
-    pub const fn ndim(&self) -> usize {
-        N
-    }
     pub fn new(x: ArrayBase<D, Ix1>, f_x: ArrayBase<D, Ix1>) -> Result<Self, ValidateError> {
         let data = Self {
             grid: [x],

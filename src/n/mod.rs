@@ -23,7 +23,6 @@ where
     pub grid: Vec<ArrayBase<D, Ix1>>,
     pub values: ArrayBase<D, IxDyn>,
 }
-validate_impl!(InterpDataND<D>);
 impl<D> InterpDataND<D>
 where
     D: Data,
@@ -36,6 +35,7 @@ where
             self.values.ndim()
         }
     }
+
     pub fn new(
         grid: Vec<ArrayBase<D, Ix1>>,
         values: ArrayBase<D, IxDyn>,
@@ -43,6 +43,35 @@ where
         let data = Self { grid, values };
         data.validate()?;
         Ok(data)
+    }
+
+    pub fn validate(&self) -> Result<(), ValidateError> {
+        let n = self.ndim();
+        if (self.grid.len() != n) && !(n == 0 && self.grid.iter().all(|g| g.is_empty())) {
+            // Only possible for `InterpDataND`
+            return Err(ValidateError::Other(format!(
+                "grid length {} does not match dimensionality {}",
+                self.grid.len(),
+                n,
+            )));
+        }
+        for i in 0..n {
+            let i_grid_len = self.grid[i].len();
+            // Check that each grid dimension has elements
+            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
+            if i_grid_len == 0 {
+                return Err(ValidateError::EmptyGrid(i));
+            }
+            // Check that grid points are monotonically increasing
+            if !self.grid[i].windows(2).into_iter().all(|w| w[0] <= w[1]) {
+                return Err(ValidateError::Monotonicity(i));
+            }
+            // Check that grid and values are compatible shapes
+            if i_grid_len != self.values.shape()[i] {
+                return Err(ValidateError::IncompatibleShapes(i));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -164,7 +193,11 @@ where
     S: StrategyND<D>,
 {
     fn ndim(&self) -> usize {
-        self.data.ndim()
+        if self.data.values.len() == 1 {
+            0
+        } else {
+            self.data.values.ndim()
+        }
     }
 
     fn validate(&self) -> Result<(), ValidateError> {

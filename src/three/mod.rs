@@ -7,16 +7,11 @@ mod strategies;
 const N: usize = 3;
 
 pub type InterpData3D<D> = InterpData<D, N>;
-validate_impl!(InterpData3D<D>);
 impl<D> InterpData3D<D>
 where
     D: Data,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
-    /// Returns `3`
-    pub const fn ndim(&self) -> usize {
-        N
-    }
     pub fn new(
         x: ArrayBase<D, Ix1>,
         y: ArrayBase<D, Ix1>,
