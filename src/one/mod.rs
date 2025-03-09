@@ -83,7 +83,7 @@ where
     /// assert_eq!(
     ///     interp.interpolate(&[3.6]).unwrap(),
     ///     1.44
-    /// ); // point is restricted to within grid bounds
+    /// );
     /// ```
     pub fn new(
         x: ArrayBase<D, Ix1>,

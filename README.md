@@ -87,7 +87,7 @@ An [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/enum.Extrapolate.html)
 setting must be provided in the `new` method.
 This controls what happens when a point is beyond the range of supplied coordinates.
 The following setttings are applicable for all interpolators:
-- `Extrapolate::Fill(f64)`
+- `Extrapolate::Fill(T)`
 - `Extrapolate::Clamp`
 - `Extrapolate::Error`
 

@@ -84,7 +84,7 @@
 //! An [`Extrapolate`] setting must be provided in the `new` method.
 //! This controls what happens when a point is beyond the range of supplied coordinates.
 //! The following setttings are applicable for all interpolators:
-//! - [`Extrapolate::Fill(f64)`](`Extrapolate::Fill`)
+//! - [`Extrapolate::Fill(T)`](`Extrapolate::Fill`)
 //! - [`Extrapolate::Clamp`]
 //! - [`Extrapolate::Error`]
 //!
@@ -263,7 +263,7 @@ pub enum Extrapolate<T> {
     Enable,
     /// If point is beyond grid limits, return this value instead.
     Fill(T),
-    /// Restrict interpolant point to the limits of the interpolation grid, using [`f64::clamp`].
+    /// Restrict interpolant point to the limits of the interpolation grid, using [`num::clamp`].
     Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
