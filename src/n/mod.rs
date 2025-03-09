@@ -175,11 +175,7 @@ where
     S: StrategyND<D>,
 {
     fn ndim(&self) -> usize {
-        if self.data.values.len() == 1 {
-            0
-        } else {
-            self.data.values.ndim()
-        }
+        self.data.ndim()
     }
 
     fn validate(&self) -> Result<(), ValidateError> {
