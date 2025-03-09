@@ -297,14 +297,6 @@ macro_rules! extrapolate_impl {
                         }
                     }
                 }
-
-                if matches!(self.extrapolate, Extrapolate::Enable)
-                    && self.data.grid.iter().any(|g| g.len() < 2)
-                {
-                    return Err(ValidateError::Other(
-                        "at least 2 data points are required for extrapolation".into(),
-                    ));
-                }
                 Ok(())
             }
         }
