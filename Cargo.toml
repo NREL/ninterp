@@ -17,7 +17,7 @@ categories = ["mathematics"]
 [dependencies]
 itertools = "0.13.0"
 ndarray = "0.16.1"
-num = "0.4.3"
+num-traits = "0.2.19"
 serde = { version = "1.0.210", optional = true, features = ["derive"] }
 thiserror = "1.0.64"
 

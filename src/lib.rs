@@ -144,8 +144,7 @@ pub(crate) use std::fmt::Debug;
 pub(crate) use ndarray::prelude::*;
 pub(crate) use ndarray::{Data, Ix};
 
-pub(crate) use num::clamp;
-pub(crate) use num::traits::{Num, One};
+pub(crate) use num_traits::{clamp, Num, One};
 
 #[cfg(feature = "serde")]
 pub(crate) use ndarray::DataOwned;
@@ -263,7 +262,7 @@ pub enum Extrapolate<T> {
     Enable,
     /// If point is beyond grid limits, return this value instead.
     Fill(T),
-    /// Restrict interpolant point to the limits of the interpolation grid, using [`num::clamp`].
+    /// Restrict interpolant point to the limits of the interpolation grid, using [`num_traits::clamp`].
     Clamp,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
