@@ -35,13 +35,16 @@
 //!   meaning strategy concrete types are determined at compilation.
 //!   This gives increased performance at the cost of runtime flexibility.
 //!   To allow swapping strategies at runtime,
-//!   use *dynamic dispatch* by providing a trait object `Box<dyn Strategy1D>`/etc. to the `new` method.
+//!   use *dynamic dispatch* by providing a boxed trait object
+//!   `Box<dyn Strategy1D>`/etc. to the `new` method.
 //!
 //! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`:
 //! [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
 //!
 //! - Defining custom strategies:
 //! [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+//!
+//! - Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
 //!
 //! # Overview
 //! A prelude module has been defined:
