@@ -28,18 +28,21 @@ See examples in `new` method documentation:
 - [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html#method.new)
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html#method.new)
 
-Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c285919baae609089dee287dc3842/examples) directory for advanced examples:
+Also see the [`examples`](https://github.com/NREL/ninterp/tree/0c664523198bee063da51dc2524cbe75e8882c2d/examples) directory for advanced examples:
 - Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
 
   By default, construction of interpolators uses *static dispatch*,
   meaning strategy concrete types are determined at compilation.
   This gives increased performance at the cost of runtime flexibility.
   To allow swapping strategies at runtime,
-  use *dynamic dispatch* by providing a trait object `Box<dyn Strategy1D>`/etc. to the `new` method.
+  use *dynamic dispatch* by providing a boxed trait object
+  `Box<dyn Strategy1D>`/etc. to the `new` method.
 
 - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
 
 - Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+
+- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
 
 ## Overview
 A prelude module has been defined: 
@@ -65,7 +68,7 @@ call [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Int
 To change the extrapolation setting, call `set_extrapolate`.
 
 To change the interpolation strategy,
-supply a `Box<dyn Strategy1D>`/etc. in the new method,
+supply a `Box<dyn Strategy1D>`/etc. upon instantiation,
 and call `set_strategy`.
 
 ### Strategies
