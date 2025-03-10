@@ -163,6 +163,14 @@ pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize
 #[derive(Debug)]
 pub struct Linear;
 
+// TODO: `pub struct Quadratic;`
+// Maybe `pub struct Polynomial(usize);` as well?
+// with `pub type Quadratic = Polynomial(2)` and `pub type Cubic = Polynomial(3)`
+
+/// Cubic spline interpolation: TODO
+#[derive(Debug)]
+pub struct Cubic;
+
 /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
 ///
 /// # Note

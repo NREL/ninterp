@@ -75,7 +75,7 @@
 //! and call `set_strategy`.
 //!
 //! ## Strategies
-//! An interpolation strategy (e.g. [`Linear`], [`Nearest`], [`LeftNearest`], [`RightNearest`]) must be specified.
+//! An interpolation strategy (e.g. [`Linear`], [`Cubic`], [`Nearest`], [`LeftNearest`], [`RightNearest`]) must be specified.
 //! Not all interpolation strategies are implemented for every dimensionality.
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
@@ -117,7 +117,7 @@
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
     pub use crate::interpolator::*;
-    pub use crate::strategy::{LeftNearest, Linear, Nearest, RightNearest};
+    pub use crate::strategy::{Cubic, LeftNearest, Linear, Nearest, RightNearest};
     pub use crate::Extrapolate;
     pub use crate::Interpolator;
 }
