@@ -18,7 +18,7 @@ mod strategies;
 pub struct InterpDataND<D>
 where
     D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: Copy + Debug,
 {
     pub grid: Vec<ArrayBase<D, Ix1>>,
     pub values: ArrayBase<D, IxDyn>,
@@ -26,7 +26,7 @@ where
 impl<D> InterpDataND<D>
 where
     D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Copy + Debug,
 {
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {

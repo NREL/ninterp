@@ -20,6 +20,7 @@ ndarray = "0.16.1"
 num-traits = "0.2.19"
 serde = { version = "1.0.210", optional = true, features = ["derive"] }
 thiserror = "1.0.64"
+uom = { version = "0.36.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -31,4 +32,6 @@ name = "benchmark"
 harness = false
 
 [features]
+default = ["uom"]
 serde = ["dep:serde", "ndarray/serde"]
+uom = ["dep:uom"]

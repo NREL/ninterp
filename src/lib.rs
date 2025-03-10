@@ -119,6 +119,7 @@ pub mod prelude {
     pub use crate::Interpolator;
 }
 
+mod data;
 pub mod error;
 pub mod strategy;
 
@@ -136,13 +137,14 @@ pub mod interpolator {
     pub use crate::zero::Interp0D;
 }
 
+pub(crate) use data::*;
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
 pub(crate) use std::fmt::Debug;
 
 pub(crate) use ndarray::prelude::*;
-pub(crate) use ndarray::{Data, Ix};
+pub(crate) use ndarray::{Data, Ix, ViewRepr};
 
 pub(crate) use num_traits::{clamp, Num, One};
 
@@ -187,54 +189,6 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
-    }
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        Dim<[usize; N]>: Serialize + DeserializeOwned,
-        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
-    ")
-)]
-pub struct InterpData<D, const N: usize>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub grid: [ArrayBase<D, Ix1>; N],
-    pub values: ArrayBase<D, Dim<[Ix; N]>>,
-}
-
-impl<D, const N: usize> InterpData<D, N>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub fn validate(&self) -> Result<(), ValidateError> {
-        for i in 0..N {
-            let i_grid_len = self.grid[i].len();
-            // Check that each grid dimension has elements
-            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
-            if i_grid_len == 0 {
-                return Err(ValidateError::EmptyGrid(i));
-            }
-            // Check that grid points are monotonically increasing
-            if !self.grid[i].windows(2).into_iter().all(|w| w[0] <= w[1]) {
-                return Err(ValidateError::Monotonicity(i));
-            }
-            // Check that grid and values are compatible shapes
-            if i_grid_len != self.values.shape()[i] {
-                return Err(ValidateError::IncompatibleShapes(i));
-            }
-        }
-        Ok(())
     }
 }
 

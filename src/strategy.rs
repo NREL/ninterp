@@ -38,6 +38,33 @@ where
     }
 }
 
+#[cfg(feature = "uom")]
+#[allow(non_camel_case_types)]
+impl<'a, D, S, D_uom, U_uom, V_uom> Strategy1D<D> for S
+where
+    S: Strategy1D<ViewRepr<&'a V_uom>>,
+    D: Data<Elem = uom::si::Quantity<D_uom, U_uom, V_uom>>,
+    D_uom: uom::si::Dimension + ?Sized,
+    U_uom: uom::si::Units<V_uom> + ?Sized,
+    V_uom: uom::num::Num + uom::Conversion<V_uom> + Num + PartialOrd + Copy + Debug,
+{
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[D::Elem; 1],
+    ) -> Result<D::Elem, InterpolateError> {
+        Ok(uom::si::Quantity {
+            dimension: std::marker::PhantomData,
+            units: std::marker::PhantomData,
+            value: S::interpolate(self, &data.values_view(), &[point[0].value])?,
+        })
+    }
+
+    fn allow_extrapolate(&self) -> bool {
+        S::allow_extrapolate(&self)
+    }
+}
+
 pub trait Strategy2D<D>: Debug
 where
     D: Data,
