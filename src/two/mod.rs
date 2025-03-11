@@ -7,9 +7,14 @@ mod strategies;
 const N: usize = 2;
 
 pub type InterpData2D<D> = InterpData<D, N>;
+/// [`InterpData2D`] that views data.
+pub type InterpData2DViewed<T> = InterpData2D<ndarray::ViewRepr<T>>;
+/// [`InterpData2D`] that owns data.
+pub type InterpData2DOwned<T> = InterpData2D<ndarray::OwnedRepr<T>>;
+
 impl<D> InterpData2D<D>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn new(
@@ -27,7 +32,7 @@ where
 }
 
 /// 2-D interpolator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -39,23 +44,27 @@ where
 )]
 pub struct Interp2D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     pub data: InterpData2D<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate<D::Elem>,
 }
+/// [`Interp2D`] that views data.
+pub type Interp2DViewed<T, S> = Interp2D<ndarray::ViewRepr<T>, S>;
+/// [`Interp2D`] that owns data.
+pub type Interp2DOwned<T, S> = Interp2D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp2D, Strategy2D);
 
 impl<D, S> Interp2D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     /// Instantiate two-dimensional interpolator.
     ///
@@ -110,9 +119,9 @@ where
 
 impl<D, S> Interpolator<D::Elem> for Interp2D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     /// Returns `2`.
     fn ndim(&self) -> usize {
@@ -170,7 +179,7 @@ where
 
 impl<D> Interp2D<D, Box<dyn Strategy2D<D>>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.

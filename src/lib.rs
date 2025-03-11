@@ -123,6 +123,7 @@ pub mod prelude {
     pub use crate::Interpolator;
 }
 
+pub mod data;
 pub mod error;
 pub mod strategy;
 
@@ -133,22 +134,26 @@ pub mod two;
 pub mod zero;
 
 pub mod interpolator {
-    pub use crate::n::InterpND;
-    pub use crate::one::Interp1D;
-    pub use crate::three::Interp3D;
-    pub use crate::two::Interp2D;
+    pub use crate::n::{InterpND, InterpNDOwned, InterpNDViewed};
+    pub use crate::one::{Interp1D, Interp1DOwned, Interp1DViewed};
+    pub use crate::three::{Interp3D, Interp3DOwned, Interp3DViewed};
+    pub use crate::two::{Interp2D, Interp2DOwned, Interp2DViewed};
     pub use crate::zero::Interp0D;
 }
 
+pub(crate) use data::*;
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
 pub(crate) use std::fmt::Debug;
 
+pub use ndarray;
 pub(crate) use ndarray::prelude::*;
-pub(crate) use ndarray::{Data, Ix};
+pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
 pub(crate) use num_traits::{clamp, Num, One};
+
+pub(crate) use dyn_clone::*;
 
 #[cfg(feature = "serde")]
 pub(crate) use ndarray::DataOwned;
@@ -173,7 +178,7 @@ pub(crate) use assert_approx_eq;
 /// This trait is dyn-compatible, meaning you can use:
 /// `Box<dyn Interpolator<_>>`
 /// and swap the contained interpolator at runtime.
-pub trait Interpolator<T> {
+pub trait Interpolator<T>: DynClone {
     /// Interpolator dimensionality.
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
@@ -181,6 +186,8 @@ pub trait Interpolator<T> {
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
 }
+
+clone_trait_object!(<T> Interpolator<T>);
 
 impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
@@ -191,54 +198,6 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
-    }
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        Dim<[usize; N]>: Serialize + DeserializeOwned,
-        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
-    ")
-)]
-pub struct InterpData<D, const N: usize>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub grid: [ArrayBase<D, Ix1>; N],
-    pub values: ArrayBase<D, Dim<[Ix; N]>>,
-}
-
-impl<D, const N: usize> InterpData<D, N>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub fn validate(&self) -> Result<(), ValidateError> {
-        for i in 0..N {
-            let i_grid_len = self.grid[i].len();
-            // Check that each grid dimension has elements
-            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
-            if i_grid_len == 0 {
-                return Err(ValidateError::EmptyGrid(i));
-            }
-            // Check that grid points are monotonically increasing
-            if !self.grid[i].windows(2).into_iter().all(|w| w[0] <= w[1]) {
-                return Err(ValidateError::Monotonicity(i));
-            }
-            // Check that grid and values are compatible shapes
-            if i_grid_len != self.values.shape()[i] {
-                return Err(ValidateError::IncompatibleShapes(i));
-            }
-        }
-        Ok(())
     }
 }
 
@@ -264,9 +223,9 @@ macro_rules! extrapolate_impl {
     ($InterpType:ident, $Strategy:ident) => {
         impl<D, S> $InterpType<D, S>
         where
-            D: Data,
+            D: Data + RawDataClone + Clone,
             D::Elem: Num + PartialOrd + Copy + Debug,
-            S: $Strategy<D>,
+            S: $Strategy<D> + Clone,
         {
             /// Set [`Extrapolate`] variant, checking validity.
             pub fn set_extrapolate(

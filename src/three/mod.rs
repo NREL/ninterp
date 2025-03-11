@@ -7,9 +7,14 @@ mod strategies;
 const N: usize = 3;
 
 pub type InterpData3D<D> = InterpData<D, N>;
+/// [`InterpData3D`] that views data.
+pub type InterpData3DViewed<T> = InterpData3D<ndarray::ViewRepr<T>>;
+/// [`InterpData3D`] that owns data.
+pub type InterpData3DOwned<T> = InterpData3D<ndarray::OwnedRepr<T>>;
+
 impl<D> InterpData3D<D>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn new(
@@ -28,7 +33,7 @@ where
 }
 
 /// 3-D interpolator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -40,9 +45,9 @@ where
 )]
 pub struct Interp3D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     pub data: InterpData3D<D>,
     pub strategy: S,
@@ -53,14 +58,18 @@ where
     )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
+/// [`Interp3D`] that views data.
+pub type Interp3DViewed<T, S> = Interp3D<ndarray::ViewRepr<T>, S>;
+/// [`Interp3D`] that owns data.
+pub type Interp3DOwned<T, S> = Interp3D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp3D, Strategy3D);
 
 impl<D, S> Interp3D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     /// Instantiate three-dimensional interpolator.
     ///
@@ -124,9 +133,9 @@ where
 
 impl<D, S> Interpolator<D::Elem> for Interp3D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     /// Returns `3`.
     fn ndim(&self) -> usize {
@@ -189,7 +198,7 @@ where
 
 impl<D> Interp3D<D, Box<dyn Strategy3D<D>>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.

@@ -5,6 +5,8 @@ use super::*;
 const N: usize = 0;
 
 /// 0-D interpolator
+// #[repr(transparent)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Interp0D<T>(pub T);
 impl<T> Interp0D<T>
 where
