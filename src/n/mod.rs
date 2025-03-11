@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 
 mod strategies;
 /// Interpolator data where N is determined at runtime
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -81,7 +81,7 @@ where
 }
 
 /// N-D interpolator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",

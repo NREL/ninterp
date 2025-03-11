@@ -5,7 +5,7 @@ pub use crate::one::{InterpData1D, InterpData1DOwned, InterpData1DViewed};
 pub use crate::three::{InterpData3D, InterpData3DOwned, InterpData3DViewed};
 pub use crate::two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
