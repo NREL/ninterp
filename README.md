@@ -63,7 +63,9 @@ This is useful when working with a `Box<dyn Interpolator>`
 Instantiation is done by calling an interpolator's `new` method.
 For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
 After editing interpolator data,
-call [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.validate) to rerun these checks.
+call the InterpData's `validate` method
+or [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.validate)
+to rerun these checks.
 
 To change the extrapolation setting, call `set_extrapolate`.
 
@@ -89,12 +91,12 @@ for an example.
 An [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/enum.Extrapolate.html)
 setting must be provided in the `new` method.
 This controls what happens when a point is beyond the range of supplied coordinates.
-The following setttings are applicable for all interpolators:
+The following settings are applicable for all interpolators:
 - `Extrapolate::Fill(T)`
 - `Extrapolate::Clamp`
 - `Extrapolate::Error`
 
-`Extrapolate::Enable` is valid for `Linear` in all dimensionalities.
+`Extrapolate::Enable` is valid for `Linear` for all dimensionalities.
 
 If you are unsure which variant to choose, `Extrapolate::Error` is likely what you want.
 
