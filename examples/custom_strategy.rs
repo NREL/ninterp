@@ -15,7 +15,7 @@ where
     // e.g. `Array2<f32>`, `ArrayView2<f32>`, `CowArray<<'a, f32>, Ix2>`, etc.
     // For a more generic bound, consider introducing a bound for D::Elem
     // e.g. D::Elem: num_traits::Num + PartialOrd
-    D: ndarray::Data<Elem = f32> + ndarray::RawDataClone,
+    D: ndarray::Data<Elem = f32> + ndarray::RawDataClone + Clone,
 {
     fn interpolate(
         &self,

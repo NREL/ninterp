@@ -14,7 +14,7 @@ pub type InterpData3DOwned<T> = InterpData3D<ndarray::OwnedRepr<T>>;
 
 impl<D> InterpData3D<D>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn new(
@@ -45,9 +45,9 @@ where
 )]
 pub struct Interp3D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     pub data: InterpData3D<D>,
     pub strategy: S,
@@ -67,9 +67,9 @@ extrapolate_impl!(Interp3D, Strategy3D);
 
 impl<D, S> Interp3D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     /// Instantiate three-dimensional interpolator.
     ///
@@ -133,9 +133,9 @@ where
 
 impl<D, S> Interpolator<D::Elem> for Interp3D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy3D<D>,
+    S: Strategy3D<D> + Clone,
 {
     /// Returns `3`.
     fn ndim(&self) -> usize {
@@ -198,7 +198,7 @@ where
 
 impl<D> Interp3D<D, Box<dyn Strategy3D<D>>>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.

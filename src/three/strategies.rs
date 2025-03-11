@@ -2,7 +2,7 @@ use super::*;
 
 impl<D> Strategy3D<D> for Linear
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -62,7 +62,7 @@ where
 
 impl<D> Strategy3D<D> for Nearest
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(

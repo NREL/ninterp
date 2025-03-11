@@ -14,7 +14,7 @@ pub type InterpData2DOwned<T> = InterpData2D<ndarray::OwnedRepr<T>>;
 
 impl<D> InterpData2D<D>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn new(
@@ -32,7 +32,7 @@ where
 }
 
 /// 2-D interpolator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -44,9 +44,9 @@ where
 )]
 pub struct Interp2D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     pub data: InterpData2D<D>,
     pub strategy: S,
@@ -62,9 +62,9 @@ extrapolate_impl!(Interp2D, Strategy2D);
 
 impl<D, S> Interp2D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     /// Instantiate two-dimensional interpolator.
     ///
@@ -119,9 +119,9 @@ where
 
 impl<D, S> Interpolator<D::Elem> for Interp2D<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy2D<D>,
+    S: Strategy2D<D> + Clone,
 {
     /// Returns `2`.
     fn ndim(&self) -> usize {
@@ -179,7 +179,7 @@ where
 
 impl<D> Interp2D<D, Box<dyn Strategy2D<D>>>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.

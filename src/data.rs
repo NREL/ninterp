@@ -19,7 +19,7 @@ pub use crate::two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
 pub struct InterpData<D, const N: usize>
 where
     Dim<[Ix; N]>: Dimension,
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub grid: [ArrayBase<D, Ix1>; N],
@@ -31,7 +31,7 @@ pub type InterpDataOwned<T, const N: usize> = InterpData<ndarray::ViewRepr<T>, N
 impl<D, const N: usize> InterpData<D, N>
 where
     Dim<[Ix; N]>: Dimension,
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn validate(&self) -> Result<(), ValidateError> {

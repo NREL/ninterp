@@ -153,6 +153,8 @@ pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
 pub(crate) use num_traits::{clamp, Num, One};
 
+pub(crate) use dyn_clone::*;
+
 #[cfg(feature = "serde")]
 pub(crate) use ndarray::DataOwned;
 #[cfg(feature = "serde")]
@@ -176,7 +178,7 @@ pub(crate) use assert_approx_eq;
 /// This trait is dyn-compatible, meaning you can use:
 /// `Box<dyn Interpolator<_>>`
 /// and swap the contained interpolator at runtime.
-pub trait Interpolator<T> {
+pub trait Interpolator<T>: DynClone {
     /// Interpolator dimensionality.
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
@@ -184,6 +186,8 @@ pub trait Interpolator<T> {
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
 }
+
+clone_trait_object!(<T> Interpolator<T>);
 
 impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
@@ -201,7 +205,7 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
 ///
 /// Controls what happens if supplied interpolant point
 /// is outside the bounds of the interpolation grid.
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
@@ -219,9 +223,9 @@ macro_rules! extrapolate_impl {
     ($InterpType:ident, $Strategy:ident) => {
         impl<D, S> $InterpType<D, S>
         where
-            D: Data + RawDataClone,
+            D: Data + RawDataClone + Clone,
             D::Elem: Num + PartialOrd + Copy + Debug,
-            S: $Strategy<D>,
+            S: $Strategy<D> + Clone,
         {
             /// Set [`Extrapolate`] variant, checking validity.
             pub fn set_extrapolate(

@@ -15,6 +15,7 @@ keywords = [
 categories = ["mathematics"]
 
 [dependencies]
+dyn-clone = "1.0.19"
 itertools = "0.13.0"
 ndarray = ">=0.15, <0.17"
 num-traits = "0.2.19"

@@ -17,7 +17,7 @@ mod strategies;
 )]
 pub struct InterpDataND<D>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub grid: Vec<ArrayBase<D, Ix1>>,
@@ -30,7 +30,7 @@ pub type InterpDataNDOwned<T> = InterpDataND<ndarray::OwnedRepr<T>>;
 
 impl<D> InterpDataND<D>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn ndim(&self) -> usize {
@@ -93,9 +93,9 @@ where
 )]
 pub struct InterpND<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<D>,
+    S: StrategyND<D> + Clone,
 {
     pub data: InterpDataND<D>,
     pub strategy: S,
@@ -115,9 +115,9 @@ extrapolate_impl!(InterpND, StrategyND);
 
 impl<D, S> InterpND<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<D>,
+    S: StrategyND<D> + Clone,
 {
     /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
@@ -179,9 +179,9 @@ where
 
 impl<D, S> Interpolator<D::Elem> for InterpND<D, S>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: StrategyND<D>,
+    S: StrategyND<D> + Clone,
 {
     fn ndim(&self) -> usize {
         self.data.ndim()
@@ -238,7 +238,7 @@ where
 
 impl<D> InterpND<D, Box<dyn StrategyND<D>>>
 where
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.
