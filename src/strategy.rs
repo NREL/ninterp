@@ -2,14 +2,9 @@
 
 use super::*;
 
-pub use crate::n::InterpDataND;
-pub use crate::one::InterpData1D;
-pub use crate::three::InterpData3D;
-pub use crate::two::InterpData2D;
-
 pub trait Strategy1D<D>: Debug
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -23,7 +18,7 @@ where
 
 impl<D> Strategy1D<D> for Box<dyn Strategy1D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -40,7 +35,7 @@ where
 
 pub trait Strategy2D<D>: Debug
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -54,7 +49,7 @@ where
 
 impl<D> Strategy2D<D> for Box<dyn Strategy2D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -71,7 +66,7 @@ where
 
 pub trait Strategy3D<D>: Debug
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -85,7 +80,7 @@ where
 
 impl<D> Strategy3D<D> for Box<dyn Strategy3D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -102,7 +97,7 @@ where
 
 pub trait StrategyND<D>: Debug
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -116,7 +111,7 @@ where
 
 impl<D> StrategyND<D> for Box<dyn StrategyND<D>>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -160,20 +155,20 @@ pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize
 }
 
 /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Linear;
 
 /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
 ///
 /// # Note
 /// Float imprecision may affect the value returned near midpoints.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Nearest;
 
 /// Left-nearest (previous value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LeftNearest;
 
 /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RightNearest;

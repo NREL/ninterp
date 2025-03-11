@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 
 mod strategies;
 /// Interpolator data where N is determined at runtime
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -17,15 +17,20 @@ mod strategies;
 )]
 pub struct InterpDataND<D>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub grid: Vec<ArrayBase<D, Ix1>>,
     pub values: ArrayBase<D, IxDyn>,
 }
+/// [`InterpDataND`] that views data.
+pub type InterpDataNDViewed<T> = InterpDataND<ndarray::ViewRepr<T>>;
+/// [`InterpDataND`] that owns data.
+pub type InterpDataNDOwned<T> = InterpDataND<ndarray::OwnedRepr<T>>;
+
 impl<D> InterpDataND<D>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn ndim(&self) -> usize {
@@ -76,7 +81,7 @@ where
 }
 
 /// N-D interpolator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -88,7 +93,7 @@ where
 )]
 pub struct InterpND<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
     S: StrategyND<D>,
 {
@@ -101,12 +106,16 @@ where
     )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
+/// [`InterpND`] that views data.
+pub type InterpNDViewed<T, S> = InterpND<ndarray::ViewRepr<T>, S>;
+/// [`InterpND`] that owns data.
+pub type InterpNDOwned<T, S> = InterpND<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(InterpND, StrategyND);
 
 impl<D, S> InterpND<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
     S: StrategyND<D>,
 {
@@ -170,7 +179,7 @@ where
 
 impl<D, S> Interpolator<D::Elem> for InterpND<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
     S: StrategyND<D>,
 {
@@ -229,7 +238,7 @@ where
 
 impl<D> InterpND<D, Box<dyn StrategyND<D>>>
 where
-    D: Data,
+    D: Data + RawDataClone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.
