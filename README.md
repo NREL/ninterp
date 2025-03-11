@@ -15,7 +15,7 @@ cargo add ninterp
 ```
 
 #### Cargo Features
-- `serde`: support for serde
+- `serde`: support for serde ([caveat](https://github.com/NREL/ninterp/issues/5))
   ```
   cargo add ninterp --features serde
   ```
@@ -28,8 +28,8 @@ See examples in `new` method documentation:
 - [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html#method.new)
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html#method.new)
 
-Also see the [`examples`](https://github.com/NREL/ninterp/tree/0c664523198bee063da51dc2524cbe75e8882c2d/examples) directory for advanced examples:
-- Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
+Also see the [`examples`](examples) directory for advanced examples:
+- Strategy dynamic dispatch: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
 
   By default, construction of interpolators uses *static dispatch*,
   meaning strategy concrete types are determined at compilation.
@@ -38,11 +38,11 @@ Also see the [`examples`](https://github.com/NREL/ninterp/tree/0c664523198bee063
   use *dynamic dispatch* by providing a boxed trait object
   `Box<dyn Strategy1D>`/etc. to the `new` method.
 
-- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
+- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](examples/dynamic_interpolator.rs)
 
-- Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+- Defining custom strategies: [`custom_strategy.rs`](examples/custom_strategy.rs)
 
-- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
+- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](examples/uom.rs)
 
 ## Overview
 A prelude module has been defined: 
@@ -84,7 +84,7 @@ Not all interpolation strategies are implemented for every dimensionality.
 `Linear` and `Nearest` are implemented for all dimensionalities.
 
 Custom strategies can be defined. See
-[`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+[`examples/custom_strategy.rs`](examples/custom_strategy.rs)
 for an example.
 
 ### Extrapolation

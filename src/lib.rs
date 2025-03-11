@@ -13,7 +13,7 @@
 //! ```
 //!
 //! ### Cargo Features
-//! - `serde`: support for [`serde`](https://crates.io/crates/serde)
+//! - `serde`: support for [`serde`](https://crates.io/crates/serde) ([caveat](https://github.com/NREL/ninterp/issues/5))
 //!   ```text
 //!   cargo add ninterp --features serde
 //!   ```
@@ -26,10 +26,10 @@
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
 //!
-//! Also see the [`examples`](https://github.com/NREL/ninterp/tree/0c664523198bee063da51dc2524cbe75e8882c2d/examples)
-//! directory for advanced examples:
-//! - Strategy dynamic dispatch:
-//! [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
+//! Also see the `examples` directory for advanced examples:
+//! - `dynamic_strategy.rs`
+//!
+//!   Strategy dynamic dispatch
 //!
 //!   By default, construction of interpolators uses *static dispatch*,
 //!   meaning strategy concrete types are determined at compilation.
@@ -38,13 +38,17 @@
 //!   use *dynamic dispatch* by providing a boxed trait object
 //!   `Box<dyn Strategy1D>`/etc. to the `new` method.
 //!
-//! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`:
-//! [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
+//! - `dynamic_interpolator.rs`
 //!
-//! - Defining custom strategies:
-//! [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+//!   Interpolator dynamic dispatch using `Box<dyn Interpolator>`
 //!
-//! - Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
+//! - `custom_strategy.rs`
+//!
+//!   Defining custom strategies
+//!
+//! - `uom.rs`
+//!
+//!   Using transmutable (transparent) types, such as `uom::si::Quantity`
 //!
 //! # Overview
 //! A prelude module has been defined:
