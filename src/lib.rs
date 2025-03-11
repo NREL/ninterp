@@ -205,7 +205,7 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
 ///
 /// Controls what happens if supplied interpolant point
 /// is outside the bounds of the interpolation grid.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate<T> {
     /// Evaluate beyond the limits of the interpolation grid.
