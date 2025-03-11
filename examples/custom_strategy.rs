@@ -1,8 +1,11 @@
-use ndarray::prelude::*;
-
 use ninterp::data::InterpData2D;
 use ninterp::prelude::*;
 use ninterp::strategy::*;
+
+// Note: ninterp also re-exposes the internally used `ndarray` crate
+// `use ninterp::ndarray;`
+use ndarray::prelude::*;
+use ndarray::{Data, RawDataClone};
 
 // Debug must be derived for custom strategies
 #[derive(Debug, Clone)]
@@ -15,7 +18,7 @@ where
     // e.g. `Array2<f32>`, `ArrayView2<f32>`, `CowArray<<'a, f32>, Ix2>`, etc.
     // For a more generic bound, consider introducing a bound for D::Elem
     // e.g. D::Elem: num_traits::Num + PartialOrd
-    D: ndarray::Data<Elem = f32> + ndarray::RawDataClone + Clone,
+    D: Data<Elem = f32> + RawDataClone + Clone,
 {
     fn interpolate(
         &self,
