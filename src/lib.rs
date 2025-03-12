@@ -84,9 +84,7 @@
 //! Not all interpolation strategies are implemented for every dimensionality.
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
-//! Custom strategies can be defined. See
-//! [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
-//! for an example.
+//! Custom strategies can be defined. See `examples/custom_strategy.rs` for an example.
 //!
 //! ## Extrapolation
 //! An [`Extrapolate`] setting must be provided in the `new` method.
