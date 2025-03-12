@@ -112,7 +112,7 @@ where
             strategy,
             extrapolate,
         };
-        interpolator.validate()?;
+        interpolator.check_extrapolate(&extrapolate)?;
         Ok(interpolator)
     }
 }
