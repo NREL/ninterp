@@ -15,7 +15,7 @@ cargo add ninterp
 ```
 
 #### Cargo Features
-- `serde`: support for serde
+- `serde`: support for serde ([caveat](https://github.com/NREL/ninterp/issues/5))
   ```
   cargo add ninterp --features serde
   ```
@@ -28,8 +28,8 @@ See examples in `new` method documentation:
 - [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html#method.new)
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html#method.new)
 
-Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c285919baae609089dee287dc3842/examples) directory for advanced examples:
-- Strategy dynamic dispatch: [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
+Also see the [`examples`](examples) directory for advanced examples:
+- Strategy dynamic dispatch: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
 
   By default, construction of interpolators uses *static dispatch*,
   meaning strategy concrete types are determined at compilation.
@@ -38,9 +38,11 @@ Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c28591
   use *dynamic dispatch* by providing a boxed trait object
   `Box<dyn Strategy1D>`/etc. to the `new` method.
 
-- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
+- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](examples/dynamic_interpolator.rs)
 
-- Defining custom strategies: [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+- Defining custom strategies: [`custom_strategy.rs`](examples/custom_strategy.rs)
+
+- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](examples/uom.rs)
 
 - Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
 
@@ -63,7 +65,9 @@ This is useful when working with a `Box<dyn Interpolator>`
 Instantiation is done by calling an interpolator's `new` method.
 For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
 After editing interpolator data,
-call [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.validate) to rerun these checks.
+call the InterpData's `validate` method
+or [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.validate)
+to rerun these checks.
 
 To change the extrapolation setting, call `set_extrapolate`.
 
@@ -82,19 +86,19 @@ Not all interpolation strategies are implemented for every dimensionality.
 `Linear` and `Nearest` are implemented for all dimensionalities.
 
 Custom strategies can be defined. See
-[`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+[`examples/custom_strategy.rs`](examples/custom_strategy.rs)
 for an example.
 
 ### Extrapolation
 An [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/enum.Extrapolate.html)
 setting must be provided in the `new` method.
 This controls what happens when a point is beyond the range of supplied coordinates.
-The following setttings are applicable for all interpolators:
+The following settings are applicable for all interpolators:
 - `Extrapolate::Fill(T)`
 - `Extrapolate::Clamp`
 - `Extrapolate::Error`
 
-`Extrapolate::Enable` is valid for `Linear` in all dimensionalities.
+`Extrapolate::Enable` is valid for `Linear` for all dimensionalities.
 
 If you are unsure which variant to choose, `Extrapolate::Error` is likely what you want.
 

@@ -13,7 +13,7 @@
 //! ```
 //!
 //! ### Cargo Features
-//! - `serde`: support for [`serde`](https://crates.io/crates/serde)
+//! - `serde`: support for [`serde`](https://crates.io/crates/serde) ([caveat](https://github.com/NREL/ninterp/issues/5))
 //!   ```text
 //!   cargo add ninterp --features serde
 //!   ```
@@ -26,10 +26,10 @@
 //! - [`Interp3D::new`](`interpolator::Interp3D::new`)
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
 //!
-//! Also see the [`examples`](https://github.com/NREL/ninterp/tree/62a62ccd2b3c285919baae609089dee287dc3842/examples)
-//! directory for advanced examples:
-//! - Strategy dynamic dispatch:
-//! [`dynamic_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_strategy.rs)
+//! Also see the `examples` directory for advanced examples:
+//! - `dynamic_strategy.rs`
+//!
+//!   Strategy dynamic dispatch
 //!
 //!   By default, construction of interpolators uses *static dispatch*,
 //!   meaning strategy concrete types are determined at compilation.
@@ -38,11 +38,17 @@
 //!   use *dynamic dispatch* by providing a boxed trait object
 //!   `Box<dyn Strategy1D>`/etc. to the `new` method.
 //!
-//! - Interpolator dynamic dispatch using `Box<dyn Interpolator>`:
-//! [`dynamic_interpolator.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/dynamic_interpolator.rs)
+//! - `dynamic_interpolator.rs`
 //!
-//! - Defining custom strategies:
-//! [`custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
+//!   Interpolator dynamic dispatch using `Box<dyn Interpolator>`
+//!
+//! - `custom_strategy.rs`
+//!
+//!   Defining custom strategies
+//!
+//! - `uom.rs`
+//!
+//!   Using transmutable (transparent) types, such as `uom::si::Quantity`
 //!
 //! - Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
 //!
@@ -65,7 +71,8 @@
 //! Instantiation is done by calling an interpolator's `new` method.
 //! For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
 //! After editing interpolator data,
-//! call [`Interpolator::validate`]
+//! call the InterpData's `validate` method
+//! or [`Interpolator::validate`]
 //! to rerun these checks.
 //!
 //! To change the extrapolation setting, call `set_extrapolate`.
@@ -79,19 +86,17 @@
 //! Not all interpolation strategies are implemented for every dimensionality.
 //! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
 //!
-//! Custom strategies can be defined. See
-//! [`examples/custom_strategy.rs`](https://github.com/NREL/ninterp/blob/62a62ccd2b3c285919baae609089dee287dc3842/examples/custom_strategy.rs)
-//! for an example.
+//! Custom strategies can be defined. See `examples/custom_strategy.rs` for an example.
 //!
 //! ## Extrapolation
 //! An [`Extrapolate`] setting must be provided in the `new` method.
 //! This controls what happens when a point is beyond the range of supplied coordinates.
-//! The following setttings are applicable for all interpolators:
+//! The following settings are applicable for all interpolators:
 //! - [`Extrapolate::Fill(T)`](`Extrapolate::Fill`)
 //! - [`Extrapolate::Clamp`]
 //! - [`Extrapolate::Error`]
 //!
-//! [`Extrapolate::Enable`] is valid for [`Linear`] in all dimensionalities.
+//! [`Extrapolate::Enable`] is valid for [`Linear`] for all dimensionalities.
 //!
 //! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
 //!
@@ -122,6 +127,7 @@ pub mod prelude {
     pub use crate::Interpolator;
 }
 
+pub mod data;
 pub mod error;
 pub mod strategy;
 
@@ -132,22 +138,26 @@ pub mod two;
 pub mod zero;
 
 pub mod interpolator {
-    pub use crate::n::InterpND;
-    pub use crate::one::Interp1D;
-    pub use crate::three::Interp3D;
-    pub use crate::two::Interp2D;
+    pub use crate::n::{InterpND, InterpNDOwned, InterpNDViewed};
+    pub use crate::one::{Interp1D, Interp1DOwned, Interp1DViewed};
+    pub use crate::three::{Interp3D, Interp3DOwned, Interp3DViewed};
+    pub use crate::two::{Interp2D, Interp2DOwned, Interp2DViewed};
     pub use crate::zero::Interp0D;
 }
 
+pub(crate) use data::*;
 pub(crate) use error::*;
 pub(crate) use strategy::*;
 
 pub(crate) use std::fmt::Debug;
 
+pub use ndarray;
 pub(crate) use ndarray::prelude::*;
-pub(crate) use ndarray::{Data, Ix};
+pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
 pub(crate) use num_traits::{clamp, Num, One};
+
+pub(crate) use dyn_clone::*;
 
 #[cfg(feature = "serde")]
 pub(crate) use ndarray::DataOwned;
@@ -172,7 +182,7 @@ pub(crate) use assert_approx_eq;
 /// This trait is dyn-compatible, meaning you can use:
 /// `Box<dyn Interpolator<_>>`
 /// and swap the contained interpolator at runtime.
-pub trait Interpolator<T> {
+pub trait Interpolator<T>: DynClone {
     /// Interpolator dimensionality.
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
@@ -180,6 +190,8 @@ pub trait Interpolator<T> {
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
 }
+
+clone_trait_object!(<T> Interpolator<T>);
 
 impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
@@ -190,54 +202,6 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
-    }
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        Dim<[usize; N]>: Serialize + DeserializeOwned,
-        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
-    ")
-)]
-pub struct InterpData<D, const N: usize>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub grid: [ArrayBase<D, Ix1>; N],
-    pub values: ArrayBase<D, Dim<[Ix; N]>>,
-}
-
-impl<D, const N: usize> InterpData<D, N>
-where
-    Dim<[Ix; N]>: Dimension,
-    D: Data,
-    D::Elem: Num + PartialOrd + Copy + Debug,
-{
-    pub fn validate(&self) -> Result<(), ValidateError> {
-        for i in 0..N {
-            let i_grid_len = self.grid[i].len();
-            // Check that each grid dimension has elements
-            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
-            if i_grid_len == 0 {
-                return Err(ValidateError::EmptyGrid(i));
-            }
-            // Check that grid points are monotonically increasing
-            if !self.grid[i].windows(2).into_iter().all(|w| w[0] <= w[1]) {
-                return Err(ValidateError::Monotonicity(i));
-            }
-            // Check that grid and values are compatible shapes
-            if i_grid_len != self.values.shape()[i] {
-                return Err(ValidateError::IncompatibleShapes(i));
-            }
-        }
-        Ok(())
     }
 }
 
@@ -263,9 +227,9 @@ macro_rules! extrapolate_impl {
     ($InterpType:ident, $Strategy:ident) => {
         impl<D, S> $InterpType<D, S>
         where
-            D: Data,
+            D: Data + RawDataClone + Clone,
             D::Elem: Num + PartialOrd + Copy + Debug,
-            S: $Strategy<D>,
+            S: $Strategy<D> + Clone,
         {
             /// Set [`Extrapolate`] variant, checking validity.
             pub fn set_extrapolate(

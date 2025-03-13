@@ -1,8 +1,6 @@
 use super::*;
 
 use itertools::Itertools;
-// TODO: any way to remove `RawDataClone`?
-use ndarray::RawDataClone;
 
 pub fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
     if shape.is_empty() {
@@ -17,8 +15,7 @@ pub fn get_index_permutations(shape: &[usize]) -> Vec<Vec<usize>> {
 
 impl<D> StrategyND<D> for Linear
 where
-    // TODO: any way to remove the `RawDataClone` bound?
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -120,8 +117,7 @@ where
 
 impl<D> StrategyND<D> for Nearest
 where
-    // TODO: any way to remove the `RawDataClone` bound?
-    D: Data + RawDataClone,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(

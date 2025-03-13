@@ -2,14 +2,9 @@
 
 use super::*;
 
-pub use crate::n::InterpDataND;
-pub use crate::one::InterpData1D;
-pub use crate::three::InterpData3D;
-pub use crate::two::InterpData2D;
-
-pub trait Strategy1D<D>: Debug
+pub trait Strategy1D<D>: Debug + DynClone
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -21,9 +16,11 @@ where
     fn allow_extrapolate(&self) -> bool;
 }
 
+clone_trait_object!(<D> Strategy1D<D>);
+
 impl<D> Strategy1D<D> for Box<dyn Strategy1D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -38,9 +35,9 @@ where
     }
 }
 
-pub trait Strategy2D<D>: Debug
+pub trait Strategy2D<D>: Debug + DynClone
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -52,9 +49,11 @@ where
     fn allow_extrapolate(&self) -> bool;
 }
 
+clone_trait_object!(<D> Strategy2D<D>);
+
 impl<D> Strategy2D<D> for Box<dyn Strategy2D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -69,9 +68,9 @@ where
     }
 }
 
-pub trait Strategy3D<D>: Debug
+pub trait Strategy3D<D>: Debug + DynClone
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -83,9 +82,11 @@ where
     fn allow_extrapolate(&self) -> bool;
 }
 
+clone_trait_object!(<D> Strategy3D<D>);
+
 impl<D> Strategy3D<D> for Box<dyn Strategy3D<D>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -100,9 +101,9 @@ where
     }
 }
 
-pub trait StrategyND<D>: Debug
+pub trait StrategyND<D>: Debug + DynClone
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -114,9 +115,11 @@ where
     fn allow_extrapolate(&self) -> bool;
 }
 
+clone_trait_object!(<D> StrategyND<D>);
+
 impl<D> StrategyND<D> for Box<dyn StrategyND<D>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     fn interpolate(
@@ -160,7 +163,8 @@ pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize
 }
 
 /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Linear;
 
 // TODO: `pub struct Quadratic;`
@@ -175,13 +179,16 @@ pub struct Cubic;
 ///
 /// # Note
 /// Float imprecision may affect the value returned near midpoints.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Nearest;
 
 /// Left-nearest (previous value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct LeftNearest;
 
 /// Right-nearest (next value) interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct RightNearest;

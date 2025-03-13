@@ -7,9 +7,14 @@ mod strategies;
 const N: usize = 1;
 
 pub type InterpData1D<D> = InterpData<D, N>;
+/// [`InterpData1D`] that views data.
+pub type InterpData1DViewed<T> = InterpData1D<ndarray::ViewRepr<T>>;
+/// [`InterpData1D`] that owns data.
+pub type InterpData1DOwned<T> = InterpData1D<ndarray::OwnedRepr<T>>;
+
 impl<D> InterpData1D<D>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     pub fn new(x: ArrayBase<D, Ix1>, f_x: ArrayBase<D, Ix1>) -> Result<Self, ValidateError> {
@@ -23,7 +28,7 @@ where
 }
 
 /// 1-D interpolator
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -35,9 +40,9 @@ where
 )]
 pub struct Interp1D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<D>,
+    S: Strategy1D<D> + Clone,
 {
     pub data: InterpData1D<D>,
     pub strategy: S,
@@ -48,14 +53,18 @@ where
     )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
+/// [`Interp1D`] that views data.
+pub type Interp1DViewed<T, S> = Interp1D<ndarray::ViewRepr<T>, S>;
+/// [`Interp1D`] that owns data.
+pub type Interp1DOwned<T, S> = Interp1D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp1D, Strategy1D);
 
 impl<D, S> Interp1D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<D>,
+    S: Strategy1D<D> + Clone,
 {
     /// Instantiate one-dimensional interpolator.
     ///
@@ -98,16 +107,16 @@ where
             strategy,
             extrapolate,
         };
-        interpolator.validate()?;
+        interpolator.check_extrapolate(&extrapolate)?;
         Ok(interpolator)
     }
 }
 
 impl<D, S> Interpolator<D::Elem> for Interp1D<D, S>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
-    S: Strategy1D<D>,
+    S: Strategy1D<D> + Clone,
 {
     /// Returns `1`.
     fn ndim(&self) -> usize {
@@ -152,7 +161,7 @@ where
 
 impl<D> Interp1D<D, Box<dyn Strategy1D<D>>>
 where
-    D: Data,
+    D: Data + RawDataClone + Clone,
     D::Elem: Num + PartialOrd + Copy + Debug,
 {
     /// Update strategy dynamically.

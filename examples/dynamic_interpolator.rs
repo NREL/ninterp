@@ -25,5 +25,5 @@ fn main() {
         )
         .unwrap(),
     );
-    assert_eq!(boxed.interpolate(&[1.75]).unwrap(), 8.)
+    assert_eq!(boxed.interpolate(&[1.75]).unwrap(), 8.);
 }
