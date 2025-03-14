@@ -22,7 +22,7 @@ where
                 } else if &point[dim] > data.grid[dim].last().unwrap() {
                     data.grid[dim].len() - 2
                 } else {
-                    find_nearest_index(data.grid[dim].view(), point[dim])
+                    find_nearest_index(data.grid[dim].view(), &point[dim])
                 }
             })
             .collect();
@@ -71,7 +71,7 @@ where
         point: &[D::Elem; 3],
     ) -> Result<D::Elem, InterpolateError> {
         // x
-        let x_l = find_nearest_index(data.grid[0].view(), point[0]);
+        let x_l = find_nearest_index(data.grid[0].view(), &point[0]);
         let x_u = x_l + 1;
         let i = if point[0] - data.grid[0][x_l] < data.grid[0][x_u] - point[0] {
             x_l
@@ -79,7 +79,7 @@ where
             x_u
         };
         // y
-        let y_l = find_nearest_index(data.grid[1].view(), point[1]);
+        let y_l = find_nearest_index(data.grid[1].view(), &point[1]);
         let y_u = y_l + 1;
         let j = if point[1] - data.grid[1][y_l] < data.grid[1][y_u] - point[1] {
             y_l
@@ -87,7 +87,7 @@ where
             y_u
         };
         // z
-        let z_l = find_nearest_index(data.grid[2].view(), point[2]);
+        let z_l = find_nearest_index(data.grid[2].view(), &point[2]);
         let z_u = z_l + 1;
         let k = if point[2] - data.grid[2][z_l] < data.grid[2][z_u] - point[2] {
             z_l

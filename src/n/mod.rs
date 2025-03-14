@@ -18,7 +18,7 @@ mod strategies;
 pub struct InterpDataND<D>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     pub grid: Vec<ArrayBase<D, Ix1>>,
     pub values: ArrayBase<D, IxDyn>,
@@ -31,7 +31,7 @@ pub type InterpDataNDOwned<T> = InterpDataND<ndarray::OwnedRepr<T>>;
 impl<D> InterpDataND<D>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug,
 {
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
@@ -94,7 +94,7 @@ where
 pub struct InterpND<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
     S: StrategyND<D> + Clone,
 {
     pub data: InterpDataND<D>,
@@ -116,7 +116,7 @@ extrapolate_impl!(InterpND, StrategyND);
 impl<D, S> InterpND<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug,
     S: StrategyND<D> + Clone,
 {
     /// Instantiate N-dimensional (any dimensionality) interpolator.
@@ -172,7 +172,7 @@ where
             strategy,
             extrapolate,
         };
-        interpolator.check_extrapolate(&extrapolate)?;
+        interpolator.check_extrapolate(&interpolator.extrapolate)?;
         Ok(interpolator)
     }
 }
@@ -180,7 +180,7 @@ where
 impl<D, S> Interpolator<D::Elem> for InterpND<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug + Clone,
     S: StrategyND<D> + Clone,
 {
     fn ndim(&self) -> usize {
@@ -205,17 +205,18 @@ where
             {
                 match &self.extrapolate {
                     Extrapolate::Enable => {}
-                    Extrapolate::Fill(value) => return Ok(*value),
+                    Extrapolate::Fill(value) => return Ok(value.clone()),
                     Extrapolate::Clamp => {
                         let clamped_point: Vec<_> = point
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
-                                *clamp(
+                                clamp(
                                     pt,
                                     self.data.grid[dim].first().unwrap(),
                                     self.data.grid[dim].last().unwrap(),
                                 )
+                                .clone()
                             })
                             .collect();
                         return self.strategy.interpolate(&self.data, &clamped_point);
@@ -239,7 +240,7 @@ where
 impl<D> InterpND<D, Box<dyn StrategyND<D>>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     /// Update strategy dynamically.
     pub fn set_strategy(&mut self, strategy: Box<dyn StrategyND<D>>) -> Result<(), ValidateError> {

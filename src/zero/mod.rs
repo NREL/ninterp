@@ -10,7 +10,7 @@ const N: usize = 0;
 pub struct Interp0D<T>(pub T);
 impl<T> Interp0D<T>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    T: PartialEq + Debug,
 {
     /// Instantiate constant-value 'interpolator'.
     ///
@@ -30,7 +30,7 @@ where
 }
 impl<T> Interpolator<T> for Interp0D<T>
 where
-    T: Num + PartialOrd + Copy + Debug,
+    T: Clone + Debug,
 {
     /// Returns `0`.
     fn ndim(&self) -> usize {
@@ -49,6 +49,6 @@ where
         if !point.is_empty() {
             return Err(InterpolateError::PointLength(N));
         }
-        Ok(self.0)
+        Ok(self.0.clone())
     }
 }
