@@ -65,7 +65,7 @@ where
             } else if &point[dim] > grid[dim].last().unwrap() {
                 grid[dim].len() - 2
             } else {
-                find_nearest_index(grid[dim].view(), point[dim])
+                find_nearest_index(grid[dim].view(), &point[dim])
             };
             let interp_diff = (point[dim] - grid[dim][lower_idx])
                 / (grid[dim][lower_idx + 1] - grid[dim][lower_idx]);
@@ -157,7 +157,7 @@ where
         let mut lower_idxs = Vec::with_capacity(n);
         let mut lower_closers = Vec::with_capacity(n);
         for dim in 0..n {
-            let lower_idx = find_nearest_index(grid[dim].view(), point[dim]);
+            let lower_idx = find_nearest_index(grid[dim].view(), &point[dim]);
             let lower_closer =
                 point[dim] - grid[dim][lower_idx] < grid[dim][lower_idx + 1] - point[dim];
             lower_idxs.push(lower_idx);

@@ -5,7 +5,7 @@ use super::*;
 pub trait Strategy1D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -21,7 +21,7 @@ clone_trait_object!(<D> Strategy1D<D>);
 impl<D> Strategy1D<D> for Box<dyn Strategy1D<D>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -38,7 +38,7 @@ where
 pub trait Strategy2D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -54,7 +54,7 @@ clone_trait_object!(<D> Strategy2D<D>);
 impl<D> Strategy2D<D> for Box<dyn Strategy2D<D>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -71,7 +71,7 @@ where
 pub trait Strategy3D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -87,7 +87,7 @@ clone_trait_object!(<D> Strategy3D<D>);
 impl<D> Strategy3D<D> for Box<dyn Strategy3D<D>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -104,7 +104,7 @@ where
 pub trait StrategyND<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -120,7 +120,7 @@ clone_trait_object!(<D> StrategyND<D>);
 impl<D> StrategyND<D> for Box<dyn StrategyND<D>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     fn interpolate(
         &self,
@@ -137,8 +137,8 @@ where
 // This method contains code from RouteE Compass, another open-source NREL-developed tool
 // <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
 // <https://github.com/NREL/routee-compass/>
-pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize {
-    if &target == arr.last().unwrap() {
+pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: &T) -> usize {
+    if target == arr.last().unwrap() {
         return arr.len() - 2;
     }
 
@@ -148,14 +148,14 @@ pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: T) -> usize
     while low < high {
         let mid = low + (high - low) / 2;
 
-        if arr[mid] >= target {
+        if &arr[mid] >= target {
             high = mid;
         } else {
             low = mid + 1;
         }
     }
 
-    if low > 0 && arr[low] >= target {
+    if low > 0 && &arr[low] >= target {
         low - 1
     } else {
         low

@@ -23,7 +23,7 @@ where
         } else if &point[0] > data.grid[0].last().unwrap() {
             data.grid[0].len() - 2
         } else {
-            find_nearest_index(data.grid[0].view(), point[0])
+            find_nearest_index(data.grid[0].view(), &point[0])
         };
         let x_u = x_l + 1;
         let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
@@ -49,7 +49,7 @@ where
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
-        let x_l = find_nearest_index(data.grid[0].view(), point[0]);
+        let x_l = find_nearest_index(data.grid[0].view(), &point[0]);
         let x_u = x_l + 1;
         let i = if point[0] - data.grid[0][x_l] < data.grid[0][x_u] - point[0] {
             x_l
@@ -78,7 +78,7 @@ where
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
-        let x_l = find_nearest_index(data.grid[0].view(), point[0]);
+        let x_l = find_nearest_index(data.grid[0].view(), &point[0]);
         Ok(data.values[x_l])
     }
 
@@ -101,7 +101,7 @@ where
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
-        let x_u = find_nearest_index(data.grid[0].view(), point[0]) + 1;
+        let x_u = find_nearest_index(data.grid[0].view(), &point[0]) + 1;
         Ok(data.values[x_u])
     }
 

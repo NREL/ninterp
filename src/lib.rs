@@ -226,7 +226,7 @@ macro_rules! extrapolate_impl {
         impl<D, S> $InterpType<D, S>
         where
             D: Data + RawDataClone + Clone,
-            D::Elem: Num + PartialOrd + Copy + Debug,
+            D::Elem: PartialEq + Debug,
             S: $Strategy<D> + Clone,
         {
             /// Set [`Extrapolate`] variant, checking validity.

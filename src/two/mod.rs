@@ -15,7 +15,7 @@ pub type InterpData2DOwned<T> = InterpData2D<ndarray::OwnedRepr<T>>;
 impl<D> InterpData2D<D>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug,
 {
     pub fn new(
         x: ArrayBase<D, Ix1>,
@@ -45,7 +45,7 @@ where
 pub struct Interp2D<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
     S: Strategy2D<D> + Clone,
 {
     pub data: InterpData2D<D>,
@@ -63,7 +63,7 @@ extrapolate_impl!(Interp2D, Strategy2D);
 impl<D, S> Interp2D<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug,
     S: Strategy2D<D> + Clone,
 {
     /// Instantiate two-dimensional interpolator.
@@ -112,7 +112,7 @@ where
             strategy,
             extrapolate,
         };
-        interpolator.check_extrapolate(&extrapolate)?;
+        interpolator.check_extrapolate(&interpolator.extrapolate)?;
         Ok(interpolator)
     }
 }
@@ -120,7 +120,7 @@ where
 impl<D, S> Interpolator<D::Elem> for Interp2D<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug + Clone,
     S: Strategy2D<D> + Clone,
 {
     /// Returns `2`.
@@ -143,21 +143,23 @@ where
             if !(self.data.grid[dim].first().unwrap()..=self.data.grid[dim].last().unwrap())
                 .contains(&&point[dim])
             {
-                match self.extrapolate {
+                match &self.extrapolate {
                     Extrapolate::Enable => {}
-                    Extrapolate::Fill(value) => return Ok(value),
+                    Extrapolate::Fill(value) => return Ok(value.clone()),
                     Extrapolate::Clamp => {
                         let clamped_point = &[
                             clamp(
-                                point[0],
-                                *self.data.grid[0].first().unwrap(),
-                                *self.data.grid[0].last().unwrap(),
-                            ),
+                                &point[0],
+                                self.data.grid[0].first().unwrap(),
+                                self.data.grid[0].last().unwrap(),
+                            )
+                            .clone(),
                             clamp(
-                                point[1],
-                                *self.data.grid[1].first().unwrap(),
-                                *self.data.grid[1].last().unwrap(),
-                            ),
+                                &point[1],
+                                self.data.grid[1].first().unwrap(),
+                                self.data.grid[1].last().unwrap(),
+                            )
+                            .clone(),
                         ];
                         return self.strategy.interpolate(&self.data, clamped_point);
                     }
@@ -180,7 +182,7 @@ where
 impl<D> Interp2D<D, Box<dyn Strategy2D<D>>>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     /// Update strategy dynamically.
     pub fn set_strategy(&mut self, strategy: Box<dyn Strategy2D<D>>) -> Result<(), ValidateError> {

@@ -20,7 +20,7 @@ pub struct InterpData<D, const N: usize>
 where
     Dim<[Ix; N]>: Dimension,
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialEq + Debug,
 {
     pub grid: [ArrayBase<D, Ix1>; N],
     pub values: ArrayBase<D, Dim<[Ix; N]>>,
@@ -32,13 +32,12 @@ impl<D, const N: usize> InterpData<D, N>
 where
     Dim<[Ix; N]>: Dimension,
     D: Data + RawDataClone + Clone,
-    D::Elem: Num + PartialOrd + Copy + Debug,
+    D::Elem: PartialOrd + Debug,
 {
     pub fn validate(&self) -> Result<(), ValidateError> {
         for i in 0..N {
             let i_grid_len = self.grid[i].len();
             // Check that each grid dimension has elements
-            // Indexing `grid` directly is okay because empty dimensions are caught at compilation
             if i_grid_len == 0 {
                 return Err(ValidateError::EmptyGrid(i));
             }
