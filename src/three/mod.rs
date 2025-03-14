@@ -134,7 +134,7 @@ where
 impl<D, S> Interpolator<D::Elem> for Interp3D<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: PartialOrd + Debug + Clone,
+    D::Elem: Num + Euclid + PartialOrd + Debug + Copy,
     S: Strategy3D<D> + Clone,
 {
     /// Returns `3`.
@@ -161,27 +161,24 @@ where
                     Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(value.clone()),
                     Extrapolate::Clamp => {
-                        let clamped_point = &[
-                            clamp(
-                                &point[0],
-                                self.data.grid[0].first().unwrap(),
-                                self.data.grid[0].last().unwrap(),
+                        let clamped_point = core::array::from_fn(|i| {
+                            *clamp(
+                                &point[i],
+                                self.data.grid[i].first().unwrap(),
+                                self.data.grid[i].last().unwrap(),
                             )
-                            .clone(),
-                            clamp(
-                                &point[1],
-                                self.data.grid[1].first().unwrap(),
-                                self.data.grid[1].last().unwrap(),
+                        });
+                        return self.strategy.interpolate(&self.data, &clamped_point);
+                    }
+                    Extrapolate::Wrap => {
+                        let wrapped_point = core::array::from_fn(|i| {
+                            wrap(
+                                point[i],
+                                *self.data.grid[i].first().unwrap(),
+                                *self.data.grid[i].last().unwrap(),
                             )
-                            .clone(),
-                            clamp(
-                                &point[2],
-                                self.data.grid[2].first().unwrap(),
-                                self.data.grid[2].last().unwrap(),
-                            )
-                            .clone(),
-                        ];
-                        return self.strategy.interpolate(&self.data, clamped_point);
+                        });
+                        return self.strategy.interpolate(&self.data, &wrapped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
@@ -379,7 +376,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extrapolate_fill_value() {
+    fn test_extrapolate_fill() {
         let interp = Interp3D::new(
             array![0.1, 1.1],
             array![0.2, 1.2],
