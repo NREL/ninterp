@@ -172,7 +172,8 @@ pub struct Linear;
 // with `pub type Quadratic = Polynomial(2)` and `pub type Cubic = Polynomial(3)`
 
 /// Cubic spline interpolation: TODO
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Cubic;
 
 /// Nearest value interpolation: <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>
