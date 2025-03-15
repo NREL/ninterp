@@ -36,6 +36,29 @@ where
     }
 }
 
+impl<D> Strategy1D<D> for Cubic<D::Elem>
+where
+    D: Data + RawDataClone + Clone,
+    D::Elem: Num + PartialOrd + Copy + Default + Debug,
+{
+    fn init(&self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
+        Ok(())
+    }
+
+    fn interpolate(
+        &self,
+        data: &InterpData1D<D>,
+        point: &[<D>::Elem; 1],
+    ) -> Result<<D>::Elem, InterpolateError> {
+        todo!()
+    }
+
+    /// Returns `true`
+    fn allow_extrapolate(&self) -> bool {
+        true
+    }
+}
+
 impl<D> Strategy1D<D> for Nearest
 where
     D: Data + RawDataClone + Clone,
