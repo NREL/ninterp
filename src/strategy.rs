@@ -7,11 +7,16 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, _data: &InterpData1D<D>) -> Result<(), ValidateError> {
+        Ok(())
+    }
+
     fn interpolate(
         &self,
         data: &InterpData1D<D>,
         point: &[D::Elem; 1],
     ) -> Result<D::Elem, InterpolateError>;
+
     /// Does this type's [`Strategy1D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
@@ -23,6 +28,10 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
+        (**self).init(data)
+    }
+
     fn interpolate(
         &self,
         data: &InterpData1D<D>,
@@ -30,6 +39,7 @@ where
     ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
+
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -40,11 +50,16 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, _data: &InterpData2D<D>) -> Result<(), ValidateError> {
+        Ok(())
+    }
+
     fn interpolate(
         &self,
         data: &InterpData2D<D>,
         point: &[D::Elem; 2],
     ) -> Result<D::Elem, InterpolateError>;
+
     /// Does this type's [`Strategy2D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
@@ -56,6 +71,10 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, data: &InterpData2D<D>) -> Result<(), ValidateError> {
+        (**self).init(data)
+    }
+
     fn interpolate(
         &self,
         data: &InterpData2D<D>,
@@ -63,6 +82,7 @@ where
     ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
+
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -73,11 +93,16 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, _data: &InterpData3D<D>) -> Result<(), ValidateError> {
+        Ok(())
+    }
+
     fn interpolate(
         &self,
         data: &InterpData3D<D>,
         point: &[D::Elem; 3],
     ) -> Result<D::Elem, InterpolateError>;
+
     /// Does this type's [`Strategy3D::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
@@ -89,6 +114,10 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, data: &InterpData3D<D>) -> Result<(), ValidateError> {
+        (**self).init(data)
+    }
+
     fn interpolate(
         &self,
         data: &InterpData3D<D>,
@@ -96,6 +125,7 @@ where
     ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
+
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -106,11 +136,16 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, _data: &InterpDataND<D>) -> Result<(), ValidateError> {
+        Ok(())
+    }
+
     fn interpolate(
         &self,
         data: &InterpDataND<D>,
         point: &[D::Elem],
     ) -> Result<D::Elem, InterpolateError>;
+
     /// Does this type's [`StrategyND::interpolate`] provision for extrapolation?
     fn allow_extrapolate(&self) -> bool;
 }
@@ -122,6 +157,10 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    fn init(&self, data: &InterpDataND<D>) -> Result<(), ValidateError> {
+        (**self).init(data)
+    }
+
     fn interpolate(
         &self,
         data: &InterpDataND<D>,
@@ -129,6 +168,7 @@ where
     ) -> Result<D::Elem, InterpolateError> {
         (**self).interpolate(data, point)
     }
+
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }

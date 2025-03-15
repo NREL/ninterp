@@ -126,6 +126,7 @@ where
     fn validate(&self) -> Result<(), ValidateError> {
         self.check_extrapolate(&self.extrapolate)?;
         self.data.validate()?;
+        self.strategy.init(&self.data)?;
         Ok(())
     }
 
