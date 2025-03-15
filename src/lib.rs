@@ -155,7 +155,7 @@ pub use ndarray;
 pub(crate) use ndarray::prelude::*;
 pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
-pub(crate) use num_traits::{clamp, Num, One};
+pub(crate) use num_traits::{clamp, Euclid, Num, One};
 
 pub(crate) use dyn_clone::*;
 
@@ -218,6 +218,8 @@ pub enum Extrapolate<T> {
     Fill(T),
     /// Restrict interpolant point to the limits of the interpolation grid, using [`num_traits::clamp`].
     Clamp,
+    /// Wrap around to other end of periodic data.
+    Wrap,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]
     Error,
@@ -270,3 +272,32 @@ macro_rules! extrapolate_impl {
     };
 }
 pub(crate) use extrapolate_impl;
+
+/// Wrap value around data bounds.
+/// Assumes `min` < `max`.
+pub(crate) fn wrap<T: Num + Euclid + Copy>(input: T, min: T, max: T) -> T {
+    min + (input - min).rem_euclid(&(max - min))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::wrap;
+
+    #[test]
+    fn test() {
+        assert_eq!(wrap(-3, -2, 5), 4);
+        assert_eq!(wrap(3, -2, 5), 3);
+        assert_eq!(wrap(6, -2, 5), -1);
+        assert_eq!(wrap(5, 0, 10), 5);
+        assert_eq!(wrap(11, 0, 10), 1);
+        assert_eq!(wrap(-3, 0, 10), 7);
+        assert_eq!(wrap(-11, 0, 10), 9);
+        assert_eq!(wrap(-0.1, -2., -1.), -1.1);
+        assert_eq!(wrap(-0., -2., -1.), -2.0);
+        assert_eq!(wrap(0.1, -2., -1.), -1.9);
+        assert_eq!(wrap(-0.5, -1., 1.), -0.5);
+        assert_eq!(wrap(0., -1., 1.), 0.);
+        assert_eq!(wrap(0.5, -1., 1.), 0.5);
+        assert_eq!(wrap(0.8, -1., 1.), 0.8);
+    }
+}

@@ -180,7 +180,7 @@ where
 impl<D, S> Interpolator<D::Elem> for InterpND<D, S>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: PartialOrd + Debug + Clone,
+    D::Elem: Num + Euclid + PartialOrd + Debug + Copy,
     S: StrategyND<D> + Clone,
 {
     fn ndim(&self) -> usize {
@@ -211,12 +211,25 @@ where
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
-                                clamp(
+                                *clamp(
                                     pt,
                                     self.data.grid[dim].first().unwrap(),
                                     self.data.grid[dim].last().unwrap(),
                                 )
-                                .clone()
+                            })
+                            .collect();
+                        return self.strategy.interpolate(&self.data, &clamped_point);
+                    }
+                    Extrapolate::Wrap => {
+                        let clamped_point: Vec<_> = point
+                            .iter()
+                            .enumerate()
+                            .map(|(dim, pt)| {
+                                wrap(
+                                    *pt,
+                                    *self.data.grid[dim].first().unwrap(),
+                                    *self.data.grid[dim].last().unwrap(),
+                                )
                             })
                             .collect();
                         return self.strategy.interpolate(&self.data, &clamped_point);
@@ -514,7 +527,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extrapolate_fill_value() {
+    fn test_extrapolate_fill() {
         let interp = InterpND::new(
             vec![array![0.1, 1.1], array![0.2, 1.2], array![0.3, 1.3]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
@@ -534,15 +547,60 @@ mod tests {
 
     #[test]
     fn test_extrapolate_clamp() {
+        let x = array![0.1, 1.1];
+        let y = array![0.2, 1.2];
+        let z = array![0.3, 1.3];
+        let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
         let interp = InterpND::new(
-            vec![array![0.1, 1.1], array![0.2, 1.2], array![0.3, 1.3]],
-            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            vec![x.view(), y.view(), z.view()],
+            values.view(),
             Linear,
             Extrapolate::Clamp,
         )
         .unwrap();
-        assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
-        assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
+        assert_eq!(
+            interp.interpolate(&[-1., -1., -1.]).unwrap(),
+            values[[0, 0, 0]]
+        );
+        assert_eq!(
+            interp.interpolate(&[-1., 2., -1.]).unwrap(),
+            values[[0, 1, 0]]
+        );
+        assert_eq!(
+            interp.interpolate(&[2., -1., 2.]).unwrap(),
+            values[[1, 0, 1]]
+        );
+        assert_eq!(
+            interp.interpolate(&[2., 2., 2.]).unwrap(),
+            values[[1, 1, 1]]
+        );
+    }
+
+    #[test]
+    fn test_extrapolate_wrap() {
+        let interp = InterpND::new(
+            vec![array![0., 1.], array![0., 1.], array![0., 1.]],
+            array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
+            Linear,
+            Extrapolate::Wrap,
+        )
+        .unwrap();
+        assert_eq!(
+            interp.interpolate(&[-0.25, -0.2, -0.4]).unwrap(),
+            interp.interpolate(&[0.75, 0.8, 0.6]).unwrap(),
+        );
+        assert_eq!(
+            interp.interpolate(&[-0.25, 2.1, -0.4]).unwrap(),
+            interp.interpolate(&[0.75, 0.1, 0.6]).unwrap(),
+        );
+        assert_eq!(
+            interp.interpolate(&[-0.25, 2.1, 2.3]).unwrap(),
+            interp.interpolate(&[0.75, 0.1, 0.3]).unwrap(),
+        );
+        assert_eq!(
+            interp.interpolate(&[2.5, 2.1, 2.3]).unwrap(),
+            interp.interpolate(&[0.5, 0.1, 0.3]).unwrap(),
+        );
     }
 
     #[test]
