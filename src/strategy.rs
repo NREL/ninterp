@@ -7,7 +7,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, _data: &InterpData1D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, _data: &InterpData1D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
@@ -28,7 +28,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
@@ -50,7 +50,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, _data: &InterpData2D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, _data: &InterpData2D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
@@ -71,7 +71,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, data: &InterpData2D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, data: &InterpData2D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
@@ -93,7 +93,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, _data: &InterpData3D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, _data: &InterpData3D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
@@ -114,7 +114,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, data: &InterpData3D<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, data: &InterpData3D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
@@ -136,7 +136,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, _data: &InterpDataND<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, _data: &InterpDataND<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
@@ -157,7 +157,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
-    fn init(&self, data: &InterpDataND<D>) -> Result<(), ValidateError> {
+    fn init(&mut self, data: &InterpDataND<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 

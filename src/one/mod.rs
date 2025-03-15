@@ -123,7 +123,7 @@ where
         N
     }
 
-    fn validate(&self) -> Result<(), ValidateError> {
+    fn validate(&mut self) -> Result<(), ValidateError> {
         self.check_extrapolate(&self.extrapolate)?;
         self.data.validate()?;
         self.strategy.init(&self.data)?;

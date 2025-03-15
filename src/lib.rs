@@ -186,7 +186,7 @@ pub trait Interpolator<T>: DynClone {
     /// Interpolator dimensionality.
     fn ndim(&self) -> usize;
     /// Validate interpolator data.
-    fn validate(&self) -> Result<(), ValidateError>;
+    fn validate(&mut self) -> Result<(), ValidateError>;
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
 }
@@ -197,7 +197,7 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
         (**self).ndim()
     }
-    fn validate(&self) -> Result<(), ValidateError> {
+    fn validate(&mut self) -> Result<(), ValidateError> {
         (**self).validate()
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {

@@ -38,7 +38,7 @@ where
     }
 
     /// Returns `Ok(())`.
-    fn validate(&self) -> Result<(), ValidateError> {
+    fn validate(&mut self) -> Result<(), ValidateError> {
         Ok(())
     }
 
