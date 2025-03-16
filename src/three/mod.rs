@@ -121,12 +121,13 @@ where
         strategy: S,
         extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
-        let interpolator = Self {
+        let mut interpolator = Self {
             data: InterpData3D::new(x, y, z, f_xyz)?,
             strategy,
             extrapolate,
         };
         interpolator.check_extrapolate(&interpolator.extrapolate)?;
+        interpolator.strategy.init(&interpolator.data)?;
         Ok(interpolator)
     }
 }
