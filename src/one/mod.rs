@@ -448,14 +448,6 @@ mod tests {
         let x = array![1., 2., 3., 5., 7., 8.];
         let f_x = array![3., -90., 19., 99., 291., 444.];
 
-        let x0 = x.first().unwrap();
-        let xn = x.last().unwrap();
-        let range = xn - x0;
-        let x_low = x0 - 0.2 * range;
-        let x_high = x0 + 0.2 * range;
-        let xs_left = Array1::linspace(x_low, *x0, 50);
-        let xs_right = Array1::linspace(*xn, x_high, 50);
-
         let interp_extrap_enable =
             Interp1D::new(x.view(), f_x.view(), Cubic::periodic(), Extrapolate::Enable).unwrap();
         let interp_extrap_wrap =
@@ -468,6 +460,13 @@ mod tests {
         }
 
         // Extrapolate::Enable is equivalent to Extrapolate::Wrap for Cubic::periodic()
+        let x0 = x.first().unwrap();
+        let xn = x.last().unwrap();
+        let range = xn - x0;
+        let x_low = x0 - 0.2 * range;
+        let x_high = x0 + 0.2 * range;
+        let xs_left = Array1::linspace(x_low, *x0, 50);
+        let xs_right = Array1::linspace(*xn, x_high, 50);
         for x in xs_left {
             assert_eq!(
                 interp_extrap_enable.interpolate(&[x]).unwrap(),
@@ -481,6 +480,33 @@ mod tests {
             );
         }
 
-        // TODO: test for slopes?
+        // Slope left
+        let xs_left = Array1::linspace(x_low, x_low + 2e6, 50);
+        let ys_left: Array1<f64> = xs_left
+            .iter()
+            .map(|&x| interp_extrap_enable.interpolate(&[x]).unwrap())
+            .collect();
+        let slopes_left: Array1<f64> = xs_left
+            .windows(2)
+            .into_iter()
+            .zip(ys_left.windows(2))
+            .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+            .collect();
+        let slope_left = slopes_left.mean().unwrap();
+        // Slope right
+        let xs_right = Array1::linspace(x_high - 2e6, x_high, 50);
+        let ys_right: Array1<f64> = xs_right
+            .iter()
+            .map(|&x| interp_extrap_enable.interpolate(&[x]).unwrap())
+            .collect();
+        let slopes_right: Array1<f64> = xs_right
+            .windows(2)
+            .into_iter()
+            .zip(ys_right.windows(2))
+            .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+            .collect();
+        let slope_right = slopes_right.mean().unwrap();
+        // Slopes at left and right are equal
+        assert_approx_eq!(slope_left, slope_right);
     }
 }
