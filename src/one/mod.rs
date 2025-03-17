@@ -345,7 +345,7 @@ mod tests {
 
         // Interpolating at knots returns values
         for i in 0..x.len() {
-            assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
+            assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i]);
         }
 
         let x0 = x.first().unwrap();
@@ -412,7 +412,7 @@ mod tests {
 
             // Interpolating at knots returns values
             for i in 0..x.len() {
-                assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
+                assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i]);
             }
 
             // Left slope = a
@@ -441,5 +441,46 @@ mod tests {
                 .collect();
             assert_approx_eq!(slopes.mean().unwrap(), b);
         }
+    }
+
+    #[test]
+    fn test_cubic_periodic() {
+        let x = array![1., 2., 3., 5., 7., 8.];
+        let f_x = array![3., -90., 19., 99., 291., 444.];
+
+        let x0 = x.first().unwrap();
+        let xn = x.last().unwrap();
+        let range = xn - x0;
+        let x_low = x0 - 0.2 * range;
+        let x_high = x0 + 0.2 * range;
+        let xs_left = Array1::linspace(x_low, *x0, 50);
+        let xs_right = Array1::linspace(*xn, x_high, 50);
+
+        let interp_extrap_enable =
+            Interp1D::new(x.view(), f_x.view(), Cubic::periodic(), Extrapolate::Enable).unwrap();
+        let interp_extrap_wrap =
+            Interp1D::new(x.view(), f_x.view(), Cubic::periodic(), Extrapolate::Wrap).unwrap();
+
+        // Interpolating at knots returns values
+        for i in 0..x.len() {
+            assert_approx_eq!(interp_extrap_enable.interpolate(&[x[i]]).unwrap(), f_x[i]);
+            assert_approx_eq!(interp_extrap_wrap.interpolate(&[x[i]]).unwrap(), f_x[i]);
+        }
+
+        // Extrapolate::Enable is equivalent to Extrapolate::Wrap for Cubic::periodic()
+        for x in xs_left {
+            assert_eq!(
+                interp_extrap_enable.interpolate(&[x]).unwrap(),
+                interp_extrap_wrap.interpolate(&[x]).unwrap()
+            );
+        }
+        for x in xs_right {
+            assert_eq!(
+                interp_extrap_enable.interpolate(&[x]).unwrap(),
+                interp_extrap_wrap.interpolate(&[x]).unwrap()
+            );
+        }
+
+        // TODO: test for slopes?
     }
 }
