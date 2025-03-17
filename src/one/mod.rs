@@ -334,4 +334,112 @@ mod tests {
         assert_approx_eq!(interp.interpolate(&[-0.75]).unwrap(), 0.05);
         assert_eq!(interp.interpolate(&[5.]).unwrap(), 1.2);
     }
+
+    #[test]
+    fn test_cubic_natural() {
+        let x = array![1., 2., 3., 5., 7., 8.];
+        let f_x = array![3., 6., 19., 99., 291., 444.];
+
+        let interp =
+            Interp1D::new(x.view(), f_x.view(), Cubic::natural(), Extrapolate::Enable).unwrap();
+
+        // Interpolating at knots returns values
+        for i in 0..x.len() {
+            assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
+        }
+
+        let x0 = x.first().unwrap();
+        let xn = x.last().unwrap();
+        let y0 = f_x.first().unwrap();
+        let yn = f_x.last().unwrap();
+
+        let range = xn - x0;
+
+        let x_low = x0 - 0.2 * range;
+        let y_low = interp.interpolate(&[x_low]).unwrap();
+        let slope_low = (y0 - y_low) / (x0 - x_low);
+
+        let x_high = xn + 0.2 * range;
+        let y_high = interp.interpolate(&[x_high]).unwrap();
+        let slope_high = (y_high - yn) / (x_high - xn);
+
+        let xs_left = Array1::linspace(x0 - 1e-6, x0 + 1e-6, 50);
+        let xs_right = Array1::linspace(xn - 1e-6, xn + 1e-6, 50);
+
+        // Left extrapolation is linear
+        let ys: Array1<f64> = xs_left
+            .iter()
+            .map(|&x| interp.interpolate(&[x]).unwrap())
+            .collect();
+        let slopes: Array1<f64> = xs_left
+            .windows(2)
+            .into_iter()
+            .zip(ys.windows(2))
+            .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+            .collect();
+        assert_approx_eq!(slopes.mean().unwrap(), slope_low);
+
+        // Right extrapolation is linear
+        let ys: Array1<f64> = xs_right
+            .iter()
+            .map(|&x| interp.interpolate(&[x]).unwrap())
+            .collect();
+        let slopes: Array1<f64> = xs_right
+            .windows(2)
+            .into_iter()
+            .zip(ys.windows(2))
+            .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+            .collect();
+        assert_approx_eq!(slopes.mean().unwrap(), slope_high);
+    }
+
+    #[test]
+    fn test_cubic_clamped() {
+        let x = array![1., 2., 3., 5., 7., 8.];
+        let f_x = array![3., -90., 19., 99., 291., 444.];
+
+        let xs_left = Array1::linspace(x.first().unwrap() - 1e-6, x.first().unwrap() + 1e-6, 50);
+        let xs_right = Array1::linspace(x.last().unwrap() - 1e-6, x.last().unwrap() + 1e-6, 50);
+
+        for (a, b) in [(-5., 10.), (0., 0.), (2.4, -5.2)] {
+            let interp = Interp1D::new(
+                x.view(),
+                f_x.view(),
+                Cubic::clamped(a, b),
+                Extrapolate::Enable,
+            )
+            .unwrap();
+
+            // Interpolating at knots returns values
+            for i in 0..x.len() {
+                assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
+            }
+
+            // Left slope = a
+            let ys: Array1<f64> = xs_left
+                .iter()
+                .map(|&x| interp.interpolate(&[x]).unwrap())
+                .collect();
+            let slopes: Array1<f64> = xs_left
+                .windows(2)
+                .into_iter()
+                .zip(ys.windows(2))
+                .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+                .collect();
+            assert_approx_eq!(slopes.mean().unwrap(), a);
+
+            // Right slope = b
+            let ys: Array1<f64> = xs_right
+                .iter()
+                .map(|&x| interp.interpolate(&[x]).unwrap())
+                .collect();
+            let slopes: Array1<f64> = xs_right
+                .windows(2)
+                .into_iter()
+                .zip(ys.windows(2))
+                .map(|(x, y)| (y[1] - y[0]) / (x[1] - x[0]))
+                .collect();
+            assert_approx_eq!(slopes.mean().unwrap(), b);
+        }
+    }
 }

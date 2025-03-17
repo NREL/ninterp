@@ -41,21 +41,6 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: Float + Default + Debug,
 {
-    /// Solves coefficients
-
-    /// Reference: https://www.math.ntnu.no/emner/TMA4215/2008h/cubicsplines.pdf
-    /// ```text
-    /// ┌─                          ─┐┌─    ─┐    ┌─    ─┐  
-    /// │ V1 H1                      ││  Z1  │    │  U1  │  
-    /// │ H1 V2 H2                   ││  Z2  │    │  U2  │  
-    /// │    H2 V3 H3                ││  Z3  │    │  U3  │  
-    /// │       .  .  .              ││   .  │ ── │   .  │  
-    /// │          .  .  .           ││   .  │ ── │   .  │  
-    /// │             .  .  .        ││   .  │    │   .  │  
-    /// │                . Vn-2 Hn-2 ││ Zn-2 │    │ Un-2 │  
-    /// │                  Hn-2 Vn-1 ││ Zn-1 │    │ Un-1 │  
-    /// └─                          ─┘└─    ─┘    └─    ─┘  
-    /// ```
     fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         // Number of segments
         let n = data.grid[0].len() - 1;
@@ -64,11 +49,6 @@ where
         let one = D::Elem::one();
         let two = <D::Elem as NumCast>::from(2.).unwrap();
         let six = <D::Elem as NumCast>::from(6.).unwrap();
-
-        // let h = Array1::from_shape_fn(n, |i| data.grid[0][i + 1] - data.grid[0][i]);
-        // let v = Array1::from_shape_fn(n - 1, |i| two * (h[i] + h[i + 1]));
-        // let b = Array1::from_shape_fn(n, |i| (data.values[i + 1] - data.values[i]) / h[i]);
-        // let u = Array1::from_shape_fn(n - 1, |i| six * (b[i + 1] - b[i]));
 
         let h = Array1::from_shape_fn(n, |i| data.grid[0][i + 1] - data.grid[0][i]);
         let v = Array1::from_shape_fn(n + 1, |i| {
@@ -120,16 +100,34 @@ where
         data: &InterpData1D<D>,
         point: &[<D>::Elem; 1],
     ) -> Result<<D>::Elem, InterpolateError> {
-        let l = if &point[0] < data.grid[0].first().unwrap() {
-            0
-        } else if &point[0] > data.grid[0].last().unwrap() {
-            data.grid[0].len() - 2
+        let six = <D::Elem as NumCast>::from(6.).unwrap();
+        let last = data.grid[0].len() - 1;
+        let l = if point[0] < data.grid[0][0] {
+            match &self.boundary_cond {
+                CubicBC::Natural => {
+                    // linear extrapolation
+                    let h0 = data.grid[0][1] - data.grid[0][0];
+                    let k0 = (data.values[1] - data.values[0]) / h0 - h0 * self.z[1] / six;
+                    return Ok(k0 * (point[0] - data.grid[0][0]) + data.values[0]);
+                }
+                _ => 0,
+            }
+        } else if point[0] > data.grid[0][last] {
+            match &self.boundary_cond {
+                CubicBC::Natural => {
+                    // linear extrapolation
+                    let hn = data.grid[0][last] - data.grid[0][last - 1];
+                    let kn = (data.values[last] - data.values[last - 1]) / hn
+                        + hn * self.z[last - 1] / six;
+                    return Ok(kn * (point[0] - data.grid[0][last]) + data.values[last]);
+                }
+                _ => last - 1,
+            }
         } else {
             find_nearest_index(data.grid[0].view(), &point[0])
         };
         let u = l + 1;
 
-        let six = <D::Elem as NumCast>::from(6.).unwrap();
         let h_i = data.grid[0][u] - data.grid[0][l];
 
         Ok(
@@ -143,43 +141,6 @@ where
     /// Returns `true`
     fn allow_extrapolate(&self) -> bool {
         true
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ndarray::*;
-
-    #[test]
-    fn test_cubic_natural() {
-        let x = array![1., 2., 3., 5., 7., 8.];
-        let f_x = array![3., 6., 19., 99., 291., 444.];
-
-        let interp =
-            Interp1D::new(x.view(), f_x.view(), Cubic::natural(), Extrapolate::Enable).unwrap();
-
-        for i in 0..x.len() {
-            assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
-        }
-    }
-
-    #[test]
-    fn test_cubic_clamped() {
-        let x = array![1., 2., 3., 5., 7., 8.];
-        let f_x = array![3., 6., 19., 99., 291., 444.];
-
-        let interp = Interp1D::new(
-            x.view(),
-            f_x.view(),
-            Cubic::clamped(0., 0.),
-            Extrapolate::Enable,
-        )
-        .unwrap();
-
-        for i in 0..x.len() {
-            assert_approx_eq!(interp.interpolate(&[x[i]]).unwrap(), f_x[i])
-        }
     }
 }
 
