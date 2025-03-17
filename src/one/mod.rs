@@ -508,5 +508,8 @@ mod tests {
         let slope_right = slopes_right.mean().unwrap();
         // Slopes at left and right are equal
         assert_approx_eq!(slope_left, slope_right);
+        // Second derivatives at left and right are equal
+        let z = interp_extrap_enable.strategy.z;
+        assert_approx_eq!(z.first().unwrap(), z.last().unwrap());
     }
 }
