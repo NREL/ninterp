@@ -363,8 +363,8 @@ mod tests {
         let y_high = interp.interpolate(&[x_high]).unwrap();
         let slope_high = (y_high - yn) / (x_high - xn);
 
-        let xs_left = Array1::linspace(x0 - 1e-6, x0 + 1e-6, 50);
-        let xs_right = Array1::linspace(xn - 1e-6, xn + 1e-6, 50);
+        let xs_left = Array1::linspace(*x0, x0 + 2e-6, 50);
+        let xs_right = Array1::linspace(xn - 2e-6, *xn, 50);
 
         // Left extrapolation is linear
         let ys: Array1<f64> = xs_left

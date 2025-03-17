@@ -39,7 +39,7 @@ where
 impl<D> Strategy1D<D> for Cubic<D::Elem>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Float + Default + Debug,
+    D::Elem: Float + Euclid + Default + Debug,
 {
     fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         // Number of segments
@@ -53,7 +53,7 @@ where
         let h = Array1::from_shape_fn(n, |i| data.grid[0][i + 1] - data.grid[0][i]);
         let v = Array1::from_shape_fn(n + 1, |i| {
             if i == 0 || i == n {
-                match &self.boundary_cond {
+                match &self.boundary_condition {
                     CubicBC::Natural => one,
                     CubicBC::Clamped(_, _) => two * h[0],
                     _ => todo!(),
@@ -65,7 +65,7 @@ where
         let b = Array1::from_shape_fn(n, |i| (data.values[i + 1] - data.values[i]) / h[i]);
         let u = Array1::from_shape_fn(n + 1, |i| {
             if i == 0 || i == n {
-                match &self.boundary_cond {
+                match &self.boundary_condition {
                     CubicBC::Natural => zero,
                     CubicBC::Clamped(l, r) => {
                         if i == 0 {
@@ -81,7 +81,7 @@ where
             }
         });
 
-        let (sub, sup) = match &self.boundary_cond {
+        let (sub, sup) = match &self.boundary_condition {
             CubicBC::Natural => (
                 &Array1::from_shape_fn(n, |i| if i == n - 1 { zero } else { h[i] }),
                 &Array1::from_shape_fn(n, |i| if i == 0 { zero } else { h[i] }),
@@ -100,42 +100,41 @@ where
         data: &InterpData1D<D>,
         point: &[<D>::Elem; 1],
     ) -> Result<<D>::Elem, InterpolateError> {
-        let six = <D::Elem as NumCast>::from(6.).unwrap();
         let last = data.grid[0].len() - 1;
         let l = if point[0] < data.grid[0][0] {
-            match &self.boundary_cond {
-                CubicBC::Natural => {
-                    // linear extrapolation
+            match &self.extrapolate {
+                CubicExtrapolate::Linear => {
                     let h0 = data.grid[0][1] - data.grid[0][0];
-                    let k0 = (data.values[1] - data.values[0]) / h0 - h0 * self.z[1] / six;
+                    let k0 = (data.values[1] - data.values[0]) / h0
+                        - h0 * self.z[1] / <D::Elem as NumCast>::from(6.).unwrap();
                     return Ok(k0 * (point[0] - data.grid[0][0]) + data.values[0]);
                 }
-                _ => 0,
+                CubicExtrapolate::Spline => 0,
+                CubicExtrapolate::Wrap => {
+                    let point = [wrap(point[0], data.grid[0][0], data.grid[0][last])];
+                    let l = find_nearest_index(data.grid[0].view(), &point[0]);
+                    return self.evaluate_1d(&point, l, data);
+                }
             }
         } else if point[0] > data.grid[0][last] {
-            match &self.boundary_cond {
-                CubicBC::Natural => {
-                    // linear extrapolation
+            match &self.extrapolate {
+                CubicExtrapolate::Linear => {
                     let hn = data.grid[0][last] - data.grid[0][last - 1];
                     let kn = (data.values[last] - data.values[last - 1]) / hn
-                        + hn * self.z[last - 1] / six;
+                        + hn * self.z[last - 1] / <D::Elem as NumCast>::from(6.).unwrap();
                     return Ok(kn * (point[0] - data.grid[0][last]) + data.values[last]);
                 }
-                _ => last - 1,
+                CubicExtrapolate::Spline => last - 1,
+                CubicExtrapolate::Wrap => {
+                    let point = [wrap(point[0], data.grid[0][0], data.grid[0][last])];
+                    let l = find_nearest_index(data.grid[0].view(), &point[0]);
+                    return self.evaluate_1d(&point, l, data);
+                }
             }
         } else {
             find_nearest_index(data.grid[0].view(), &point[0])
         };
-        let u = l + 1;
-
-        let h_i = data.grid[0][u] - data.grid[0][l];
-
-        Ok(
-            self.z[u] / (six * h_i) * (point[0] - data.grid[0][l]).powi(3)
-                + self.z[l] / (six * h_i) * (data.grid[0][u] - point[0]).powi(3)
-                + (data.values[u] / h_i - self.z[u] * h_i / six) * (point[0] - data.grid[0][l])
-                + (data.values[l] / h_i - self.z[l] * h_i / six) * (data.grid[0][u] - point[0]),
-        )
+        self.evaluate_1d(point, l, data)
     }
 
     /// Returns `true`
