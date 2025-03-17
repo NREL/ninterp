@@ -93,6 +93,7 @@ impl<T> Cubic<T>
 where
     T: Float + Debug,
 {
+    // Reference: https://www.math.ntnu.no/emner/TMA4215/2008h/cubicsplines.pdf
     pub(crate) fn evaluate_1d<D: Data<Elem = T> + RawDataClone + Clone>(
         &self,
         point: &[T; 1],
