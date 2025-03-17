@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-pub struct Cubic<T: Default> {
+pub struct Cubic<T> {
     /// Cubic spline boundary conditions.
     pub boundary_condition: CubicBC<T>,
     /// Behavior of [`Extrapolate::Enable`].
@@ -30,20 +30,17 @@ pub enum CubicExtrapolate {
     Linear,
     /// Use nearest spline to extrapolate.
     Spline,
-    /// Same as [`Extrapolate::Wrap`]. Default for periodic splines.
+    /// Same as [`Extrapolate::Wrap`], default for periodic splines.
     Wrap,
 }
 
-impl<T> Cubic<T>
-where
-    T: Default,
-{
+impl<T> Cubic<T> {
     /// Cubic spline with given boundary condition and extrapolation behavior.
     pub fn new(boundary_condition: CubicBC<T>, extrapolate: CubicExtrapolate) -> Self {
         Self {
             boundary_condition,
             extrapolate,
-            z: <Array1<T> as Default>::default(),
+            z: Array1::from_vec(Vec::new()),
         }
     }
 
@@ -69,7 +66,7 @@ where
 
     /// Not-a-knot cubic spline.
     ///
-    /// Spline 3rd derivatives at second and second-to-last knots are equal, respectively:
+    /// Spline 3rd derivatives at second and second-to-last knots are continuous, respectively:
     /// S'''<sub>0</sub>(x<sub>1</sub>) = S'''<sub>1</sub>(x<sub>1</sub>) and
     /// S'''<sub>n-1</sub>(x<sub>n-1</sub>) = S'''<sub>n</sub>(x<sub>n-1</sub>).
     ///
@@ -93,7 +90,7 @@ where
 
 impl<T> Cubic<T>
 where
-    T: Float + Default + Debug,
+    T: Float + Debug,
 {
     pub(crate) fn evaluate_1d<D: Data<Elem = T> + RawDataClone + Clone>(
         &self,
@@ -142,9 +139,10 @@ where
 
 impl<T> Cubic<T>
 where
-    T: Num + Copy + Default,
+    T: Num + Copy,
 {
-    /// Solves Ax = d for a tridiagonal matrix A using the [Thomas algorithm](https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm).
+    /// Solves Ax = d for a tridiagonal matrix A using the
+    /// [Thomas algorithm](https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm).
     /// - `a`: sub-diagonal (1 element shorter than `b` and `d`)
     /// - `b`: diagonal
     /// - `c`: super-diagonal (1 element shorter than `b` and `d`)
@@ -160,9 +158,9 @@ where
         assert_eq!(b.len(), n);
         assert_eq!(c.len(), n - 1);
 
-        let mut c_prime = Array1::default(n - 1);
-        let mut d_prime = Array1::default(n);
-        let mut x = Array1::default(n);
+        let mut c_prime = Array1::zeros(n - 1);
+        let mut d_prime = Array1::zeros(n);
+        let mut x = Array1::zeros(n);
 
         // Forward sweep
         c_prime[0] = c[0] / b[0];

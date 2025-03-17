@@ -39,7 +39,7 @@ where
 impl<D> Strategy1D<D> for Cubic<D::Elem>
 where
     D: Data + RawDataClone + Clone,
-    D::Elem: Float + Euclid + Default + Debug,
+    D::Elem: Float + Euclid + Debug,
 {
     fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         // Number of segments
