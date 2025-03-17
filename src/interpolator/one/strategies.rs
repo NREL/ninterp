@@ -51,46 +51,48 @@ where
         let six = <D::Elem as NumCast>::from(6.).unwrap();
 
         let h = Array1::from_shape_fn(n, |i| data.grid[0][i + 1] - data.grid[0][i]);
-        let v = Array1::from_shape_fn(n + 1, |i| {
-            if i == 0 || i == n {
-                match &self.boundary_condition {
-                    CubicBC::Natural => one,
-                    CubicBC::Clamped(_, _) => two * h[0],
-                    _ => todo!(),
-                }
-            } else {
-                two * (h[i - 1] + h[i])
-            }
-        });
+        let v = Array1::from_shape_fn(n - 1, |i| two * (h[i + 1] + h[i]));
         let b = Array1::from_shape_fn(n, |i| (data.values[i + 1] - data.values[i]) / h[i]);
-        let u = Array1::from_shape_fn(n + 1, |i| {
-            if i == 0 || i == n {
-                match &self.boundary_condition {
-                    CubicBC::Natural => zero,
-                    CubicBC::Clamped(l, r) => {
-                        if i == 0 {
-                            six * (b[i] - *l)
-                        } else {
-                            six * (*r - b[i - 1])
-                        }
-                    }
-                    _ => todo!(),
-                }
-            } else {
-                six * (b[i] - b[i - 1])
-            }
-        });
+        let u = Array1::from_shape_fn(n - 1, |i| six * (b[i + 1] - b[i]));
 
-        let (sub, sup) = match &self.boundary_condition {
-            CubicBC::Natural => (
-                &Array1::from_shape_fn(n, |i| if i == n - 1 { zero } else { h[i] }),
-                &Array1::from_shape_fn(n, |i| if i == 0 { zero } else { h[i] }),
+        let (sub, diag, sup, rhs) = match &self.boundary_condition {
+            CubicBC::Natural => {
+                let zero = array![zero];
+                let one = array![one];
+                (
+                    &ndarray::concatenate(Axis(0), &[h.slice(s![0..n - 1]), zero.view()]).unwrap(),
+                    &ndarray::concatenate(Axis(0), &[one.view(), v.view(), one.view()]).unwrap(),
+                    &ndarray::concatenate(Axis(0), &[zero.view(), h.slice(s![1..n])]).unwrap(),
+                    &ndarray::concatenate(Axis(0), &[zero.view(), u.view(), zero.view()]).unwrap(),
+                )
+            }
+            CubicBC::Clamped(l, r) => (
+                &h,
+                &ndarray::concatenate(
+                    Axis(0),
+                    &[
+                        array![two * h[0]].view(),
+                        v.view(),
+                        array![two * h[n - 1]].view(),
+                    ],
+                )
+                .unwrap(),
+                &h,
+                &ndarray::concatenate(
+                    Axis(0),
+                    &[
+                        array![six * (b[0] - *l)].view(),
+                        u.view(),
+                        array![six * (*r - b[n - 1])].view(),
+                    ],
+                )
+                .unwrap(),
             ),
-            CubicBC::Clamped(_, _) => (&h, &h),
+            // CubicBC::NotAKnot => (),
             _ => todo!(),
         };
 
-        self.z = Self::thomas(sub.view(), v.view(), sup.view(), u.view()).into_dyn();
+        self.z = Self::thomas(sub.view(), diag.view(), sup.view(), rhs.view()).into_dyn();
 
         Ok(())
     }

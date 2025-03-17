@@ -152,8 +152,8 @@ fn test_extrapolate() {
 
 #[test]
 fn test_cubic_natural() {
-    let x = array![1., 2., 3., 5., 7., 8.];
-    let f_x = array![3., 6., 19., 99., 291., 444.];
+    let x = array![1., 2., 3., 5., 7., 8., 10.];
+    let f_x = array![3., 6., 19., 99., 291., 444., 222.];
 
     let interp =
         Interp1D::new(x.view(), f_x.view(), Cubic::natural(), Extrapolate::Enable).unwrap();
@@ -210,8 +210,8 @@ fn test_cubic_natural() {
 
 #[test]
 fn test_cubic_clamped() {
-    let x = array![1., 2., 3., 5., 7., 8.];
-    let f_x = array![3., -90., 19., 99., 291., 444.];
+    let x = array![1., 2., 3., 5., 7., 8., 10.];
+    let f_x = array![3., -90., 19., 99., 291., 444., 222.];
 
     let xs_left = Array1::linspace(x.first().unwrap() - 1e-6, x.first().unwrap() + 1e-6, 50);
     let xs_right = Array1::linspace(x.last().unwrap() - 1e-6, x.last().unwrap() + 1e-6, 50);
