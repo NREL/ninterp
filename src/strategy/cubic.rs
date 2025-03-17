@@ -82,7 +82,8 @@ impl<T> Cubic<T> {
     /// Spline 1st & 2nd derivatives at outermost knots are equal:
     /// k<sub>0</sub> = k<sub>n</sub>, z<sub>0</sub> = z<sub>n</sub>
     ///
-    /// [`Extrapolate::Enable`] defaults to [`CubicExtrapolate::Wrap`].
+    /// [`Extrapolate::Enable`] defaults to [`CubicExtrapolate::Wrap`],
+    /// thus is equivalent to [`Extrapolate::Wrap`].
     pub fn periodic() -> Self {
         Self::new(CubicBC::Periodic, CubicExtrapolate::Wrap)
     }
