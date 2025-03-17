@@ -1,6 +1,7 @@
 //! 1-dimensional interpolation
 
 use super::*;
+use crate::strategy::cubic::*;
 
 mod strategies;
 #[cfg(test)]

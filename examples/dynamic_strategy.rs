@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use ninterp::prelude::*;
-use ninterp::strategy::Strategy1D;
+use ninterp::strategy::traits::Strategy1D;
 
 fn main() {
     // Create mutable interpolator

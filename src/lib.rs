@@ -122,7 +122,7 @@
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
     pub use crate::interpolator::*;
-    pub use crate::strategy::{Cubic, LeftNearest, Linear, Nearest, RightNearest};
+    pub use crate::strategy::{cubic, LeftNearest, Linear, Nearest, RightNearest};
     pub use crate::Extrapolate;
     pub use crate::Interpolator;
 }
@@ -140,6 +140,7 @@ pub use interpolator::two;
 pub use interpolator::zero;
 
 pub(crate) use error::*;
+pub(crate) use strategy::traits::*;
 pub(crate) use strategy::*;
 
 pub(crate) use std::fmt::Debug;
