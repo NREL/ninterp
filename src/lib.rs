@@ -94,6 +94,7 @@
 //! The following settings are applicable for all interpolators:
 //! - [`Extrapolate::Fill(T)`](`Extrapolate::Fill`)
 //! - [`Extrapolate::Clamp`]
+//! - [`Extrapolate::Wrap`]
 //! - [`Extrapolate::Error`]
 //!
 //! [`Extrapolate::Enable`] is valid for [`Linear`] for all dimensionalities.
@@ -122,7 +123,7 @@
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
     pub use crate::interpolator::*;
-    pub use crate::strategy::{cubic, LeftNearest, Linear, Nearest, RightNearest};
+    pub use crate::strategy::{cubic, cubic::Cubic, LeftNearest, Linear, Nearest, RightNearest};
     pub use crate::Extrapolate;
     pub use crate::Interpolator;
 }

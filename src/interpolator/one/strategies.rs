@@ -90,7 +90,7 @@ where
             _ => todo!(),
         };
 
-        self.z = Self::thomas(sub.view(), v.view(), sup.view(), u.view());
+        self.z = Self::thomas(sub.view(), v.view(), sup.view(), u.view()).into_dyn();
 
         Ok(())
     }

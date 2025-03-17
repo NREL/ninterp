@@ -8,7 +8,7 @@ pub struct Cubic<T> {
     /// Behavior of [`Extrapolate::Enable`].
     pub extrapolate: CubicExtrapolate,
     /// Solved second derivatives.
-    pub z: Array1<T>,
+    pub z: ArrayD<T>,
 }
 
 /// Cubic spline boundary conditions.
@@ -40,7 +40,7 @@ impl<T> Cubic<T> {
         Self {
             boundary_condition,
             extrapolate,
-            z: Array1::from_vec(Vec::new()),
+            z: Array1::from_vec(Vec::new()).into_dyn(),
         }
     }
 
