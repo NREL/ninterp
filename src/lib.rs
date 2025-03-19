@@ -80,9 +80,14 @@
 //! and call `set_strategy`.
 //!
 //! ## Strategies
-//! An interpolation strategy (e.g. [`Linear`], [`Nearest`], [`LeftNearest`], [`RightNearest`]) must be specified.
+//! An interpolation strategy (e.g.
+//!   [`Linear`](strategy::Linear),
+//!   [`Nearest`](strategy::Nearest),
+//!   [`LeftNearest`](strategy::LeftNearest),
+//!   [`RightNearest`](strategy::RightNearest))
+//! must be specified.
 //! Not all interpolation strategies are implemented for every dimensionality.
-//! [`Linear`] and [`Nearest`] are implemented for all dimensionalities.
+//! [`Linear`](strategy::Linear) and [`Nearest`](strategy::Nearest) are implemented for all dimensionalities.
 //!
 //! Custom strategies can be defined. See `examples/custom_strategy.rs` for an example.
 //!
@@ -92,9 +97,10 @@
 //! The following settings are applicable for all interpolators:
 //! - [`Extrapolate::Fill(T)`](`Extrapolate::Fill`)
 //! - [`Extrapolate::Clamp`]
+//! - [`Extrapolate::Wrap`]
 //! - [`Extrapolate::Error`]
 //!
-//! [`Extrapolate::Enable`] is valid for [`Linear`] for all dimensionalities.
+//! [`Extrapolate::Enable`] is valid for [`Linear`](strategy::Linear) for all dimensionalities.
 //!
 //! If you are unsure which variant to choose, [`Extrapolate::Error`] is likely what you want.
 //!
@@ -112,40 +118,28 @@
 ///   - [`Interp3D`](`interpolator::Interp3D`)
 ///   - [`InterpND`](`interpolator::InterpND`)
 /// - Their common trait: [`Interpolator`]
-/// - Pre-defined interpolation strategies:
-///   - [`Linear`]
-///   - [`Nearest`]
-///   - [`LeftNearest`]
-///   - [`RightNearest`]
+/// - The [`strategy`] mod, containing pre-defined interpolation strategies:
+///   - [`strategy::Linear`]
+///   - [`strategy::Nearest`]
+///   - [`strategy::LeftNearest`]
+///   - [`strategy::RightNearest`]
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
-    pub use crate::interpolator::*;
-    pub use crate::strategy::{LeftNearest, Linear, Nearest, RightNearest};
+    pub use crate::interpolator::{Interp0D, Interp1D, Interp2D, Interp3D, InterpND};
+    pub use crate::strategy;
     pub use crate::Extrapolate;
     pub use crate::Interpolator;
 }
 
-pub mod data;
 pub mod error;
 pub mod strategy;
 
-pub mod n;
-pub mod one;
-pub mod three;
-pub mod two;
-pub mod zero;
+pub mod interpolator;
+pub use interpolator::data;
+pub(crate) use interpolator::data::*;
 
-pub mod interpolator {
-    pub use crate::n::{InterpND, InterpNDOwned, InterpNDViewed};
-    pub use crate::one::{Interp1D, Interp1DOwned, Interp1DViewed};
-    pub use crate::three::{Interp3D, Interp3DOwned, Interp3DViewed};
-    pub use crate::two::{Interp2D, Interp2DOwned, Interp2DViewed};
-    pub use crate::zero::Interp0D;
-}
-
-pub(crate) use data::*;
 pub(crate) use error::*;
-pub(crate) use strategy::*;
+pub(crate) use strategy::traits::*;
 
 pub(crate) use std::fmt::Debug;
 
@@ -217,6 +211,7 @@ pub enum Extrapolate<T> {
     /// Restrict interpolant point to the limits of the interpolation grid, using [`num_traits::clamp`].
     Clamp,
     /// Wrap around to other end of periodic data.
+    /// Does NOT check that first and last values are equal.
     Wrap,
     /// Return an error when interpolant point is beyond the limits of the interpolation grid.
     #[default]

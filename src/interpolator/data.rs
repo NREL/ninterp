@@ -1,9 +1,9 @@
 use super::*;
 
-pub use crate::n::{InterpDataND, InterpDataNDOwned, InterpDataNDViewed};
-pub use crate::one::{InterpData1D, InterpData1DOwned, InterpData1DViewed};
-pub use crate::three::{InterpData3D, InterpData3DOwned, InterpData3DViewed};
-pub use crate::two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
+pub use n::{InterpDataND, InterpDataNDOwned, InterpDataNDViewed};
+pub use one::{InterpData1D, InterpData1DOwned, InterpData1DViewed};
+pub use three::{InterpData3D, InterpData3DOwned, InterpData3DViewed};
+pub use two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]

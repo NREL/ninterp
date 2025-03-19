@@ -1,6 +1,7 @@
-use ninterp::data::InterpData2D;
 use ninterp::prelude::*;
-use ninterp::strategy::*;
+
+use ninterp::data::InterpData2D;
+use ninterp::strategy::traits::Strategy2D;
 
 // Note: ninterp also re-exposes the internally used `ndarray` crate
 // `use ninterp::ndarray;`
