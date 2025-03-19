@@ -22,11 +22,11 @@ cargo add ninterp
 
 ## Examples
 See examples in `new` method documentation:
-- [`Interp0D::new`](https://docs.rs/ninterp/latest/ninterp/zero/struct.Interp0D.html#method.new)
-- [`Interp1D::new`](https://docs.rs/ninterp/latest/ninterp/one/struct.Interp1D.html#method.new)
-- [`Interp2D::new`](https://docs.rs/ninterp/latest/ninterp/two/struct.Interp2D.html#method.new)
-- [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html#method.new)
-- [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html#method.new)
+- [`Interp0D::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp0D.html#method.new)
+- [`Interp1D::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp1D.html#method.new)
+- [`Interp2D::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp2D.html#method.new)
+- [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp3D.html#method.new)
+- [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.InterpND.html#method.new)
 
 Also see the [`examples`](examples) directory for advanced examples:
 - Strategy dynamic dispatch: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
@@ -51,20 +51,20 @@ use ninterp::prelude::*;
 ```
 
 This exposes all strategies and a variety of interpolators:
-- [`Interp1D`](https://docs.rs/ninterp/latest/ninterp/one/struct.Interp1D.html)
-- [`Interp2D`](https://docs.rs/ninterp/latest/ninterp/two/struct.Interp2D.html)
-- [`Interp3D`](https://docs.rs/ninterp/latest/ninterp/three/struct.Interp3D.html)
-- [`InterpND`](https://docs.rs/ninterp/latest/ninterp/n/struct.InterpND.html)
+- [`Interp1D`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp1D.html)
+- [`Interp2D`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp2D.html)
+- [`Interp3D`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp3D.html)
+- [`InterpND`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.InterpND.html)
 
 There is also a constant-value 'interpolator':
-[`Interp0D`](https://docs.rs/ninterp/latest/ninterp/zero/struct.Interp0D.html).
+[`Interp0D`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp0D.html).
 This is useful when working with a `Box<dyn Interpolator>`
 
 Instantiation is done by calling an interpolator's `new` method.
 For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
 After editing interpolator data,
 call the InterpData's `validate` method
-or [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.validate)
+or [`Interpolator::validate`](https://docs.rs/ninterp/latest/ninterp/interpolator/trait.Interpolator.html#tymethod.validate)
 to rerun these checks.
 
 To change the extrapolation setting, call `set_extrapolate`.
@@ -88,12 +88,13 @@ Custom strategies can be defined. See
 for an example.
 
 ### Extrapolation
-An [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/enum.Extrapolate.html)
+An [`Extrapolate`](https://docs.rs/ninterp/latest/ninterp/interpolator/enum.Extrapolate.html)
 setting must be provided in the `new` method.
 This controls what happens when a point is beyond the range of supplied coordinates.
 The following settings are applicable for all interpolators:
 - `Extrapolate::Fill(T)`
 - `Extrapolate::Clamp`
+- `Extrapolate::Wrap`
 - `Extrapolate::Error`
 
 `Extrapolate::Enable` is valid for `Linear` for all dimensionalities.
@@ -101,7 +102,7 @@ The following settings are applicable for all interpolators:
 If you are unsure which variant to choose, `Extrapolate::Error` is likely what you want.
 
 ### Interpolation
-Interpolation is executed by calling [`Interpolator::interpolate`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.interpolate).
+Interpolation is executed by calling [`Interpolator::interpolate`](https://docs.rs/ninterp/latest/ninterp/interpolator/trait.Interpolator.html#tymethod.interpolate).
 
 The length of the interpolant point slice must be equal to the interpolator dimensionality.
-The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`](https://docs.rs/ninterp/latest/ninterp/trait.Interpolator.html#tymethod.ndim).
+The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`](https://docs.rs/ninterp/latest/ninterp/interpolator/trait.Interpolator.html#tymethod.ndim).

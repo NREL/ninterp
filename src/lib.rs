@@ -5,7 +5,7 @@
 //! There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
 //! All interpolators work with both owned and borrowed arrays (array views) of various types.
 //!
-//! A variety of interpolation strategies are implemented and exposed in the `prelude` module.
+//! A variety of interpolation strategies are implemented and exposed in the [`prelude`] module.
 //! Custom interpolation strategies can be defined in downstream crates.
 //!
 //! ```text
@@ -51,7 +51,7 @@
 //!   Using transmutable (transparent) types, such as `uom::si::Quantity`
 //!
 //! # Overview
-//! A prelude module has been defined:
+//! A [`prelude`] module has been defined:
 //! ```rust,text
 //! use ninterp::prelude::*;
 //! ```
