@@ -148,7 +148,7 @@ pub use ndarray;
 pub(crate) use ndarray::prelude::*;
 pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
-pub(crate) use num_traits::{clamp, Euclid, Num, One};
+pub(crate) use num_traits::{clamp, Euclid, Float, Num, NumCast, One, Zero};
 
 pub(crate) use dyn_clone::*;
 

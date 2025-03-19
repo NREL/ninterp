@@ -2,7 +2,10 @@
 
 use super::*;
 
+pub mod cubic;
 pub mod traits;
+
+pub use cubic::Cubic;
 
 /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
 #[derive(Debug, Clone, PartialEq)]
