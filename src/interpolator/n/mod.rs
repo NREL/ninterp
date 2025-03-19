@@ -226,7 +226,7 @@ where
                         return self.strategy.interpolate(&self.data, &clamped_point);
                     }
                     Extrapolate::Wrap => {
-                        let clamped_point: Vec<_> = point
+                        let wrapped_point: Vec<_> = point
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
@@ -237,7 +237,7 @@ where
                                 )
                             })
                             .collect();
-                        return self.strategy.interpolate(&self.data, &clamped_point);
+                        return self.strategy.interpolate(&self.data, &wrapped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
