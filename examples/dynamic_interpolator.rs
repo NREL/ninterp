@@ -9,7 +9,7 @@ fn main() {
             array![0., 1.],
             array![0., 1.],
             array![[2., 4.], [4., 16.]],
-            Linear,
+            strategy::Linear,
             Extrapolate::Enable,
         )
         .unwrap(),
@@ -20,7 +20,7 @@ fn main() {
         Interp1D::new(
             array![0., 1., 2.],
             array![0., 4., 8.],
-            Nearest,
+            strategy::Nearest,
             Extrapolate::Error,
         )
         .unwrap(),

@@ -5,8 +5,14 @@ fn test_linear() {
     let x = array![0.05, 0.10, 0.15];
     let y = array![0.10, 0.20, 0.30];
     let f_xy = array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]];
-    let interp =
-        Interp2D::new(x.view(), y.view(), f_xy.view(), Linear, Extrapolate::Error).unwrap();
+    let interp = Interp2D::new(
+        x.view(),
+        y.view(),
+        f_xy.view(),
+        strategy::Linear,
+        Extrapolate::Error,
+    )
+    .unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         for (j, y_j) in y.iter().enumerate() {
@@ -23,7 +29,7 @@ fn test_linear_offset() {
         array![0., 1.],
         array![0., 1.],
         array![[0., 1.], [2., 3.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -36,7 +42,7 @@ fn test_linear_extrapolation() {
         array![0.05, 0.10, 0.15],
         array![0.10, 0.20, 0.30],
         array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -61,8 +67,14 @@ fn test_nearest() {
     let x = array![0.05, 0.10, 0.15];
     let y = array![0.10, 0.20, 0.30];
     let f_xy = array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]];
-    let interp =
-        Interp2D::new(x.view(), y.view(), f_xy.view(), Nearest, Extrapolate::Error).unwrap();
+    let interp = Interp2D::new(
+        x.view(),
+        y.view(),
+        f_xy.view(),
+        strategy::Nearest,
+        Extrapolate::Error,
+    )
+    .unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         for (j, y_j) in y.iter().enumerate() {
@@ -89,7 +101,7 @@ fn test_extrapolate_inputs() {
             array![0.1, 1.1],
             array![0.2, 1.2],
             array![[0., 1.], [2., 3.]],
-            Nearest,
+            strategy::Nearest,
             Extrapolate::Enable,
         )
         .unwrap_err(),
@@ -100,7 +112,7 @@ fn test_extrapolate_inputs() {
         array![0.1, 1.1],
         array![0.2, 1.2],
         array![[0., 1.], [2., 3.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -120,7 +132,7 @@ fn test_extrapolate_fill() {
         array![0.1, 1.1],
         array![0.2, 1.2],
         array![[0., 1.], [2., 3.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Fill(f64::NAN),
     )
     .unwrap();
@@ -138,12 +150,12 @@ fn test_dyn_strategy() {
         array![0., 1.],
         array![0., 1.],
         array![[0., 1.], [2., 3.]],
-        Box::new(Linear) as Box<dyn Strategy2D<_>>,
+        Box::new(strategy::Linear) as Box<dyn Strategy2D<_>>,
         Extrapolate::Error,
     )
     .unwrap();
     assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.4);
-    interp.set_strategy(Box::new(Nearest)).unwrap();
+    interp.set_strategy(Box::new(strategy::Nearest)).unwrap();
     assert_eq!(interp.interpolate(&[0.2, 0.]).unwrap(), 0.);
 }
 
@@ -153,7 +165,7 @@ fn test_extrapolate_clamp() {
         array![0.1, 1.1],
         array![0.2, 1.2],
         array![[0., 1.], [2., 3.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Clamp,
     )
     .unwrap();

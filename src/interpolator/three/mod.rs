@@ -76,10 +76,10 @@ where
     /// Instantiate three-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Linear`]
-    /// - [`Nearest`]
+    /// - [`strategy::Linear`]
+    /// - [`strategy::Nearest`]
     ///
-    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    /// [`Extrapolate::Enable`] is valid for [`strategy::Linear`]
     ///
     /// # Example:
     /// ```
@@ -104,7 +104,7 @@ where
     ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
     ///         ],
     ///     ],
-    ///     Linear,
+    ///     strategy::Linear,
     ///     Extrapolate::Error, // return an error when point is out of bounds
     /// )
     /// .unwrap();

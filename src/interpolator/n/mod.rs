@@ -125,10 +125,10 @@ where
     /// Instantiate N-dimensional (any dimensionality) interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Linear`]
-    /// - [`Nearest`]
+    /// - [`strategy::Linear`]
+    /// - [`strategy::Nearest`]
     ///
-    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    /// [`Extrapolate::Enable`] is valid for [`strategy::Linear`]
     ///
     /// # Example:
     /// ```
@@ -153,7 +153,7 @@ where
     ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
     ///         ],
     ///     ].into_dyn(),
-    ///     Linear,
+    ///     strategy::Linear,
     ///     Extrapolate::Error, // return an error when point is out of bounds
     /// )
     /// .unwrap();
@@ -226,7 +226,7 @@ where
                         return self.strategy.interpolate(&self.data, &clamped_point);
                     }
                     Extrapolate::Wrap => {
-                        let clamped_point: Vec<_> = point
+                        let wrapped_point: Vec<_> = point
                             .iter()
                             .enumerate()
                             .map(|(dim, pt)| {
@@ -237,7 +237,7 @@ where
                                 )
                             })
                             .collect();
-                        return self.strategy.interpolate(&self.data, &clamped_point);
+                        return self.strategy.interpolate(&self.data, &wrapped_point);
                     }
                     Extrapolate::Error => {
                         errors.push(format!(

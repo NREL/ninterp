@@ -5,33 +5,7 @@ use super::*;
 pub mod cubic;
 pub mod traits;
 
-// This method contains code from RouteE Compass, another open-source NREL-developed tool
-// <https://www.nrel.gov/transportation/route-energy-prediction-model.html>
-// <https://github.com/NREL/routee-compass/>
-pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: &T) -> usize {
-    if target == arr.last().unwrap() {
-        return arr.len() - 2;
-    }
-
-    let mut low = 0;
-    let mut high = arr.len() - 1;
-
-    while low < high {
-        let mid = low + (high - low) / 2;
-
-        if &arr[mid] >= target {
-            high = mid;
-        } else {
-            low = mid + 1;
-        }
-    }
-
-    if low > 0 && &arr[low] >= target {
-        low - 1
-    } else {
-        low
-    }
-}
+pub use cubic::Cubic;
 
 /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>
 #[derive(Debug, Clone, PartialEq)]

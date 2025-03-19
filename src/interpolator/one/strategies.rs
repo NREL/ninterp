@@ -1,4 +1,6 @@
 use super::*;
+use strategy::cubic::*;
+use strategy::*;
 
 impl<D> Strategy1D<D> for Linear
 where

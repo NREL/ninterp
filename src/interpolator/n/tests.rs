@@ -12,7 +12,7 @@ fn test_linear() {
         [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
     ]
     .into_dyn();
-    let interp = InterpND::new(grid, values.view(), Linear, Extrapolate::Error).unwrap();
+    let interp = InterpND::new(grid, values.view(), strategy::Linear, Extrapolate::Error).unwrap();
     // Check that interpolating at grid points just retrieves the value
     for i in 0..x.len() {
         for j in 0..y.len() {
@@ -37,7 +37,7 @@ fn test_linear_offset() {
     let interp = InterpND::new(
         vec![array![0., 1.], array![0., 1.], array![0., 1.]],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -50,14 +50,14 @@ fn test_linear_extrapolation_2d() {
         array![0.05, 0.10, 0.15],
         array![0.10, 0.20, 0.30],
         array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]],
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
     let interp_nd = InterpND::new(
         vec![array![0.05, 0.10, 0.15], array![0.10, 0.20, 0.30]],
         array![[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -110,7 +110,7 @@ fn test_linear_extrapolate_3d() {
             [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
         ],
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -126,7 +126,7 @@ fn test_linear_extrapolate_3d() {
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.]],
         ]
         .into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -211,7 +211,7 @@ fn test_nearest() {
     let z = array![0., 1.];
     let grid = vec![x.view(), y.view(), z.view()];
     let values = array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn();
-    let interp = InterpND::new(grid, values.view(), Nearest, Extrapolate::Error).unwrap();
+    let interp = InterpND::new(grid, values.view(), strategy::Nearest, Extrapolate::Error).unwrap();
     // Check that interpolating at grid points just retrieves the value
     for i in 0..x.len() {
         for j in 0..y.len() {
@@ -236,7 +236,7 @@ fn test_extrapolate_inputs() {
         InterpND::new(
             vec![array![0., 1.], array![0., 1.], array![0., 1.]],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-            Nearest,
+            strategy::Nearest,
             Extrapolate::Enable,
         )
         .unwrap_err(),
@@ -246,7 +246,7 @@ fn test_extrapolate_inputs() {
     let interp = InterpND::new(
         vec![array![0., 1.], array![0., 1.], array![0., 1.]],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -265,7 +265,7 @@ fn test_extrapolate_fill() {
     let interp = InterpND::new(
         vec![array![0.1, 1.1], array![0.2, 1.2], array![0.3, 1.3]],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Fill(f64::NAN),
     )
     .unwrap();
@@ -288,7 +288,7 @@ fn test_extrapolate_clamp() {
     let interp = InterpND::new(
         vec![x.view(), y.view(), z.view()],
         values.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Clamp,
     )
     .unwrap();
@@ -315,7 +315,7 @@ fn test_extrapolate_wrap() {
     let interp = InterpND::new(
         vec![array![0., 1.], array![0., 1.], array![0., 1.]],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Wrap,
     )
     .unwrap();
@@ -345,7 +345,7 @@ fn test_mismatched_grid() {
             vec![array![0., 1.], array![0., 1.], array![0., 1.]],
             // 2-D values
             array![[0., 1.], [2., 3.]].into_dyn(),
-            Linear,
+            strategy::Linear,
             Extrapolate::Error,
         )
         .unwrap_err(),
@@ -354,7 +354,7 @@ fn test_mismatched_grid() {
     assert!(InterpND::new(
         vec![array![]],
         array![0.].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .is_ok(),);
@@ -364,7 +364,7 @@ fn test_mismatched_grid() {
             vec![array![1.]],
             // 0-D values
             array![0.].into_dyn(),
-            Linear,
+            strategy::Linear,
             Extrapolate::Error,
         )
         .unwrap_err(),

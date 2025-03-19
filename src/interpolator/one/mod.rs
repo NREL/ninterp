@@ -1,7 +1,6 @@
 //! 1-dimensional interpolation
 
 use super::*;
-use crate::strategy::cubic::*;
 
 mod strategies;
 #[cfg(test)]
@@ -72,12 +71,12 @@ where
     /// Instantiate one-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Linear`]
-    /// - [`Nearest`]
-    /// - [`LeftNearest`]
-    /// - [`RightNearest`]
+    /// - [`strategy::Linear`]
+    /// - [`strategy::Nearest`]
+    /// - [`strategy::LeftNearest`]
+    /// - [`strategy::RightNearest`]
     ///
-    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    /// [`Extrapolate::Enable`] is valid for [`strategy::Linear`]
     ///
     /// # Example:
     /// ```
@@ -89,7 +88,7 @@ where
     ///     array![0., 1., 2.], // x0, x1, x2
     ///     // f(x)
     ///     array![0.0, 0.4, 0.8], // f(x0), f(x1), f(x2)
-    ///     Linear,
+    ///     strategy::Linear,
     ///     Extrapolate::Enable,
     /// )
     /// .unwrap();

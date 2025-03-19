@@ -5,7 +5,7 @@ fn test_invalid_args() {
     let interp = Interp1D::new(
         array![0., 1., 2., 3., 4.],
         array![0.2, 0.4, 0.6, 0.8, 1.0],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -20,7 +20,7 @@ fn test_invalid_args() {
 fn test_linear() {
     let x = array![0., 1., 2., 3., 4.];
     let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-    let interp = Interp1D::new(x.view(), f_x.view(), Linear, Extrapolate::Error).unwrap();
+    let interp = Interp1D::new(x.view(), f_x.view(), strategy::Linear, Extrapolate::Error).unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -34,7 +34,13 @@ fn test_linear() {
 fn test_left_nearest() {
     let x = array![0., 1., 2., 3., 4.];
     let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-    let interp = Interp1D::new(x.view(), f_x.view(), LeftNearest, Extrapolate::Error).unwrap();
+    let interp = Interp1D::new(
+        x.view(),
+        f_x.view(),
+        strategy::LeftNearest,
+        Extrapolate::Error,
+    )
+    .unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -48,7 +54,13 @@ fn test_left_nearest() {
 fn test_right_nearest() {
     let x = array![0., 1., 2., 3., 4.];
     let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-    let interp = Interp1D::new(x.view(), f_x.view(), RightNearest, Extrapolate::Error).unwrap();
+    let interp = Interp1D::new(
+        x.view(),
+        f_x.view(),
+        strategy::RightNearest,
+        Extrapolate::Error,
+    )
+    .unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -62,7 +74,8 @@ fn test_right_nearest() {
 fn test_nearest() {
     let x = array![0., 1., 2., 3., 4.];
     let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-    let interp = Interp1D::new(x.view(), f_x.view(), Nearest, Extrapolate::Error).unwrap();
+    let interp =
+        Interp1D::new(x.view(), f_x.view(), strategy::Nearest, Extrapolate::Error).unwrap();
     // Check that interpolating at grid points just retrieves the value
     for (i, x_i) in x.iter().enumerate() {
         assert_eq!(interp.interpolate(&[*x_i]).unwrap(), f_x[i]);
@@ -81,7 +94,7 @@ fn test_extrapolate_inputs() {
         Interp1D::new(
             array![0., 1., 2., 3., 4.],
             array![0.2, 0.4, 0.6, 0.8, 1.0],
-            Nearest,
+            strategy::Nearest,
             Extrapolate::Enable,
         )
         .unwrap_err(),
@@ -92,7 +105,7 @@ fn test_extrapolate_inputs() {
     let interp = Interp1D::new(
         array![0., 1., 2., 3., 4.],
         array![0.2, 0.4, 0.6, 0.8, 1.0],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -113,7 +126,7 @@ fn test_extrapolate_fill() {
     let interp = Interp1D::new(
         array![0., 1., 2., 3., 4.],
         array![0.2, 0.4, 0.6, 0.8, 1.0],
-        Linear,
+        strategy::Linear,
         Extrapolate::Fill(f64::NAN),
     )
     .unwrap();
@@ -128,7 +141,7 @@ fn test_extrapolate_clamp() {
     let interp = Interp1D::new(
         array![0., 1., 2., 3., 4.],
         array![0.2, 0.4, 0.6, 0.8, 1.0],
-        Linear,
+        strategy::Linear,
         Extrapolate::Clamp,
     )
     .unwrap();
@@ -141,7 +154,7 @@ fn test_extrapolate() {
     let interp = Interp1D::new(
         array![0., 1., 2., 3., 4.],
         array![0.2, 0.4, 0.6, 0.8, 1.0],
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -155,8 +168,13 @@ fn test_cubic_natural() {
     let x = array![1., 2.4, 3.1, 5., 7.6, 8.3, 10., 10.1];
     let f_x = array![3., -90., 19., 99., 291., 444., 222., 250.];
 
-    let interp =
-        Interp1D::new(x.view(), f_x.view(), Cubic::natural(), Extrapolate::Enable).unwrap();
+    let interp = Interp1D::new(
+        x.view(),
+        f_x.view(),
+        strategy::Cubic::natural(),
+        Extrapolate::Enable,
+    )
+    .unwrap();
 
     // Interpolating at knots returns values
     for i in 0..x.len() {
@@ -220,7 +238,7 @@ fn test_cubic_clamped() {
         let interp = Interp1D::new(
             x.view(),
             f_x.view(),
-            Cubic::clamped(a, b),
+            strategy::Cubic::clamped(a, b),
             Extrapolate::Enable,
         )
         .unwrap();
@@ -269,7 +287,7 @@ fn test_cubic_not_a_knot() {
     let interp = Interp1D::new(
         x.view(),
         f_x.view(),
-        Cubic::not_a_knot(),
+        strategy::Cubic::not_a_knot(),
         Extrapolate::Enable,
     )
     .unwrap();
@@ -310,18 +328,18 @@ fn test_cubic_not_a_knot() {
 // fn test_cubic_periodic() {
 //     let x = array![1., 2., 3., 5., 7., 8.];
 //     let f_x = array![3., -90., 19., 99., 291., 444.];
-
+//
 //     let interp_extrap_enable =
-//         Interp1D::new(x.view(), f_x.view(), Cubic::periodic(), Extrapolate::Enable).unwrap();
+//         Interp1D::new(x.view(), f_x.view(), strategy::Cubic::periodic(), Extrapolate::Enable).unwrap();
 //     let interp_extrap_wrap =
-//         Interp1D::new(x.view(), f_x.view(), Cubic::periodic(), Extrapolate::Wrap).unwrap();
-
+//         Interp1D::new(x.view(), f_x.view(), strategy::Cubic::periodic(), Extrapolate::Wrap).unwrap();
+//
 //     // Interpolating at knots returns values
 //     for i in 0..x.len() {
 //         assert_approx_eq!(interp_extrap_enable.interpolate(&[x[i]]).unwrap(), f_x[i]);
 //         assert_approx_eq!(interp_extrap_wrap.interpolate(&[x[i]]).unwrap(), f_x[i]);
 //     }
-
+//
 //     // Extrapolate::Enable is equivalent to Extrapolate::Wrap for Cubic::periodic()
 //     let x0 = x.first().unwrap();
 //     let xn = x.last().unwrap();
@@ -342,7 +360,7 @@ fn test_cubic_not_a_knot() {
 //             interp_extrap_wrap.interpolate(&[x]).unwrap()
 //         );
 //     }
-
+//
 //     // Slope left
 //     let xs_left = Array1::linspace(x_low, x_low + 2e6, 50);
 //     let ys_left: Array1<f64> = xs_left

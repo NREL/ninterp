@@ -1,7 +1,6 @@
 use ndarray::prelude::*;
 
 use ninterp::prelude::*;
-use ninterp::strategy::traits::Strategy1D;
 
 fn main() {
     // Create mutable interpolator
@@ -9,12 +8,12 @@ fn main() {
         array![0., 1., 2.],
         array![0., 3., 6.],
         // Provide the strategy as a trait object
-        Box::new(Linear) as Box<dyn Strategy1D<_>>,
+        Box::new(strategy::Linear) as Box<dyn strategy::traits::Strategy1D<_>>,
         Extrapolate::Error,
     )
     .unwrap();
     assert_eq!(interp.interpolate(&[1.75]).unwrap(), 5.25);
     // Change strategy to `Nearest`
-    interp.set_strategy(Box::new(Nearest)).unwrap();
+    interp.set_strategy(Box::new(strategy::Nearest)).unwrap();
     assert_eq!(interp.interpolate(&[1.75]).unwrap(), 6.);
 }

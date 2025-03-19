@@ -44,8 +44,6 @@ Also see the [`examples`](examples) directory for advanced examples:
 
 - Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](examples/uom.rs)
 
-- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](https://github.com/NREL/ninterp/blob/de2c770dc3614ba43af9e015481fecdc20538380/examples/uom.rs)
-
 ## Overview
 A prelude module has been defined: 
 ```rust

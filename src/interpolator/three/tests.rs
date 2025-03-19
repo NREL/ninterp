@@ -15,7 +15,7 @@ fn test_linear() {
         y.view(),
         z.view(),
         f_xyz.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -49,7 +49,7 @@ fn test_linear_extrapolation() {
             [[9., 10., 11.], [12., 13., 14.], [15., 16., 17.]],
             [[18., 19., 20.], [21., 22., 23.], [24., 25., 26.],],
         ],
-        Linear,
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -86,7 +86,7 @@ fn test_linear_offset() {
         array![0., 1.],
         array![0., 1.],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -104,7 +104,7 @@ fn test_nearest() {
         y.view(),
         z.view(),
         f_xyz.view(),
-        Nearest,
+        strategy::Nearest,
         Extrapolate::Error,
     )
     .unwrap();
@@ -137,7 +137,7 @@ fn test_extrapolate_inputs() {
             array![0.2, 1.2],
             array![0.3, 1.3],
             array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-            Nearest,
+            strategy::Nearest,
             Extrapolate::Enable,
         )
         .unwrap_err(),
@@ -149,7 +149,7 @@ fn test_extrapolate_inputs() {
         array![0.2, 1.2],
         array![0.3, 1.3],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -170,7 +170,7 @@ fn test_extrapolate_fill() {
         array![0.2, 1.2],
         array![0.3, 1.3],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-        Linear,
+        strategy::Linear,
         Extrapolate::Fill(f64::NAN),
     )
     .unwrap();
@@ -193,7 +193,7 @@ fn test_extrapolate_clamp() {
         array![0.2, 1.2],
         array![0.3, 1.3],
         array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-        Linear,
+        strategy::Linear,
         Extrapolate::Clamp,
     )
     .unwrap();

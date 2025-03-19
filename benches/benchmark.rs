@@ -25,7 +25,7 @@ fn benchmark_0D_multi() {
     let interp_0d_multi = InterpND::new(
         vec![array![]],
         array![0.5].into_dyn(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -40,7 +40,8 @@ fn benchmark_1D() {
     // Generate interpolator data (same as N-D benchmark)
     let values_data = Array1::random_using(100, Uniform::new(0., 1.), &mut rng);
     // Create a 1-D interpolator with 100 data points
-    let interp_1d = Interp1D::new(grid_data, values_data, Linear, Extrapolate::Error).unwrap();
+    let interp_1d =
+        Interp1D::new(grid_data, values_data, strategy::Linear, Extrapolate::Error).unwrap();
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.gen::<f64>() * 99.).collect();
     for point in points {
@@ -56,8 +57,13 @@ fn benchmark_1D_multi() {
     let grid_data: Array1<f64> = (0..100).map(|x| x as f64).collect();
     let values_data = Array1::random_using(100, Uniform::new(0., 1.), &mut rng).into_dyn();
     // Create an N-D interpolator with 100x100 data (10,000 points)
-    let interp_1d_multi =
-        InterpND::new(vec![grid_data], values_data, Linear, Extrapolate::Error).unwrap();
+    let interp_1d_multi = InterpND::new(
+        vec![grid_data],
+        values_data,
+        strategy::Linear,
+        Extrapolate::Error,
+    )
+    .unwrap();
     // Sample 1,000 points
     let points: Vec<f64> = (0..1_000).map(|_| rng.gen::<f64>() * 99.).collect();
     for point in points {
@@ -76,7 +82,7 @@ fn benchmark_2D() {
         grid_data.view(),
         grid_data.view(),
         values_data.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -100,7 +106,7 @@ fn benchmark_2D_multi() {
     let interp_2d_multi = InterpND::new(
         vec![grid_data.view(), grid_data.view()],
         values_data.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -126,7 +132,7 @@ fn benchmark_3D() {
         grid_data.view(),
         grid_data.view(),
         values_data.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
@@ -157,7 +163,7 @@ fn benchmark_3D_multi() {
     let interp_3d_multi = InterpND::new(
         vec![grid_data.view(), grid_data.view(), grid_data.view()],
         values_data.view(),
-        Linear,
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();

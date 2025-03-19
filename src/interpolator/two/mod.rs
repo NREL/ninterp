@@ -71,10 +71,10 @@ where
     /// Instantiate two-dimensional interpolator.
     ///
     /// Applicable interpolation strategies:
-    /// - [`Linear`]
-    /// - [`Nearest`]
+    /// - [`strategy::Linear`]
+    /// - [`strategy::Nearest`]
     ///
-    /// [`Extrapolate::Enable`] is valid for [`Linear`]
+    /// [`Extrapolate::Enable`] is valid for [`strategy::Linear`]
     ///
     /// # Example:
     /// ```
@@ -92,7 +92,7 @@ where
     ///         [0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
     ///         [0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
     ///     ],
-    ///     Linear,
+    ///     strategy::Linear,
     ///     Extrapolate::Clamp, // restrict point within grid bounds
     /// )
     /// .unwrap();

@@ -1,4 +1,5 @@
 use super::*;
+use strategy::*;
 
 impl<D> Strategy3D<D> for Linear
 where
