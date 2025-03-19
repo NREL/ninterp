@@ -8,7 +8,7 @@ use ninterp::strategy::traits::Strategy2D;
 use ndarray::prelude::*;
 use ndarray::{Data, RawDataClone};
 
-// Debug must be derived for custom strategies
+// Debug and Clone must be derived for custom strategies
 #[derive(Debug, Clone)]
 struct CustomStrategy;
 
@@ -21,13 +21,25 @@ where
     // e.g. D::Elem: num_traits::Num + PartialOrd
     D: Data<Elem = f32> + RawDataClone + Clone,
 {
+    // We can optionally define an initialization step, useful for strategies that need precalculation.
+    // This is called from Interpolator::validate, thus is run on construction for all interpolators.
+    // It takes a mutable reference, so you can edit any data contained in `CustomStrategy`.
+    //
+    // There is a default implementation that just returns `Ok(())`, so leave this out if not needed.
+    fn init(&mut self, _data: &InterpData2D<D>) -> Result<(), ninterp::error::ValidateError> {
+        println!("initialized!");
+        Ok(())
+    }
+
+    // Returns interpolated value for the supplied point.
     fn interpolate(
         &self,
         _data: &InterpData2D<D>,
         point: &[f32; 2],
     ) -> Result<f32, ninterp::error::InterpolateError> {
         // Dummy interpolation strategy, product of all point components
-        // Here we could access the `InterpData2D` instead,
+        //
+        // Here we could access the `InterpData2D` (and/or data in `self`) instead,
         // but this is just an example.
         Ok(point.iter().fold(1., |acc, x| acc * x))
     }
@@ -38,6 +50,9 @@ where
     // `Extrapolate::Enable` and `CustomStrategy` will fail on validation.
     //
     // Only set this to `true` if the `interpolate` implementation provisions for extrapolation.
+    //
+    // All extrapolation settings besides `Extrapolate::Enable` are handled before the strategy `interpolate` call.
+    // If you need different options for extrapolation beyond 'Enable', use an enum in your `CustomStrategy`.
     fn allow_extrapolate(&self) -> bool {
         false
     }
