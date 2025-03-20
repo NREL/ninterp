@@ -1,5 +1,6 @@
 use super::*;
 
+/// See [enums module](super) documentation.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum StrategyNDEnum {

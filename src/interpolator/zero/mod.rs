@@ -7,6 +7,7 @@ const N: usize = 0;
 /// 0-D interpolator
 // #[repr(transparent)]
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Interp0D<T>(pub T);
 impl<T> Interp0D<T>
 where
@@ -33,11 +34,13 @@ where
     T: Clone + Debug,
 {
     /// Returns `0`.
+    #[inline]
     fn ndim(&self) -> usize {
         N
     }
 
     /// Returns `Ok(())`.
+    #[inline]
     fn validate(&mut self) -> Result<(), ValidateError> {
         Ok(())
     }

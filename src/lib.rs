@@ -13,7 +13,7 @@
 //! ```
 //!
 //! ### Cargo Features
-//! - `serde`: support for [`serde`](https://crates.io/crates/serde) ([caveat](https://github.com/NREL/ninterp/issues/5))
+//! - `serde`: support for [`serde`](https://crates.io/crates/serde) 1.x
 //!   ```text
 //!   cargo add ninterp --features serde
 //!   ```
@@ -27,26 +27,33 @@
 //! - [`InterpND::new`](`interpolator::InterpND::new`)
 //!
 //! Also see the `examples` directory for advanced examples:
-//! - `dynamic_strategy.rs`
+//! - **`dynamic_strategy.rs`**
 //!
 //!   Swapping strategies at runtime
-//!   - Using strategy enums ([`strategy::enums::Strategy1DEnum`]/etc
+//!   - Using strategy enums ([`strategy::enums::Strategy1DEnum`]/etc.)
 //!     - Compatible with `serde`
 //!     - Incompatible with custom strategies
-//!   - Using dynamic dispatch ([`Box<dyn Strategy1D>`]/etc.)
+//!   - Using [`Box<dyn Strategy1D>`]/etc. (dynamic dispatch)
 //!     - Incompatible with `serde`
 //!     - Compatible with custom strategies
 //!     - Runtime cost
 //!
-//! - `dynamic_interpolator.rs`
+//! - **`dynamic_interpolator.rs`**
 //!
-//!   Interpolator dynamic dispatch using [`Box<dyn Interpolator>`]
+//!   Swapping interpolators at runtime
+//!   - Using [`InterpolatorEnum`](interpolator::enums::InterpolatorEnum)
+//!     - Compatible with `serde`
+//!     - Incompatible with custom strategies
+//!   - Using [`Box<dyn Interpolator>`] (dynamic dispatch)
+//!     - Incompatible with `serde`
+//!     - Compatible with custom strategies
+//!     - Runtime cost
 //!
-//! - `custom_strategy.rs`
+//! - **`custom_strategy.rs`**
 //!
 //!   Defining custom strategies
 //!
-//! - `uom.rs`
+//! - **`uom.rs`**
 //!
 //!   Using transmutable (transparent) types, such as [`uom::si::Quantity`](https://docs.rs/uom/0.36.0/uom/si/struct.Quantity.html)
 //!
@@ -64,7 +71,7 @@
 //!
 //! There is also a constant-value 'interpolator':
 //! [`Interp0D`](`interpolator::Interp0D`).
-//! This is useful when working with a `Box<dyn Interpolator>`
+//! This is useful when working with an [`InterpolatorEnum`](enums::InterpolatorEnum) or [`Box<dyn Interpolator>`]
 //!
 //! Instantiation is done by calling an interpolator's `new` method.
 //! For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
@@ -76,7 +83,7 @@
 //! To change the extrapolation setting, call `set_extrapolate`.
 //!
 //! To change the interpolation strategy,
-//! supply a `Box<dyn Strategy1D>`/etc. upon instantiation,
+//! supply a [`Strategy1DEnum`](strategy::enums::Strategy1DEnum)/etc. or [`Box<dyn Strategy1D>`]/etc. upon instantiation,
 //! and call `set_strategy`.
 //!
 //! ## Strategies
@@ -117,16 +124,19 @@
 ///   - [`Interp2D`](`interpolator::Interp2D`)
 ///   - [`Interp3D`](`interpolator::Interp3D`)
 ///   - [`InterpND`](`interpolator::InterpND`)
+///   - A `serde`-compatible interpolator enum [`InterpolatorEnum`](`interpolator::enums::InterpolatorEnum`)
 /// - Their common trait: [`Interpolator`]
 /// - The [`strategy`] mod, containing pre-defined interpolation strategies:
 ///   - [`strategy::Linear`]
 ///   - [`strategy::Nearest`]
 ///   - [`strategy::LeftNearest`]
 ///   - [`strategy::RightNearest`]
+///   - `serde`-compatible strategy enums: [`strategy::enums::Strategy1DEnum`]/etc.
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
     pub use crate::interpolator::{
-        Extrapolate, Interp0D, Interp1D, Interp2D, Interp3D, InterpND, Interpolator,
+        enums::InterpolatorEnum, Extrapolate, Interp0D, Interp1D, Interp2D, Interp3D, InterpND,
+        Interpolator,
     };
     pub use crate::strategy;
 }
@@ -181,7 +191,7 @@ mod tests {
     use super::wrap;
 
     #[test]
-    fn test() {
+    fn test_wrap() {
         assert_eq!(wrap(-3, -2, 5), 4);
         assert_eq!(wrap(3, -2, 5), 3);
         assert_eq!(wrap(6, -2, 5), -1);

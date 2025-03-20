@@ -127,6 +127,7 @@ where
     S: Strategy2D<D> + Clone,
 {
     /// Returns `2`.
+    #[inline]
     fn ndim(&self) -> usize {
         N
     }

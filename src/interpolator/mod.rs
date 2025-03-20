@@ -7,6 +7,7 @@ mod two;
 mod zero;
 
 pub mod data;
+pub mod enums;
 
 pub use n::{InterpND, InterpNDOwned, InterpNDViewed};
 pub use one::{Interp1D, Interp1DOwned, Interp1DViewed};

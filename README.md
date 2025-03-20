@@ -7,7 +7,7 @@ The `ninterp` crate provides [multivariate interpolation](https://en.wikipedia.o
 There are hard-coded interpolators for lower dimensionalities (up to N = 3) for better runtime performance.
 All interpolators work with both owned and borrowed arrays (array views) of various types.
 
-A variety of interpolation strategies are implemented and exposed in the `prelude` module.
+A variety of interpolation strategies are implemented and exposed in the [`prelude`](https://docs.rs/ninterp/latest/ninterp/prelude/index.html) module.
 Custom interpolation strategies can be defined in downstream crates.
 
 ```
@@ -15,7 +15,7 @@ cargo add ninterp
 ```
 
 #### Cargo Features
-- `serde`: support for serde ([caveat](https://github.com/NREL/ninterp/issues/5))
+- `serde`: support for [`serde`](https://crates.io/crates/serde) 1.x
   ```
   cargo add ninterp --features serde
   ```
@@ -29,23 +29,31 @@ See examples in `new` method documentation:
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.InterpND.html#method.new)
 
 Also see the [`examples`](examples) directory for advanced examples:
-- Swapping strategies at runtime: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
-  - Using strategy enums `strategy::enums::Strategy1DEnum`/etc
+- Swapping strategies at runtime: **[`dynamic_strategy.rs`](examples/dynamic_strategy.rs)**
+  - Using strategy enums (`strategy::enums::Strategy1DEnum`/etc.)
     - Compatible with `serde`
     - Incompatible with custom strategies
-  - Using dynamic dispatch `Box<dyn Strategy1D>`/etc.)
+  - Using `Box<dyn Strategy1D>`/etc. (dynamic dispatch)
     - Incompatible with `serde`
     - Compatible with custom strategies
     - Runtime cost
 
-- Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](examples/dynamic_interpolator.rs)
+- Swapping interpolators at runtime: **[`dynamic_interpolator.rs`](examples/dynamic_interpolator.rs)**
+  - Using `InterpolatorEnum`
+    - Compatible with `serde`
+    - Incompatible with custom strategies
+  - Using `Box<dyn Interpolator>` (dynamic dispatch)
+    - Incompatible with `serde`
+    - Compatible with custom strategies
+    - Runtime cost
 
-- Defining custom strategies: [`custom_strategy.rs`](examples/custom_strategy.rs)
+- Defining custom strategies: **[`custom_strategy.rs`](examples/custom_strategy.rs)**
 
-- Using transmutable (transparent) types, such as `uom::si::Quantity`: [`uom.rs`](examples/uom.rs)
+- Using transmutable (transparent) types, such as [`uom::si::Quantity`](https://docs.rs/uom/0.36.0/uom/si/struct.Quantity.html):
+  **[`uom.rs`](examples/uom.rs)**
 
 ## Overview
-A prelude module has been defined: 
+A [`prelude`](https://docs.rs/ninterp/latest/ninterp/prelude/index.html) module has been defined: 
 ```rust
 use ninterp::prelude::*;
 ```
@@ -58,7 +66,7 @@ This exposes all strategies and a variety of interpolators:
 
 There is also a constant-value 'interpolator':
 [`Interp0D`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp0D.html).
-This is useful when working with a `Box<dyn Interpolator>`
+This is useful when working with an `InterpolatorEnum` or `Box<dyn Interpolator>`
 
 Instantiation is done by calling an interpolator's `new` method.
 For dimensionalities N ≥ 1, this executes a validation step, preventing runtime panics.
@@ -70,7 +78,7 @@ to rerun these checks.
 To change the extrapolation setting, call `set_extrapolate`.
 
 To change the interpolation strategy,
-supply a `Box<dyn Strategy1D>`/etc. upon instantiation,
+supply a `Strategy1DEnum`/etc. or `Box<dyn Strategy1D>`/etc. upon instantiation,
 and call `set_strategy`.
 
 ### Strategies

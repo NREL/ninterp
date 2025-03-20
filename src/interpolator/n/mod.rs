@@ -187,6 +187,7 @@ where
     D::Elem: Num + Euclid + PartialOrd + Debug + Copy,
     S: StrategyND<D> + Clone,
 {
+    #[inline]
     fn ndim(&self) -> usize {
         self.data.ndim()
     }

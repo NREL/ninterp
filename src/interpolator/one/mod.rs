@@ -122,6 +122,7 @@ where
     S: Strategy1D<D> + Clone,
 {
     /// Returns `1`.
+    #[inline]
     fn ndim(&self) -> usize {
         N
     }
