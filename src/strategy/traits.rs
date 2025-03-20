@@ -56,10 +56,12 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    #[inline]
     fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
+    #[inline]
     fn interpolate(
         &self,
         data: &InterpData1D<D>,
@@ -68,6 +70,7 @@ where
         (**self).interpolate(data, point)
     }
 
+    #[inline]
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -99,10 +102,12 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    #[inline]
     fn init(&mut self, data: &InterpData2D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
+    #[inline]
     fn interpolate(
         &self,
         data: &InterpData2D<D>,
@@ -111,6 +116,7 @@ where
         (**self).interpolate(data, point)
     }
 
+    #[inline]
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -142,10 +148,12 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    #[inline]
     fn init(&mut self, data: &InterpData3D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
+    #[inline]
     fn interpolate(
         &self,
         data: &InterpData3D<D>,
@@ -154,6 +162,7 @@ where
         (**self).interpolate(data, point)
     }
 
+    #[inline]
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }
@@ -185,10 +194,12 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    #[inline]
     fn init(&mut self, data: &InterpDataND<D>) -> Result<(), ValidateError> {
         (**self).init(data)
     }
 
+    #[inline]
     fn interpolate(
         &self,
         data: &InterpDataND<D>,
@@ -197,6 +208,7 @@ where
         (**self).interpolate(data, point)
     }
 
+    #[inline]
     fn allow_extrapolate(&self) -> bool {
         (**self).allow_extrapolate()
     }

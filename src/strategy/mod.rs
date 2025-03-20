@@ -2,6 +2,7 @@
 
 use super::*;
 
+pub mod enums;
 pub mod traits;
 
 /// Linear interpolation: <https://en.wikipedia.org/wiki/Linear_interpolation>

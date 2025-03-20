@@ -29,18 +29,18 @@
 //! Also see the `examples` directory for advanced examples:
 //! - `dynamic_strategy.rs`
 //!
-//!   Strategy dynamic dispatch
-//!
-//!   By default, construction of interpolators uses *static dispatch*,
-//!   meaning strategy concrete types are determined at compilation.
-//!   This gives increased performance at the cost of runtime flexibility.
-//!   To allow swapping strategies at runtime,
-//!   use *dynamic dispatch* by providing a boxed trait object
-//!   `Box<dyn Strategy1D>`/etc. to the `new` method.
+//!   Swapping strategies at runtime
+//!   - Using strategy enums ([`strategy::enums::Strategy1DEnum`]/etc
+//!     - Compatible with `serde`
+//!     - Incompatible with custom strategies
+//!   - Using dynamic dispatch ([`Box<dyn Strategy1D>`]/etc.)
+//!     - Incompatible with `serde`
+//!     - Compatible with custom strategies
+//!     - Runtime cost
 //!
 //! - `dynamic_interpolator.rs`
 //!
-//!   Interpolator dynamic dispatch using `Box<dyn Interpolator>`
+//!   Interpolator dynamic dispatch using [`Box<dyn Interpolator>`]
 //!
 //! - `custom_strategy.rs`
 //!
@@ -48,7 +48,7 @@
 //!
 //! - `uom.rs`
 //!
-//!   Using transmutable (transparent) types, such as `uom::si::Quantity`
+//!   Using transmutable (transparent) types, such as [`uom::si::Quantity`](https://docs.rs/uom/0.36.0/uom/si/struct.Quantity.html)
 //!
 //! # Overview
 //! A [`prelude`] module has been defined:

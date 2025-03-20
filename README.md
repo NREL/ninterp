@@ -29,14 +29,14 @@ See examples in `new` method documentation:
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.InterpND.html#method.new)
 
 Also see the [`examples`](examples) directory for advanced examples:
-- Strategy dynamic dispatch: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
-
-  By default, construction of interpolators uses *static dispatch*,
-  meaning strategy concrete types are determined at compilation.
-  This gives increased performance at the cost of runtime flexibility.
-  To allow swapping strategies at runtime,
-  use *dynamic dispatch* by providing a boxed trait object
-  `Box<dyn Strategy1D>`/etc. to the `new` method.
+- Swapping strategies at runtime: [`dynamic_strategy.rs`](examples/dynamic_strategy.rs)
+  - Using strategy enums `strategy::enums::Strategy1DEnum`/etc
+    - Compatible with `serde`
+    - Incompatible with custom strategies
+  - Using dynamic dispatch `Box<dyn Strategy1D>`/etc.)
+    - Incompatible with `serde`
+    - Compatible with custom strategies
+    - Runtime cost
 
 - Interpolator dynamic dispatch using `Box<dyn Interpolator>`: [`dynamic_interpolator.rs`](examples/dynamic_interpolator.rs)
 

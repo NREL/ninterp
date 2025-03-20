@@ -182,3 +182,18 @@ where
         self.check_extrapolate(&self.extrapolate)
     }
 }
+
+impl<D> Interp1D<D, strategy::enums::Strategy1DEnum>
+where
+    D: Data + RawDataClone + Clone,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    /// Update strategy dynamically.
+    pub fn set_strategy(
+        &mut self,
+        strategy: impl Into<strategy::enums::Strategy1DEnum>,
+    ) -> Result<(), ValidateError> {
+        self.strategy = strategy.into();
+        self.check_extrapolate(&self.extrapolate)
+    }
+}

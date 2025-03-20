@@ -211,3 +211,18 @@ where
         self.check_extrapolate(&self.extrapolate)
     }
 }
+
+impl<D> Interp3D<D, strategy::enums::Strategy3DEnum>
+where
+    D: Data + RawDataClone + Clone,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+{
+    /// Update strategy dynamically.
+    pub fn set_strategy(
+        &mut self,
+        strategy: impl Into<strategy::enums::Strategy3DEnum>,
+    ) -> Result<(), ValidateError> {
+        self.strategy = strategy.into();
+        self.check_extrapolate(&self.extrapolate)
+    }
+}
