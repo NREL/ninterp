@@ -35,7 +35,7 @@ where
 }
 
 /// 3-D interpolator
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -66,6 +66,7 @@ pub type Interp3DViewed<T, S> = Interp3D<ndarray::ViewRepr<T>, S>;
 pub type Interp3DOwned<T, S> = Interp3D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp3D, Strategy3D);
+partialeq_impl!(Interp3D, InterpData3D, Strategy3D);
 
 impl<D, S> Interp3D<D, S>
 where

@@ -30,7 +30,7 @@ where
 }
 
 /// 1-D interpolator
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -61,6 +61,7 @@ pub type Interp1DViewed<T, S> = Interp1D<ndarray::ViewRepr<T>, S>;
 pub type Interp1DOwned<T, S> = Interp1D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp1D, Strategy1D);
+partialeq_impl!(Interp1D, InterpData1D, Strategy1D);
 
 impl<D, S> Interp1D<D, S>
 where

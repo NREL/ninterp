@@ -34,7 +34,7 @@ where
 }
 
 /// 2-D interpolator
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -61,6 +61,7 @@ pub type Interp2DViewed<T, S> = Interp2D<ndarray::ViewRepr<T>, S>;
 pub type Interp2DOwned<T, S> = Interp2D<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(Interp2D, Strategy2D);
+partialeq_impl!(Interp2D, InterpData2D, Strategy2D);
 
 impl<D, S> Interp2D<D, S>
 where

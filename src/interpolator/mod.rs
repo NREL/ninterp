@@ -111,3 +111,22 @@ macro_rules! extrapolate_impl {
     };
 }
 pub(crate) use extrapolate_impl;
+
+macro_rules! partialeq_impl {
+    ($InterpType:ident, $Data:ident, $Strategy:ident) => {
+        impl<D, S> PartialEq for $InterpType<D, S>
+        where
+            D: Data + RawDataClone + Clone,
+            D::Elem: PartialEq + Debug,
+            S: $Strategy<D> + Clone + PartialEq,
+            $Data<D>: PartialEq,
+        {
+            fn eq(&self, other: &Self) -> bool {
+                self.data == other.data
+                    && self.strategy == other.strategy
+                    && self.extrapolate == other.extrapolate
+            }
+        }
+    };
+}
+pub(crate) use partialeq_impl;

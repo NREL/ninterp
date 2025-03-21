@@ -1,7 +1,7 @@
 use super::*;
 
 /// See [enums module](super) documentation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Strategy1DEnum {
     Linear(strategy::Linear),

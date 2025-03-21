@@ -200,3 +200,14 @@ fn test_extrapolate_clamp() {
     assert_eq!(interp.interpolate(&[-1., -1., -1.]).unwrap(), 0.);
     assert_eq!(interp.interpolate(&[2., 2., 2.]).unwrap(), 7.);
 }
+
+#[test]
+fn test_partialeq() {
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct(InterpData3DOwned<f64>);
+
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct2(Interp3DOwned<f64, strategy::Linear>);
+}

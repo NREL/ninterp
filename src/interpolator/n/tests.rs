@@ -371,3 +371,14 @@ fn test_mismatched_grid() {
         ValidateError::Other(_)
     ));
 }
+
+#[test]
+fn test_partialeq() {
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct(InterpDataNDOwned<f64>);
+
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct2(InterpNDOwned<f64, strategy::Linear>);
+}

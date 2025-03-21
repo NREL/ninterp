@@ -25,7 +25,7 @@ use strategy::enums::*;
 /// let mut interp = InterpolatorEnum::new_1d(
 ///     x.view(),
 ///     f_x.view(),
-///     strategy::Linear.into(),
+///     strategy::Linear,
 ///     Extrapolate::Error,
 /// )
 /// .unwrap();
@@ -41,7 +41,7 @@ use strategy::enums::*;
 ///     x.view(),
 ///     y.view(),
 ///     f_xy.view(),
-///     strategy::Nearest.into(),
+///     strategy::Nearest,
 ///     Extrapolate::Error,
 /// )
 /// .unwrap();
@@ -75,6 +75,28 @@ where
     Interp3D(Interp3D<D, Strategy3DEnum>),
     InterpND(InterpND<D, StrategyNDEnum>),
 }
+/// [`InterpolatorEnum`] that views data.
+pub type InterpolatorEnumViewed<T> = InterpolatorEnum<ndarray::ViewRepr<T>>;
+/// [`InterpolatorEnum`] that owns data.
+pub type InterpolatorEnumOwned<T> = InterpolatorEnum<ndarray::OwnedRepr<T>>;
+
+impl<D> PartialEq for InterpolatorEnum<D>
+where
+    D: Data + RawDataClone + Clone,
+    D::Elem: Num + PartialOrd + Copy + Debug,
+    ArrayBase<D, Ix1>: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Interp0D(l), Self::Interp0D(r)) => l == r,
+            (Self::Interp1D(l), Self::Interp1D(r)) => l == r,
+            (Self::Interp2D(l), Self::Interp2D(r)) => l == r,
+            (Self::Interp3D(l), Self::Interp3D(r)) => l == r,
+            (Self::InterpND(l), Self::InterpND(r)) => l == r,
+            _ => false,
+        }
+    }
+}
 
 impl<D> InterpolatorEnum<D>
 where
@@ -92,13 +114,13 @@ where
     pub fn new_1d(
         x: ArrayBase<D, Ix1>,
         f_x: ArrayBase<D, Ix1>,
-        strategy: Strategy1DEnum,
+        strategy: impl Into<Strategy1DEnum>,
         extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         Ok(Self::Interp1D(Interp1D::new(
             x,
             f_x,
-            strategy,
+            strategy.into(),
             extrapolate,
         )?))
     }
@@ -109,14 +131,14 @@ where
         x: ArrayBase<D, Ix1>,
         y: ArrayBase<D, Ix1>,
         f_xy: ArrayBase<D, Ix2>,
-        strategy: Strategy2DEnum,
+        strategy: impl Into<Strategy2DEnum>,
         extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         Ok(Self::Interp2D(Interp2D::new(
             x,
             y,
             f_xy,
-            strategy,
+            strategy.into(),
             extrapolate,
         )?))
     }
@@ -128,7 +150,7 @@ where
         y: ArrayBase<D, Ix1>,
         z: ArrayBase<D, Ix1>,
         f_xyz: ArrayBase<D, Ix3>,
-        strategy: Strategy3DEnum,
+        strategy: impl Into<Strategy3DEnum>,
         extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         Ok(Self::Interp3D(Interp3D::new(
@@ -136,7 +158,7 @@ where
             y,
             z,
             f_xyz,
-            strategy,
+            strategy.into(),
             extrapolate,
         )?))
     }
@@ -146,13 +168,13 @@ where
     pub fn new_nd(
         grid: Vec<ArrayBase<D, Ix1>>,
         values: ArrayBase<D, IxDyn>,
-        strategy: StrategyNDEnum,
+        strategy: impl Into<StrategyNDEnum>,
         extrapolate: Extrapolate<D::Elem>,
     ) -> Result<Self, ValidateError> {
         Ok(Self::InterpND(InterpND::new(
             grid,
             values,
-            strategy,
+            strategy.into(),
             extrapolate,
         )?))
     }
@@ -249,5 +271,14 @@ where
     #[inline]
     fn from(interpolator: InterpND<D, StrategyNDEnum>) -> Self {
         InterpolatorEnum::InterpND(interpolator)
+    }
+}
+
+mod tests {
+    #[test]
+    fn test_partialeq() {
+        #[derive(PartialEq)]
+        #[allow(unused)]
+        struct MyStruct(super::InterpolatorEnumOwned<f64>);
     }
 }

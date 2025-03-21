@@ -134,11 +134,19 @@
 ///   - `serde`-compatible strategy enums: [`strategy::enums::Strategy1DEnum`]/etc.
 /// - The extrapolation setting enum: [`Extrapolate`]
 pub mod prelude {
-    pub use crate::interpolator::{
-        enums::InterpolatorEnum, Extrapolate, Interp0D, Interp1D, Interp2D, Interp3D, InterpND,
-        Interpolator,
-    };
     pub use crate::strategy;
+
+    pub use crate::interpolator::{Extrapolate, Interpolator};
+
+    pub use crate::interpolator::Interp0D;
+    pub use crate::interpolator::{Interp1D, Interp1DOwned, Interp1DViewed};
+    pub use crate::interpolator::{Interp2D, Interp2DOwned, Interp2DViewed};
+    pub use crate::interpolator::{Interp3D, Interp3DOwned, Interp3DViewed};
+    pub use crate::interpolator::{InterpND, InterpNDOwned, InterpNDViewed};
+
+    pub use crate::interpolator::enums::{
+        InterpolatorEnum, InterpolatorEnumOwned, InterpolatorEnumViewed,
+    };
 }
 
 pub mod error;
@@ -158,6 +166,7 @@ pub use ndarray;
 pub(crate) use ndarray::prelude::*;
 pub(crate) use ndarray::{Data, Ix, RawDataClone};
 
+pub use num_traits;
 pub(crate) use num_traits::{clamp, Euclid, Num, One};
 
 pub(crate) use dyn_clone::*;

@@ -17,7 +17,7 @@ fn using_enum() {
         array![0., 1.],
         array![0., 1.],
         array![[2., 4.], [4., 16.]],
-        strategy::Linear.into(),
+        strategy::Linear,
         Extrapolate::Enable,
     )
     .unwrap();
@@ -40,7 +40,7 @@ fn using_enum() {
         array![0., 1.],
         array![0., 1.],
         array![[[0., 1.], [0.1, 1.1]], [[0.2, 1.2], [0.3, 1.3]]],
-        strategy::Nearest.into(),
+        strategy::Nearest,
         Extrapolate::Error,
     )
     .unwrap(); // `.into()` converts the `Interp1D` into an `InterpolatorEnum::Interp1D(...)`

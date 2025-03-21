@@ -9,7 +9,7 @@ mod strategies;
 mod tests;
 
 /// Interpolator data where N is determined at runtime
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -30,6 +30,17 @@ where
 pub type InterpDataNDViewed<T> = InterpDataND<ndarray::ViewRepr<T>>;
 /// [`InterpDataND`] that owns data.
 pub type InterpDataNDOwned<T> = InterpDataND<ndarray::OwnedRepr<T>>;
+
+impl<D> PartialEq for InterpDataND<D>
+where
+    D: Data + RawDataClone + Clone,
+    D::Elem: PartialEq + Debug,
+    ArrayBase<D, Ix1>: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.grid == other.grid && self.values == other.values
+    }
+}
 
 impl<D> InterpDataND<D>
 where
@@ -84,7 +95,7 @@ where
 }
 
 /// N-D interpolator
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -115,6 +126,7 @@ pub type InterpNDViewed<T, S> = InterpND<ndarray::ViewRepr<T>, S>;
 pub type InterpNDOwned<T, S> = InterpND<ndarray::OwnedRepr<T>, S>;
 
 extrapolate_impl!(InterpND, StrategyND);
+partialeq_impl!(InterpND, InterpDataND, StrategyND);
 
 impl<D, S> InterpND<D, S>
 where

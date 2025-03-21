@@ -162,3 +162,14 @@ fn test_extrapolate() {
     assert_approx_eq!(interp.interpolate(&[-0.75]).unwrap(), 0.05);
     assert_eq!(interp.interpolate(&[5.]).unwrap(), 1.2);
 }
+
+#[test]
+fn test_partialeq() {
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct(InterpData1DOwned<f64>);
+
+    #[derive(PartialEq)]
+    #[allow(unused)]
+    struct MyStruct2(Interp1DOwned<f64, strategy::Linear>);
+}
