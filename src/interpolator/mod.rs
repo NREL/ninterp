@@ -27,6 +27,8 @@ pub trait Interpolator<T>: DynClone {
     fn validate(&mut self) -> Result<(), ValidateError>;
     /// Interpolate at supplied point.
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError>;
+    /// Set [`Extrapolate`] variant, checking validity.
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError>;
 }
 
 clone_trait_object!(<T> Interpolator<T>);
@@ -40,6 +42,9 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     }
     fn interpolate(&self, point: &[T]) -> Result<T, InterpolateError> {
         (**self).interpolate(point)
+    }
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
+        (**self).set_extrapolate(extrapolate)
     }
 }
 
@@ -72,16 +77,6 @@ macro_rules! extrapolate_impl {
             D::Elem: PartialEq + Debug,
             S: $Strategy<D> + Clone,
         {
-            /// Set [`Extrapolate`] variant, checking validity.
-            pub fn set_extrapolate(
-                &mut self,
-                extrapolate: Extrapolate<D::Elem>,
-            ) -> Result<(), ValidateError> {
-                self.check_extrapolate(&extrapolate)?;
-                self.extrapolate = extrapolate;
-                Ok(())
-            }
-
             pub fn check_extrapolate(
                 &self,
                 extrapolate: &Extrapolate<D::Elem>,

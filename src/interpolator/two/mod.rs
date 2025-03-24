@@ -186,6 +186,12 @@ where
         }
         self.strategy.interpolate(&self.data, point)
     }
+
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
+        self.check_extrapolate(&extrapolate)?;
+        self.extrapolate = extrapolate;
+        Ok(())
+    }
 }
 
 impl<D> Interp2D<D, Box<dyn Strategy2D<D>>>

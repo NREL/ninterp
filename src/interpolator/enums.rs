@@ -217,6 +217,17 @@ where
             InterpolatorEnum::InterpND(interp) => interp.interpolate(point),
         }
     }
+
+    #[inline]
+    fn set_extrapolate(&mut self, extrapolate: Extrapolate<D::Elem>) -> Result<(), ValidateError> {
+        match self {
+            InterpolatorEnum::Interp0D(_) => Ok(()),
+            InterpolatorEnum::Interp1D(interp) => interp.set_extrapolate(extrapolate),
+            InterpolatorEnum::Interp2D(interp) => interp.set_extrapolate(extrapolate),
+            InterpolatorEnum::Interp3D(interp) => interp.set_extrapolate(extrapolate),
+            InterpolatorEnum::InterpND(interp) => interp.set_extrapolate(extrapolate),
+        }
+    }
 }
 
 impl<D> From<Interp0D<D::Elem>> for InterpolatorEnum<D>

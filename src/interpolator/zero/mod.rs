@@ -54,4 +54,10 @@ where
         }
         Ok(self.0.clone())
     }
+
+    /// Returns `Ok(())`.
+    #[inline]
+    fn set_extrapolate(&mut self, _extrapolate: Extrapolate<T>) -> Result<(), ValidateError> {
+        Ok(())
+    }
 }
