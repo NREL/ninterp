@@ -144,7 +144,7 @@ where
         {
             match &self.extrapolate {
                 Extrapolate::Enable => {}
-                Extrapolate::Fill(value) => return Ok(value.clone()),
+                Extrapolate::Fill(value) => return Ok(*value),
                 Extrapolate::Clamp => {
                     let clamped_point = [*clamp(
                         &point[0],
