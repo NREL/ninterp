@@ -50,7 +50,6 @@ pub use two::*;
 mod tests {
     use super::*;
     use crate::prelude::*;
-    use ndarray::prelude::*;
 
     #[test]
     fn test_1d() {

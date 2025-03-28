@@ -17,7 +17,8 @@ categories = ["mathematics"]
 [dependencies]
 dyn-clone = "1.0.19"
 itertools = "0.13.0"
-ndarray = ">=0.15, <0.17"
+ndarray_v0_15 = { package = "ndarray", version = "0.15", optional = true }
+ndarray_v0_16 = { package = "ndarray", version = "0.16", optional = true }
 num-traits = "0.2.19"
 serde = { version = "1", optional = true, features = ["derive"] }
 thiserror = "1.0.64"
@@ -33,4 +34,7 @@ name = "benchmark"
 harness = false
 
 [features]
-serde = ["dep:serde", "ndarray/serde"]
+default = ["ndarray_v0_16"]
+ndarray_v0_15 = ["dep:ndarray_v0_15"]
+ndarray_v0_16 = ["dep:ndarray_v0_16"]
+serde = ["dep:serde", "ndarray_v0_16?/serde", "ndarray_v0_15?/serde"]

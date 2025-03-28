@@ -1,5 +1,4 @@
-use ndarray::prelude::*;
-
+use ninterp::ndarray::prelude::*;
 use ninterp::prelude::*;
 
 fn main() {

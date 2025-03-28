@@ -3,7 +3,7 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use ndarray::prelude::*;
+use ninterp::ndarray::prelude::*;
 use ninterp::prelude::*;
 
 use ndarray_rand::rand::{prelude::StdRng, Rng, SeedableRng};

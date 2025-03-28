@@ -162,7 +162,21 @@ pub(crate) use strategy::traits::*;
 
 pub(crate) use std::fmt::Debug;
 
-pub use ndarray;
+#[cfg(all(not(feature = "ndarray_v0_15"), not(feature = "ndarray_v0_16")))]
+compile_error!(
+    "An ndarray version must be specified by selecting a feature. \
+    The default is `ndarray_v0_16`."
+);
+#[cfg(all(feature = "ndarray_v0_15", feature = "ndarray_v0_16"))]
+compile_error!(
+    "Only one ndarray version can be specified. \
+    The default is `ndarray_v0_16`."
+);
+#[cfg(all(feature = "ndarray_v0_15", not(feature = "ndarray_v0_16")))]
+pub use ndarray_v0_15 as ndarray;
+#[cfg(all(feature = "ndarray_v0_16", not(feature = "ndarray_v0_15")))]
+pub use ndarray_v0_16 as ndarray;
+
 pub(crate) use ndarray::prelude::*;
 pub(crate) use ndarray::{Data, Ix, RawDataClone};
 

@@ -3,10 +3,8 @@ use ninterp::prelude::*;
 use ninterp::data::InterpData2D;
 use ninterp::strategy::traits::Strategy2D;
 
-// Note: ninterp also re-exposes the internally used `ndarray` crate
-// `use ninterp::ndarray;`
-use ndarray::prelude::*;
-use ndarray::{Data, RawDataClone};
+use ninterp::ndarray::prelude::*;
+use ninterp::ndarray::{Data, RawDataClone};
 
 // Debug and Clone must be derived for custom strategies
 #[derive(Debug, Clone)]

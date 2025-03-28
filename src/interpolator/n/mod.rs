@@ -2,8 +2,6 @@
 
 use super::*;
 
-use ndarray::prelude::*;
-
 mod strategies;
 #[cfg(test)]
 mod tests;

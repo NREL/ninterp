@@ -1,4 +1,4 @@
-use ndarray::prelude::*;
+use ninterp::ndarray::prelude::*;
 use ninterp::prelude::*;
 
 use uom::si::f64::Ratio;
