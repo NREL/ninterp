@@ -15,16 +15,16 @@ keywords = [
 categories = ["mathematics"]
 
 [dependencies]
-dyn-clone = "1.0.19"
+dyn-clone = "1"
 itertools = "0.13.0"
-ndarray = ">=0.15, <0.17"
-num-traits = "0.2.19"
-serde = { version = "1", optional = true, features = ["derive"] }
-thiserror = "1.0.64"
+ndarray = ">=0.15.3, <0.17"
+num-traits = "0.2.15"
+serde = { version = "1.0.103", optional = true, features = ["derive"] }
+thiserror = "1.0.1"
 
 [dev-dependencies]
 criterion = "0.5.1"
-ndarray-rand = "0.15.0"
+ndarray-rand = "0.15.0" # note: for `cargo bench`, ndarray 0.16 must be used
 approx = "0.5.1"
 uom = "0.36.0"
 
