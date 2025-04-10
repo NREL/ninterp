@@ -12,10 +12,10 @@ fn main() {
     let f_x = array![Power::new::<kilowatt>(0.25), Power::new::<kilowatt>(0.75)];
     // `uom::si::Quantity` is repr(transparent), meaning it has the same memory layout as its contained type.
     // This means we can get the contained type via transmuting.
-    let interp: Interp1DOwned<f64, _> = unsafe {
+    let interp: Interp1DViewed<&f64, _> = unsafe {
         Interp1D::new(
-            std::mem::transmute(x),
-            std::mem::transmute(f_x),
+            std::mem::transmute(x.view()),
+            std::mem::transmute(f_x.view()),
             strategy::Linear,
             Extrapolate::Error,
         )
