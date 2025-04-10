@@ -57,10 +57,7 @@ where
         let mut interp_diffs = Vec::with_capacity(n);
         for dim in 0..n {
             // Extrapolation is checked previously in Interpolator::interpolate,
-            // meaning:
-            // - point is within grid bounds, or
-            // - point is clamped, or
-            // - extrapolation is enabled
+            // meaning by now, point is within grid bounds or extrapolation is enabled
             let lower_idx = if &point[dim] < grid[dim].first().unwrap() {
                 0
             } else if &point[dim] > grid[dim].last().unwrap() {

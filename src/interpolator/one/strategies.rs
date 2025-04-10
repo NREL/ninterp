@@ -14,11 +14,8 @@ where
         if let Some(i) = data.grid[0].iter().position(|&x_val| x_val == point[0]) {
             return Ok(data.values[i]);
         }
-        // Extrapolation is checked previously in `Interpolator::interpolate`,
-        // meaning:
-        // - point is within grid bounds, or
-        // - point is clamped, or
-        // - extrapolation is enabled
+        // Extrapolation is checked previously in Interpolator::interpolate,
+        // meaning by now, point is within grid bounds or extrapolation is enabled
         let x_l = if &point[0] < data.grid[0].first().unwrap() {
             0
         } else if &point[0] > data.grid[0].last().unwrap() {

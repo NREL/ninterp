@@ -12,22 +12,16 @@ where
         point: &[D::Elem; 3],
     ) -> Result<D::Elem, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
-        // meaning:
-        // - point is within grid bounds, or
-        // - point is clamped, or
-        // - extrapolation is enabled
-        let lowers: Vec<usize> = (0..3)
-            .map(|dim| {
-                if &point[dim] < data.grid[dim].first().unwrap() {
-                    0
-                } else if &point[dim] > data.grid[dim].last().unwrap() {
-                    data.grid[dim].len() - 2
-                } else {
-                    find_nearest_index(data.grid[dim].view(), &point[dim])
-                }
-            })
-            .collect();
-        // x
+        // meaning by now, point is within grid bounds or extrapolation is enabled
+        let lowers: [usize; 3] = std::array::from_fn(|dim| {
+            if &point[dim] < data.grid[dim].first().unwrap() {
+                0
+            } else if &point[dim] > data.grid[dim].last().unwrap() {
+                data.grid[dim].len() - 2
+            } else {
+                find_nearest_index(data.grid[dim].view(), &point[dim])
+            }
+        });
         let x_l = lowers[0];
         let x_u = x_l + 1;
         let x_diff = (point[0] - data.grid[0][x_l]) / (data.grid[0][x_u] - data.grid[0][x_l]);
