@@ -163,7 +163,7 @@ where
                 }
                 Extrapolate::Error => {
                     return Err(InterpolateError::ExtrapolateError(format!(
-                        "\n    point[0] = {:?} is out of bounds for grid dim 0 = {:?}",
+                        "\n    point[0] = {:?} is out of bounds for grid[0] = {:?}",
                         point[0], self.data.grid[0]
                     )))
                 }

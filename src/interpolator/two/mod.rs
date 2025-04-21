@@ -174,7 +174,7 @@ where
                     }
                     Extrapolate::Error => {
                         errors.push(format!(
-                            "\n    point[{dim}] = {:?} is out of bounds for grid dim {dim} = {:?}",
+                            "\n    point[{dim}] = {:?} is out of bounds for grid[{dim}] = {:?}",
                             point[dim], self.data.grid[dim],
                         ));
                     }
