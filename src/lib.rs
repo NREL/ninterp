@@ -174,7 +174,7 @@ pub(crate) use dyn_clone::*;
 #[cfg(feature = "serde")]
 pub(crate) use ndarray::DataOwned;
 #[cfg(feature = "serde")]
-pub(crate) use serde::{de::DeserializeOwned, Deserialize, Serialize};
+pub(crate) use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 /// Alias for [`approx::assert_abs_diff_eq`] with `epsilon = 1e-6`

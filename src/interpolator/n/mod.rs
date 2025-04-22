@@ -13,10 +13,13 @@ mod tests;
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-    ")
+    serde(bound(
+        serialize = "D::Elem: Serialize",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+        "
+    ))
 )]
 pub struct InterpDataND<D>
 where
@@ -99,11 +102,17 @@ where
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        S: Serialize + DeserializeOwned
-    ")
+    serde(bound(
+        serialize = "
+            D::Elem: Serialize,
+            S: Serialize,
+        ",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+            S: Deserialize<'de>
+        "
+    ))
 )]
 pub struct InterpND<D, S>
 where
@@ -114,10 +123,6 @@ where
     pub data: InterpDataND<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    #[cfg_attr(
-        feature = "serde",
-        serde(bound = "D::Elem: Serialize + DeserializeOwned")
-    )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
 /// [`InterpND`] that views data.

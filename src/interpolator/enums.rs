@@ -59,10 +59,13 @@ use strategy::enums::*;
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-    ")
+    serde(bound(
+        serialize = "D::Elem: Serialize",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+        "
+    ))
 )]
 pub enum InterpolatorEnum<D>
 where

@@ -9,12 +9,19 @@ pub use two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        Dim<[usize; N]>: Serialize + DeserializeOwned,
-        [ArrayBase<D, Ix1>; N]: Serialize + DeserializeOwned,
-    ")
+    serde(bound(
+        serialize = "
+            D::Elem: Serialize,
+            Dim<[usize; N]>: Serialize,
+            [ArrayBase<D, Ix1>; N]: Serialize,
+        ",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+            Dim<[usize; N]>: Deserialize<'de>,
+            [ArrayBase<D, Ix1>; N]: Deserialize<'de>,
+        "
+    ))
 )]
 pub struct InterpData<D, const N: usize>
 where

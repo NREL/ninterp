@@ -38,11 +38,17 @@ where
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        S: Serialize + DeserializeOwned
-    ")
+    serde(bound(
+        serialize = "
+            D::Elem: Serialize,
+            S: Serialize,
+        ",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+            S: Deserialize<'de>,
+        "
+    ))
 )]
 pub struct Interp2D<D, S>
 where

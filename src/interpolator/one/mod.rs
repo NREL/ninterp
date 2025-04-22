@@ -34,11 +34,17 @@ where
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound = "
-        D: DataOwned,
-        D::Elem: Serialize + DeserializeOwned,
-        S: Serialize + DeserializeOwned
-    ")
+    serde(bound(
+        serialize = "
+            D::Elem: Serialize,
+            S: Serialize,
+        ",
+        deserialize = "
+            D: DataOwned,
+            D::Elem: Deserialize<'de>,
+            S: Deserialize<'de>,
+        "
+    ))
 )]
 pub struct Interp1D<D, S>
 where
@@ -49,10 +55,6 @@ where
     pub data: InterpData1D<D>,
     pub strategy: S,
     #[cfg_attr(feature = "serde", serde(default))]
-    #[cfg_attr(
-        feature = "serde",
-        serde(bound = "D::Elem: Serialize + DeserializeOwned")
-    )]
     pub extrapolate: Extrapolate<D::Elem>,
 }
 /// [`Interp1D`] that views data.
