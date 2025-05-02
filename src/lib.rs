@@ -129,11 +129,12 @@
 //!   use ndarray::prelude::*;
 //!   use ninterp::prelude::*;
 //!   let interp: Interp1DOwned<f64, _> = Interp1D::new(
-//!      array![0.0, 1.0, 2.0, 3.0],
-//!      array![0.0, 1.0, 4.0, 9.0],
-//!      strategy::Linear,
-//!      Extrapolate::Error,
-//!   ).unwrap();
+//!       array![0.0, 1.0, 2.0, 3.0],
+//!       array![0.0, 1.0, 4.0, 9.0],
+//!       strategy::Linear,
+//!       Extrapolate::Error,
+//!   )
+//!   .unwrap();
 //!   ```
 //! - [`Interp1DViewed`](`interpolator::Interp1DViewed`)
 //!   - Data is *borrowed* by the interpolator object
@@ -144,15 +145,16 @@
 //!   let x = array![0.0, 1.0, 2.0, 3.0];
 //!   let f_x = array![0.0, 1.0, 4.0, 9.0];
 //!   let interp: Interp1DViewed<&f64, _> = Interp1D::new(
-//!      x.view(),
-//!      f_x.view(),
-//!      strategy::Linear,
-//!      Extrapolate::Error,
-//!   ).unwrap();
+//!       x.view(),
+//!       f_x.view(),
+//!       strategy::Linear,
+//!       Extrapolate::Error,
+//!   )
+//!   .unwrap();
 //!   ```
 //!
 //! Typically, the compiler can determine concrete types using the arguments provided to `new` methods.
-//! Examples throughout this crate have type annotions for clarity purposes, they are often unnecessary.
+//! Examples throughout this crate have type annotions for clarity purposes; they are often unnecessary.
 
 /// The `prelude` module exposes a variety of types:
 /// - All interpolator structs:

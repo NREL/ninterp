@@ -114,3 +114,46 @@ Interpolation is executed by calling [`Interpolator::interpolate`](https://docs.
 
 The length of the interpolant point slice must be equal to the interpolator dimensionality.
 The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`](https://docs.rs/ninterp/latest/ninterp/interpolator/trait.Interpolator.html#tymethod.ndim).
+
+## Using Owned and Borrowed (Viewed) Data
+All interpolators work with both owned and borrowed data.
+This is accomplished by the generic `D`, which has a bound on the
+[`ndarray::Data`](https://docs.rs/ndarray/latest/ndarray/trait.Data.html)
+trait.
+
+Type aliases are provided in the
+[`prelude`](https://docs.rs/ninterp/latest/ninterp/prelude/index.html)
+for convenience, e.g. for 1-D:
+- [`Interp1DOwned`](https://docs.rs/ninterp/latest/ninterp/interpolator/type.Interp1DOwned.html)
+  - Data is *owned* by the interpolator object
+  - Useful for struct fields
+  ```rust
+  use ndarray::prelude::*;
+  use ninterp::prelude::*;
+  let interp: Interp1DOwned<f64, _> = Interp1D::new(
+      array![0.0, 1.0, 2.0, 3.0],
+      array![0.0, 1.0, 4.0, 9.0],
+      strategy::Linear,
+      Extrapolate::Error,
+  )
+  .unwrap();
+  ```
+- [`Interp1DViewed`](https://docs.rs/ninterp/latest/ninterp/interpolator/type.Interp1DViewed.html)
+  - Data is *borrowed* by the interpolator object
+  - Use when interpolator data should be owned by another object
+  ```rust
+  use ndarray::prelude::*;
+  use ninterp::prelude::*;
+  let x = array![0.0, 1.0, 2.0, 3.0];
+  let f_x = array![0.0, 1.0, 4.0, 9.0];
+  let interp: Interp1DViewed<&f64, _> = Interp1D::new(
+      x.view(),
+      f_x.view(),
+      strategy::Linear,
+      Extrapolate::Error,
+  )
+  .unwrap();
+  ```
+
+Typically, the compiler can determine concrete types using the arguments provided to `new` methods.
+Examples throughout this crate have type annotions for clarity purposes; they are often unnecessary.
