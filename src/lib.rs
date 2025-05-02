@@ -116,6 +116,43 @@
 //!
 //! The length of the interpolant point slice must be equal to the interpolator dimensionality.
 //! The interpolator dimensionality can be retrieved by calling [`Interpolator::ndim`].
+//!
+//! # Using Owned and Borrowed (Viewed) Data
+//! All interpolators work with both owned and borrowed data.
+//! This is accomplished by the generic `D`, which has a bound on the [`ndarray::Data`] trait.
+//!
+//! Type aliases are provided in the [`prelude`] for convenience, e.g. for 1-D:
+//! - [`Interp1DOwned`](`interpolator::Interp1DOwned`)
+//!   - Data is *owned* by the interpolator object
+//!   - Useful for struct fields
+//!   ```rust
+//!   use ndarray::prelude::*;
+//!   use ninterp::prelude::*;
+//!   let interp: Interp1DOwned<f64, _> = Interp1D::new(
+//!      array![0.0, 1.0, 2.0, 3.0],
+//!      array![0.0, 1.0, 4.0, 9.0],
+//!      strategy::Linear,
+//!      Extrapolate::Error,
+//!   ).unwrap();
+//!   ```
+//! - [`Interp1DViewed`](`interpolator::Interp1DViewed`)
+//!   - Data is *borrowed* by the interpolator object
+//!   - Use when interpolator data should be owned by another object
+//!   ```rust
+//!   use ndarray::prelude::*;
+//!   use ninterp::prelude::*;
+//!   let x = array![0.0, 1.0, 2.0, 3.0];
+//!   let f_x = array![0.0, 1.0, 4.0, 9.0];
+//!   let interp: Interp1DViewed<&f64, _> = Interp1D::new(
+//!      x.view(),
+//!      f_x.view(),
+//!      strategy::Linear,
+//!      Extrapolate::Error,
+//!   ).unwrap();
+//!   ```
+//!
+//! Typically, the compiler can determine concrete types using the arguments provided to `new` methods.
+//! Examples throughout this crate have type annotions for clarity purposes, they are often unnecessary.
 
 /// The `prelude` module exposes a variety of types:
 /// - All interpolator structs:
@@ -125,6 +162,7 @@
 ///   - [`Interp3D`](`interpolator::Interp3D`)
 ///   - [`InterpND`](`interpolator::InterpND`)
 ///   - A `serde`-compatible interpolator enum [`InterpolatorEnum`](`interpolator::enums::InterpolatorEnum`)
+///   - `Owned` and `Viewed` type aliases for all of the above
 /// - Their common trait: [`Interpolator`]
 /// - The [`strategy`] mod, containing pre-defined interpolation strategies:
 ///   - [`strategy::Linear`]
