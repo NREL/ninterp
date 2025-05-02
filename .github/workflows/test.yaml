@@ -23,5 +23,5 @@ jobs:
         cargo test --all-features --verbose
     - name: run examples
       run: |
-        cargo install cargo-examples
+        cargo install cargo-examples --version 0.5.0
         cargo examples
