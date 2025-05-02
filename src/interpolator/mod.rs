@@ -50,21 +50,21 @@ impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
 
 /// Extrapolation strategy
 ///
-/// Controls what happens if supplied interpolant point
-/// is outside the bounds of the interpolation grid.
+/// Controls what happens when supplied interpolation point
+/// is outside the bounds of the coordinate grid.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum Extrapolate<T> {
-    /// Evaluate beyond the limits of the interpolation grid.
+    /// Evaluate beyond the grid limits. Not applicable for all strategies.
     Enable,
     /// If point is beyond grid limits, return this value instead.
     Fill(T),
-    /// Restrict interpolant point to the limits of the interpolation grid, using [`num_traits::clamp`].
+    /// Restrict interpolant point to the grid limits using [`num_traits::clamp`].
     Clamp,
-    /// Wrap around to other end of periodic data.
+    /// Wrap around to other end of (periodic) data.
     /// Does NOT check that first and last values are equal.
     Wrap,
-    /// Return an error when interpolant point is beyond the limits of the interpolation grid.
+    /// Return an error.
     #[default]
     Error,
 }

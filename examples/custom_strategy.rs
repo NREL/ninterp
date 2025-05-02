@@ -59,10 +59,11 @@ where
 }
 
 fn main() {
-    let interp = Interp2D::new(
-        array![0., 2., 4.],
+    // type annotation for clarity
+    let interp: Interp2DOwned<f32, CustomStrategy> = Interp2D::new(
+        array![0., 2.],
         array![0., 4., 8.],
-        array![[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        array![[0., 0., 0.], [0., 0., 0.]],
         CustomStrategy,
         Extrapolate::Error,
     )

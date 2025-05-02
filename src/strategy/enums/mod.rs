@@ -12,7 +12,7 @@
 //!
 //! let x = array![0., 1., 2., 3., 4.];
 //! let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-//! let mut interp: Interp1D<_, strategy::enums::Strategy1DEnum> = Interp1D::new(
+//! let mut interp: Interp1DViewed<_, strategy::enums::Strategy1DEnum> = Interp1D::new(
 //!     x.view(),
 //!     f_x.view(),
 //!     strategy::Linear.into(),

@@ -22,10 +22,11 @@ use strategy::enums::*;
 /// // 1-D linear
 /// let x = array![0., 1., 2., 3., 4.];
 /// let f_x = array![0.2, 0.4, 0.6, 0.8, 1.0];
-/// let mut interp = InterpolatorEnum::new_1d(
+/// // type annotation for clarity
+/// let mut interp: InterpolatorEnumViewed<&f64> = InterpolatorEnum::new_1d(
 ///     x.view(),
 ///     f_x.view(),
-///     strategy::Linear,
+///     strategy::Linear, // strategy mod is exposed via `use ndarray::prelude::*;`
 ///     Extrapolate::Error,
 /// )
 /// .unwrap();

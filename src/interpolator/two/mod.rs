@@ -88,25 +88,26 @@ where
     /// use ndarray::prelude::*;
     /// use ninterp::prelude::*;
     /// // f(x, y) = 0.2 * x + 0.4 * y
-    /// let interp = Interp2D::new(
+    /// // type annotation for clarity
+    /// let interp: Interp2DOwned<f64, _> = Interp2D::new(
     ///     // x
     ///     array![0., 1., 2.], // x0, x1, x2
     ///     // y
-    ///     array![0., 1., 2.], // y0, y1, y2
+    ///     array![0., 1., 2., 3.], // y0, y1, y2
     ///     // f(x, y)
     ///     array![
-    ///         [0.0, 0.4, 0.8], // f(x0, y0), f(x0, y1), f(x0, y2)
-    ///         [0.2, 0.6, 1.0], // f(x1, y0), f(x1, y1), f(x1, y2)
-    ///         [0.4, 0.8, 1.2], // f(x2, y0), f(x2, y1), f(x2, y2)
+    ///         [0.0, 0.4, 0.8, 1.2], // f(x0, y0), f(x0, y1), f(x0, y2), f(x0, y3)
+    ///         [0.2, 0.6, 1.0, 1.4], // f(x1, y0), f(x1, y1), f(x1, y2), f(x1, y3)
+    ///         [0.4, 0.8, 1.2, 1.6], // f(x2, y0), f(x2, y1), f(x2, y2), f(x2, y3)
     ///     ],
-    ///     strategy::Linear,
+    ///     strategy::Linear, // strategy mod is exposed via `use ndarray::prelude::*;`
     ///     Extrapolate::Clamp, // restrict point within grid bounds
     /// )
     /// .unwrap();
     /// assert_eq!(interp.interpolate(&[1.5, 1.5]).unwrap(), 0.9);
     /// assert_eq!(
-    ///     interp.interpolate(&[-1., 2.5]).unwrap(),
-    ///     interp.interpolate(&[0., 2.]).unwrap()
+    ///     interp.interpolate(&[-1., 3.5]).unwrap(),
+    ///     interp.interpolate(&[0., 3.]).unwrap()
     /// ); // point is restricted to within grid bounds
     /// ```
     pub fn new(

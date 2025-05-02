@@ -86,12 +86,13 @@ where
     /// use ndarray::prelude::*;
     /// use ninterp::prelude::*;
     /// // f(x) = 0.4 * x
-    /// let interp = Interp1D::new(
+    /// // type annotation for clarity
+    /// let interp: Interp1DOwned<f64, _> = Interp1D::new(
     ///     // x
     ///     array![0., 1., 2.], // x0, x1, x2
     ///     // f(x)
     ///     array![0.0, 0.4, 0.8], // f(x0), f(x1), f(x2)
-    ///     strategy::Linear,
+    ///     strategy::Linear, // strategy mod is exposed via `use ndarray::prelude::*;`
     ///     Extrapolate::Enable,
     /// )
     /// .unwrap();

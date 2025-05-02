@@ -152,32 +152,38 @@ where
     /// use ndarray::prelude::*;
     /// use ninterp::prelude::*;
     /// // f(x, y, z) = 0.2 * x + 0.2 * y + 0.2 * z
-    /// let interp = InterpND::new(
+    /// // type annotation for clarity
+    /// let interp: InterpNDOwned<f64, _> = InterpND::new(
     ///     // grid
     ///     vec![
+    ///         // x
     ///         array![1., 2.], // x0, x1
-    ///         array![1., 2.], // y0, y1
-    ///         array![1., 2.], // z0, z1
+    ///         // y
+    ///         array![1., 2., 3.], // y0, y1, y2
+    ///         // z
+    ///         array![1., 2., 3., 4.], // z0, z1, z2, z3
     ///     ],
     ///     // values
     ///     array![
     ///         [
-    ///             [0.6, 0.8], // f(x0, y0, z0), f(x0, y0, z1)
-    ///             [0.8, 1.0], // f(x0, y1, z0), f(x0, y1, z1)
+    ///             [0.6, 0.8, 1.0, 1.2], // f(x0, y0, z0), f(x0, y0, z1), f(x0, y0, z2), f(x0, y0, z3)
+    ///             [0.8, 1.0, 1.2, 1.4], // f(x0, y1, z0), f(x0, y1, z1), f(x0, y1, z2), f(x0, y1, z3)
+    ///             [1.0, 1.2, 1.4, 1.6], // f(x0, y2, z0), f(x0, y2, z1), f(x0, y2, z2), f(x0, y2, z3)
     ///         ],
     ///         [
-    ///             [0.8, 1.0], // f(x1, y0, z0), f(x1, y0, z1)
-    ///             [1.0, 1.2], // f(x1, y1, z0), f(x1, y1, z1)
+    ///             [0.8, 1.0, 1.2, 1.4], // f(x1, y0, z0), f(x1, y0, z1), f(x1, y0, z2), f(x1, y0, z3)
+    ///             [1.0, 1.2, 1.4, 1.6], // f(x1, y1, z0), f(x1, y1, z1), f(x1, y1, z2), f(x1, y1, z3)
+    ///             [1.2, 1.4, 1.6, 1.8], // f(x1, y2, z0), f(x1, y2, z1), f(x1, y2, z2), f(x1, y2, z3)
     ///         ],
     ///     ].into_dyn(),
-    ///     strategy::Linear,
+    ///     strategy::Linear, // strategy mod is exposed via `use ndarray::prelude::*;`
     ///     Extrapolate::Error, // return an error when point is out of bounds
     /// )
     /// .unwrap();
     /// assert_eq!(interp.interpolate(&[1.5, 1.5, 1.5]).unwrap(), 0.9);
     /// // out of bounds point with `Extrapolate::Error` fails
     /// assert!(matches!(
-    ///     interp.interpolate(&[2.5, 2.5, 2.5]).unwrap_err(),
+    ///     interp.interpolate(&[5.5, 5.5, 5.5]).unwrap_err(),
     ///     ninterp::error::InterpolateError::ExtrapolateError(_)
     /// ));
     /// ```

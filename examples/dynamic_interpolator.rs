@@ -15,8 +15,8 @@ fn using_enum() {
     // Create `InterpolatorEnum`
     let mut interp = InterpolatorEnum::new_2d(
         array![0., 1.],
-        array![0., 1.],
-        array![[2., 4.], [4., 16.]],
+        array![0., 1., 2.],
+        array![[2., 4., 6.], [4., 16., 32.]],
         strategy::Linear,
         Extrapolate::Enable,
     )
@@ -56,8 +56,8 @@ fn using_boxdyn() {
     let mut boxed: Box<dyn Interpolator<_>> = Box::new(
         Interp2D::new(
             array![0., 1.],
-            array![0., 1.],
-            array![[2., 4.], [4., 16.]],
+            array![0., 1., 2.],
+            array![[2., 4., 6.], [4., 16., 32.]],
             strategy::Linear,
             Extrapolate::Enable,
         )
