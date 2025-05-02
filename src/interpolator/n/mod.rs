@@ -8,7 +8,9 @@ mod strategies;
 #[cfg(test)]
 mod tests;
 
-/// Interpolator data where N is determined at runtime
+/// Interpolator data for N-dimensional interpolators, where N can vary at runtime.
+///
+/// See [`InterpData`] and its aliases for concrete-dimensionality interpolator data structs.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
@@ -26,7 +28,9 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Coordinate grid: a vector of 1-dimensional [`ArrayBase<D, Ix1>`].
     pub grid: Vec<ArrayBase<D, Ix1>>,
+    /// Function values at coordinates: a single dynamic-dimensional [`ArrayBase`].
     pub values: ArrayBase<D, IxDyn>,
 }
 /// [`InterpDataND`] that views data.

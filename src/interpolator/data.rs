@@ -5,6 +5,9 @@ pub use one::{InterpData1D, InterpData1DOwned, InterpData1DViewed};
 pub use three::{InterpData3D, InterpData3DOwned, InterpData3DViewed};
 pub use two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
 
+/// Interpolator data for interpolators of concrete dimensionality `const N: usize`.
+///
+/// See [`InterpDataND`] for the N-dimensional interpolator data struct.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
@@ -29,7 +32,12 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Coordinate grid: an `N`-length array of 1-dimensional [`ArrayBase<D, Ix1>`].
+    /// - 1-D: `[x]`
+    /// - 2-D: `[x, y]`
+    /// - 3-D: `[x, y, z]`
     pub grid: [ArrayBase<D, Ix1>; N],
+    /// Function values at coordinates: a single `N`-dimensional [`ArrayBase`].
     pub values: ArrayBase<D, Dim<[Ix; N]>>,
 }
 pub type InterpDataViewed<T, const N: usize> = InterpData<ndarray::ViewRepr<T>, N>;
