@@ -58,6 +58,7 @@ use strategy::enums::*;
 /// See also: `examples/dynamic_interpolator.rs`
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 #[cfg_attr(
     feature = "serde",
     serde(bound(
@@ -290,10 +291,31 @@ where
 }
 
 mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
     #[test]
     fn test_partialeq() {
         #[derive(PartialEq)]
         #[allow(unused)]
-        struct MyStruct(super::InterpolatorEnumOwned<f64>);
+        struct MyStruct(InterpolatorEnumOwned<f64>);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde() {
+        let interp0: Interp1D<_, strategy::enums::Strategy1DEnum> = Interp1D::new(
+            array![0., 1., 2., 3., 4.],
+            array![0.2, 0.4, 0.6, 0.8, 1.0],
+            strategy::LeftNearest.into(),
+            Extrapolate::Error,
+        )
+        .unwrap();
+        let interp1 = InterpolatorEnum::from(interp0.clone());
+
+        assert_eq!(
+            serde_json::to_string(&interp0).unwrap(),
+            serde_json::to_string(&interp1).unwrap()
+        );
     }
 }

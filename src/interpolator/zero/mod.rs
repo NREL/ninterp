@@ -61,3 +61,18 @@ where
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde() {
+        let interp = Interp0D::new(0.5);
+
+        let ser = serde_json::to_string(&interp).unwrap();
+        let de: Interp0D<_> = serde_json::from_str(&ser).unwrap();
+        assert_eq!(interp, de);
+    }
+}

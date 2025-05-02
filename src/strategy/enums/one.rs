@@ -3,6 +3,7 @@ use super::*;
 /// See [enums module](super) documentation.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Strategy1DEnum {
     Linear(strategy::Linear),
     Nearest(strategy::Nearest),
@@ -81,5 +82,32 @@ where
             Strategy1DEnum::LeftNearest(strategy) => Strategy1D::<D>::allow_extrapolate(strategy),
             Strategy1DEnum::RightNearest(strategy) => Strategy1D::<D>::allow_extrapolate(strategy),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde() {
+        assert_eq!(
+            serde_json::to_string(&Strategy1DEnum::from(Linear)).unwrap(),
+            serde_json::to_string(&Linear).unwrap(),
+        );
+        assert_eq!(
+            serde_json::to_string(&Strategy1DEnum::from(Nearest)).unwrap(),
+            serde_json::to_string(&Nearest).unwrap(),
+        );
+        assert_eq!(
+            serde_json::to_string(&Strategy1DEnum::from(LeftNearest)).unwrap(),
+            serde_json::to_string(&LeftNearest).unwrap(),
+        );
+        assert_eq!(
+            serde_json::to_string(&Strategy1DEnum::from(RightNearest)).unwrap(),
+            serde_json::to_string(&RightNearest).unwrap(),
+        );
     }
 }

@@ -211,3 +211,21 @@ fn test_partialeq() {
     #[allow(unused)]
     struct MyStruct2(Interp3DOwned<f64, strategy::Linear>);
 }
+
+#[test]
+#[cfg(feature = "serde")]
+fn test_serde() {
+    let interp = Interp3D::new(
+        array![0., 1.],
+        array![0., 1.],
+        array![0., 1.],
+        array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
+        strategy::Nearest,
+        Extrapolate::Error,
+    )
+    .unwrap();
+
+    let ser = serde_json::to_string(&interp).unwrap();
+    let de: Interp3DOwned<f64, strategy::Nearest> = serde_json::from_str(&ser).unwrap();
+    assert_eq!(interp, de);
+}

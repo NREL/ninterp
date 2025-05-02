@@ -3,6 +3,7 @@ use super::*;
 /// See [enums module](super) documentation.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum StrategyNDEnum {
     Linear(strategy::Linear),
     Nearest(strategy::Nearest),
@@ -55,5 +56,24 @@ where
             StrategyNDEnum::Linear(strategy) => StrategyND::<D>::allow_extrapolate(strategy),
             StrategyNDEnum::Nearest(strategy) => StrategyND::<D>::allow_extrapolate(strategy),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde() {
+        assert_eq!(
+            serde_json::to_string(&StrategyNDEnum::from(Linear)).unwrap(),
+            serde_json::to_string(&Linear).unwrap(),
+        );
+        assert_eq!(
+            serde_json::to_string(&StrategyNDEnum::from(Nearest)).unwrap(),
+            serde_json::to_string(&Nearest).unwrap(),
+        );
     }
 }
