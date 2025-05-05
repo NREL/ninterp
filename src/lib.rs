@@ -212,7 +212,7 @@ pub(crate) use num_traits::{clamp, Euclid, Num, One};
 pub(crate) use dyn_clone::*;
 
 #[cfg(feature = "serde")]
-pub(crate) use ndarray::DataOwned;
+pub(crate) use ndarray::{DataOwned, IntoDimension};
 #[cfg(feature = "serde")]
 pub(crate) use serde::{Deserialize, Serialize};
 #[cfg(feature = "serde")]

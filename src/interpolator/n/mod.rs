@@ -31,6 +31,7 @@ where
     /// Coordinate grid: a vector of 1-dimensional [`ArrayBase<D, Ix1>`].
     pub grid: Vec<ArrayBase<D, Ix1>>,
     /// Function values at coordinates: a single dynamic-dimensional [`ArrayBase`].
+    #[cfg_attr(feature = "serde", serde(with = "serde_ndim"))]
     pub values: ArrayBase<D, IxDyn>,
 }
 /// [`InterpDataND`] that views data.
