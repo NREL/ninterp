@@ -14,13 +14,13 @@ pub use two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
     feature = "serde",
     serde(bound(
         serialize = "
-            D::Elem: Serialize,
+            D::Elem: Serialize + Clone,
             Dim<[usize; N]>: Serialize,
             [ArrayBase<D, Ix1>; N]: Serialize,
         ",
         deserialize = "
             D: DataOwned,
-            D::Elem: Deserialize<'de>,
+            D::Elem: Deserialize<'de> + Clone,
             Dim<[usize; N]>: Deserialize<'de> + Dimension,
             [usize; N]: IntoDimension<Dim = Dim<[usize; N]>>,
             [ArrayBase<D, Ix1>; N]: Deserialize<'de>,
@@ -37,6 +37,7 @@ where
     /// - 1-D: `[x]`
     /// - 2-D: `[x, y]`
     /// - 3-D: `[x, y, z]`
+    #[cfg_attr(feature = "serde", serde(with = "serde_arrays_2"))]
     pub grid: [ArrayBase<D, Ix1>; N],
     /// Function values at coordinates: a single `N`-dimensional [`ArrayBase`].
     #[cfg_attr(feature = "serde", serde(with = "serde_ndim"))]

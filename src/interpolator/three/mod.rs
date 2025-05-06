@@ -41,12 +41,12 @@ where
     feature = "serde",
     serde(bound(
         serialize = "
-            D::Elem: Serialize,
+            D::Elem: Serialize + Clone,
             S: Serialize,
         ",
         deserialize = "
             D: DataOwned,
-            D::Elem: Deserialize<'de>,
+            D::Elem: Deserialize<'de> + Clone,
             S: Deserialize<'de>,
         "
     ))
