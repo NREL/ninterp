@@ -32,14 +32,14 @@ pub(crate) mod serde_arr_array {
     ) -> Result<[ArrayBase<D, Ix1>; N], De::Error>
     where
         De: Deserializer<'de>,
-        D: DataOwned + RawDataClone,
-        D::Elem: Deserialize<'de> + Clone,
+        D: DataOwned,
+        D::Elem: Deserialize<'de>,
     {
         let items: Vec<Vec<D::Elem>> = Deserialize::deserialize(deserializer)?;
         let arrays: Vec<ArrayBase<D, Ix1>> = items.into_iter().map(|v| v.into()).collect();
         arrays
             .try_into()
-            .map_err(|_| De::Error::custom(format_args!("Expected {} arrays", N)))
+            .map_err(|_| De::Error::custom(format_args!("expected {} arrays", N)))
     }
 }
 
@@ -61,8 +61,8 @@ pub(crate) mod serde_vec_array {
     pub fn deserialize<'de, D, De>(deserializer: De) -> Result<Vec<ArrayBase<D, Ix1>>, De::Error>
     where
         De: Deserializer<'de>,
-        D: DataOwned + RawDataClone,
-        D::Elem: Deserialize<'de> + Clone,
+        D: DataOwned,
+        D::Elem: Deserialize<'de>,
     {
         let items = Vec::<Vec<D::Elem>>::deserialize(deserializer)?;
         let arrays = items.into_iter().map(|v| v.into()).collect();

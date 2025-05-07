@@ -17,7 +17,7 @@
 //!   ```text
 //!   cargo add ninterp --features serde
 //!   ```
-//! - `serde-simple`: same as `serde` feature, with alternate simplified array serde format
+//! - `serde-simple`: same as `serde` feature, with alternate simplified array format
 //!   ```text
 //!   cargo add ninterp --features serde-simple
 //!   ```
@@ -217,9 +217,9 @@ pub(crate) use dyn_clone::*;
 
 #[cfg(feature = "serde")]
 #[path = "serde.rs"]
-mod custom_serde;
+mod serde_mod;
 #[cfg(feature = "serde")]
-pub(crate) use crate::custom_serde::*;
+pub(crate) use serde_mod::*;
 
 #[cfg(test)]
 /// Alias for [`approx::assert_abs_diff_eq`] with `epsilon = 1e-6`
