@@ -37,10 +37,10 @@ where
     /// - 1-D: `[x]`
     /// - 2-D: `[x, y]`
     /// - 3-D: `[x, y, z]`
-    #[cfg_attr(feature = "serde", serde(with = "serde_arrays_2"))]
+    #[cfg_attr(feature = "serde-simple", serde(with = "serde_arr_array"))]
     pub grid: [ArrayBase<D, Ix1>; N],
     /// Function values at coordinates: a single `N`-dimensional [`ArrayBase`].
-    #[cfg_attr(feature = "serde", serde(with = "serde_ndim"))]
+    #[cfg_attr(feature = "serde-simple", serde(with = "serde_ndim"))]
     pub values: ArrayBase<D, Dim<[Ix; N]>>,
 }
 pub type InterpDataViewed<T, const N: usize> = InterpData<ndarray::ViewRepr<T>, N>;

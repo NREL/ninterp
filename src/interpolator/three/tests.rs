@@ -217,17 +217,26 @@ fn test_partialeq() {
 fn test_serde() {
     let interp = Interp3D::new(
         array![0., 1.],
-        array![0., 1.],
-        array![0., 1.],
-        array![[[0., 1.], [2., 3.]], [[4., 5.], [6., 7.]],],
-        strategy::Nearest,
+        array![0., 1., 2.],
+        array![0., 1., 2., 3.],
+        array![
+            [
+                [0.6, 0.8, 1.0, 1.2],
+                [0.8, 1.0, 1.2, 1.4],
+                [1.0, 1.2, 1.4, 1.6],
+            ],
+            [
+                [0.8, 1.0, 1.2, 1.4],
+                [1.0, 1.2, 1.4, 1.6],
+                [1.2, 1.4, 1.6, 1.8],
+            ],
+        ],
+        strategy::Linear,
         Extrapolate::Error,
     )
     .unwrap();
 
     let ser = serde_json::to_string(&interp).unwrap();
-    // TODO: remove
-    println!("{ser}");
-    let de: Interp3DOwned<f64, strategy::Nearest> = serde_json::from_str(&ser).unwrap();
+    let de: Interp3D<_, _> = serde_json::from_str(&ser).unwrap();
     assert_eq!(interp, de);
 }

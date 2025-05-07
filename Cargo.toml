@@ -23,7 +23,6 @@ serde = { version = "1.0.103", optional = true, features = ["derive"] }
 serde_unit_struct = { version = "0.1.3", optional = true }
 # TODO: modify when https://github.com/RReverser/serde-ndim/pull/2 merged
 # serde-ndim = { version = "2.0.2", optional = true, features = ["ndarray"] }
-# serde-ndim = { path = "../serde-ndim", optional = true, features = ["ndarray"] }
 serde-ndim = { git = "https://github.com/kylecarow/serde-ndim.git", optional = true, features = [
     "ndarray",
 ] }
@@ -41,10 +40,5 @@ name = "benchmark"
 harness = false
 
 [features]
-default = ["serde"] # TODO: remove
-serde = [
-    "dep:serde",
-    "ndarray/serde",
-    "dep:serde_unit_struct",
-    "dep:serde-ndim",
-]
+serde = ["dep:serde", "ndarray/serde", "dep:serde_unit_struct"]
+serde-simple = ["serde", "dep:serde-ndim"]

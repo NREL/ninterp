@@ -186,8 +186,6 @@ fn test_serde() {
     .unwrap();
 
     let ser = serde_json::to_string(&interp).unwrap();
-    // TODO: remove
-    println!("{ser}");
     let de: Interp1DOwned<f64, strategy::LeftNearest> = serde_json::from_str(&ser).unwrap();
     assert_eq!(interp, de);
 }

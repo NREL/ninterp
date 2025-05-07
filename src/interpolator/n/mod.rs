@@ -12,8 +12,6 @@ mod tests;
 ///
 /// See [`InterpData`] and its aliases for concrete-dimensionality interpolator data structs.
 #[derive(Debug, Clone)]
-// #[cfg_attr(feature = "serde", serde_as)]
-// #[cfg_attr(feature = "serde", cfg_eval::cfg_eval, serde_as)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(
     feature = "serde",
@@ -31,11 +29,11 @@ where
     D::Elem: PartialEq + Debug,
 {
     /// Coordinate grid: a vector of 1-dimensional [`ArrayBase<D, Ix1>`].
-    #[cfg_attr(feature = "serde", serde(with = "crate::serde_arrays"))]
+    #[cfg_attr(feature = "serde-simple", serde(with = "serde_vec_array"))]
     // #[cfg_attr(feature = "serde", serde(serialize_with = "serde_arrs::serialize"))]
     pub grid: Vec<ArrayBase<D, Ix1>>,
     /// Function values at coordinates: a single dynamic-dimensional [`ArrayBase`].
-    #[cfg_attr(feature = "serde", serde(with = "serde_ndim"))]
+    #[cfg_attr(feature = "serde-simple", serde(with = "serde_ndim"))]
     pub values: ArrayBase<D, IxDyn>,
 }
 /// [`InterpDataND`] that views data.

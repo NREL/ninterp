@@ -17,6 +17,10 @@
 //!   ```text
 //!   cargo add ninterp --features serde
 //!   ```
+//! - `serde-simple`: same as `serde` feature, with alternate simplified array serde format
+//!   ```text
+//!   cargo add ninterp --features serde-simple
+//!   ```
 //!
 //! # Examples
 //! See examples in `new` method documentation:
@@ -212,11 +216,10 @@ pub(crate) use num_traits::{clamp, Euclid, Num, One};
 pub(crate) use dyn_clone::*;
 
 #[cfg(feature = "serde")]
-pub(crate) use ndarray::{DataOwned, IntoDimension};
+#[path = "serde.rs"]
+mod custom_serde;
 #[cfg(feature = "serde")]
-pub(crate) use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-pub(crate) use serde_unit_struct::{Deserialize_unit_struct, Serialize_unit_struct};
+pub(crate) use crate::custom_serde::*;
 
 #[cfg(test)]
 /// Alias for [`approx::assert_abs_diff_eq`] with `epsilon = 1e-6`
@@ -257,126 +260,5 @@ mod tests {
         assert_eq!(wrap(0., -1., 1.), 0.);
         assert_eq!(wrap(0.5, -1., 1.), 0.5);
         assert_eq!(wrap(0.8, -1., 1.), 0.8);
-    }
-}
-
-#[cfg(feature = "serde")]
-mod serde_arrays {
-    use super::*;
-    use serde::{Deserializer, Serializer};
-
-    pub fn serialize<S, D>(grid: &[ArrayBase<D, Ix1>], serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        D: Data + RawDataClone + Clone,
-        D::Elem: Serialize + Clone,
-    {
-        let vecs: Vec<Vec<D::Elem>> = grid.iter().map(|arr| arr.to_vec()).collect();
-        vecs.serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D, De>(deserializer: De) -> Result<Vec<ArrayBase<D, Ix1>>, De::Error>
-    where
-        De: Deserializer<'de>,
-        D: DataOwned + RawDataClone,
-        D::Elem: Deserialize<'de> + Clone,
-    {
-        let vecs: Vec<Vec<D::Elem>> = Vec::deserialize(deserializer)?;
-        let arrays = vecs
-            .into_iter()
-            .map(|v| ArrayBase::<D, Ix1>::from_vec(v))
-            .collect();
-        Ok(arrays)
-    }
-}
-
-#[cfg(feature = "serde")]
-mod serde_arrays_2 {
-    use super::*;
-    use serde::de::{Deserializer, Error as DeError, SeqAccess, Visitor};
-    use serde::ser::{SerializeSeq, Serializer};
-    use std::marker::PhantomData;
-
-    pub fn serialize<S, D, const N: usize>(
-        grid: &[ArrayBase<D, Ix1>; N],
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        D: Data + RawDataClone + Clone,
-        D::Elem: Serialize + Clone,
-    {
-        let vecs: [Vec<D::Elem>; N] = std::array::from_fn(|i| grid[i].to_vec());
-        let mut seq = serializer.serialize_seq(Some(N))?;
-        for vec in &vecs {
-            seq.serialize_element(vec)?;
-        }
-        seq.end()
-    }
-
-    pub fn deserialize<'de, D, De, const N: usize>(
-        deserializer: De,
-    ) -> Result<[ArrayBase<D, Ix1>; N], De::Error>
-    where
-        De: Deserializer<'de>,
-        D: DataOwned,
-        D::Elem: Deserialize<'de> + Clone,
-    {
-        struct ArrayVisitor<D, const N: usize>(PhantomData<D>);
-
-        impl<'de, D, const N: usize> Visitor<'de> for ArrayVisitor<D, N>
-        where
-            D: DataOwned,
-            D::Elem: Deserialize<'de> + Clone,
-        {
-            type Value = [ArrayBase<D, Ix1>; N];
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str(&format!("an array of {} arrays", N))
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                // Create a Vec and then try to convert to array
-                let mut arrays = Vec::with_capacity(N);
-
-                // Handle either format (Vec<Vec<T>> or Vec<ArrayBase>)
-                for _ in 0..N {
-                    // Try to deserialize as Vec<T> first
-                    if let Ok(vec) = seq.next_element::<Vec<D::Elem>>() {
-                        if let Some(vec) = vec {
-                            arrays.push(ArrayBase::<D, Ix1>::from_vec(vec));
-                            continue;
-                        }
-                    }
-
-                    // Then try as ArrayBase
-                    if let Ok(arr) = seq.next_element::<ArrayBase<D, Ix1>>() {
-                        if let Some(arr) = arr {
-                            arrays.push(
-                                ArrayBase::<D, Ix1>::from_shape_vec(arr.len(), arr.to_vec())
-                                    .map_err(|e| DeError::custom(format!("Shape error: {}", e)))?,
-                            );
-                            continue;
-                        }
-                    }
-
-                    // If we get here, we didn't find a valid element
-                    return Err(DeError::custom(format!(
-                        "Expected {} arrays, found fewer",
-                        N
-                    )));
-                }
-
-                // Convert Vec to fixed-size array
-                arrays
-                    .try_into()
-                    .map_err(|_| DeError::custom(format!("Expected array of length {}", N)))
-            }
-        }
-
-        deserializer.deserialize_seq(ArrayVisitor::<D, N>(PhantomData))
     }
 }
