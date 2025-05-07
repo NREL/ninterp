@@ -1,6 +1,8 @@
 # ninterp
 
-[![docs.rs](https://img.shields.io/docsrs/ninterp)](https://docs.rs/ninterp/latest/ninterp) [![Crates.io Version](https://img.shields.io/crates/v/ninterp)](https://crates.io/crates/ninterp) [![GitHub](https://img.shields.io/badge/github-NREL/ninterp-blue)](https://github.com/NREL/ninterp/)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-ninterp-F74C00?style=for-the-badge&logo=docs.rs" height=25>](https://docs.rs/ninterp/latest/ninterp)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/ninterp?style=for-the-badge&color=FFC932&logo=rust" height=25>](https://crates.io/crates/ninterp)
+[<img alt="github.com" src="https://img.shields.io/badge/github-NREL/ninterp-0076BD?style=for-the-badge&logo=github" height=25>](https://github.com/NREL/ninterp/)
 
 The `ninterp` crate provides [multivariate interpolation](https://en.wikipedia.org/wiki/Multivariate_interpolation#Regular_grid) over rectilinear grids of any dimensionality.
 
