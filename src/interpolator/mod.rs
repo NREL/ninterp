@@ -1,3 +1,5 @@
+//! Module for all interpolation types.
+
 use super::*;
 
 mod n;
@@ -77,6 +79,7 @@ macro_rules! extrapolate_impl {
             D::Elem: PartialEq + Debug,
             S: $Strategy<D> + Clone,
         {
+            /// Check applicability of strategy, data, and extrapolate setting.
             pub fn check_extrapolate(
                 &self,
                 extrapolate: &Extrapolate<D::Elem>,

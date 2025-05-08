@@ -56,6 +56,7 @@ use strategy::enums::*;
 /// assert_eq!(interp.interpolate(&[]).unwrap(), 0.5);
 /// ```
 /// See also: `examples/dynamic_interpolator.rs`
+#[allow(missing_docs)]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]

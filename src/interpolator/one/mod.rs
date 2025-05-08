@@ -8,6 +8,7 @@ mod tests;
 
 const N: usize = 1;
 
+/// [`InterpData`] for 1-D data.
 pub type InterpData1D<D> = InterpData<D, N>;
 /// [`InterpData1D`] that views data.
 pub type InterpData1DViewed<T> = InterpData1D<ndarray::ViewRepr<T>>;
@@ -19,6 +20,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialOrd + Debug,
 {
+    /// Construct and validate a new [`InterpData1D`].
     pub fn new(x: ArrayBase<D, Ix1>, f_x: ArrayBase<D, Ix1>) -> Result<Self, ValidateError> {
         let data = Self {
             grid: [x],
@@ -52,8 +54,11 @@ where
     D::Elem: PartialEq + Debug,
     S: Strategy1D<D> + Clone,
 {
+    /// Interpolator data.
     pub data: InterpData1D<D>,
+    /// Interpolation strategy.
     pub strategy: S,
+    /// Extrapolation setting.
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate<D::Elem>,
 }

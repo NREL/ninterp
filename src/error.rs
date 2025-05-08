@@ -3,6 +3,7 @@
 use thiserror::Error;
 
 /// Error in interpolator data validation
+#[allow(missing_docs)]
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum ValidateError {
     #[error("selected `Strategy` ({0}) is unimplemented/inapplicable for interpolator")]
@@ -20,6 +21,7 @@ pub enum ValidateError {
 }
 
 /// Error in interpolation call
+#[allow(missing_docs)]
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum InterpolateError {
     #[error("attempted to interpolate at point beyond grid data: {0}")]
