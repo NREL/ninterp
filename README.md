@@ -21,10 +21,6 @@ cargo add ninterp
   ```
   cargo add ninterp --features serde
   ```
-- `serde-simple`: same as `serde` feature, with alternate simplified array format
-  ```
-  cargo add ninterp --features serde-simple
-  ```
 
 ## Examples
 See examples in `new` method documentation:

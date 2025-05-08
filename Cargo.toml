@@ -40,5 +40,9 @@ name = "benchmark"
 harness = false
 
 [features]
-serde = ["dep:serde", "ndarray/serde", "dep:serde_unit_struct"]
-serde-simple = ["serde", "dep:serde-ndim"]
+serde = [
+    "dep:serde",
+    "ndarray/serde",
+    "dep:serde_unit_struct",
+    "dep:serde-ndim",
+]

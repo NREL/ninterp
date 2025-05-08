@@ -239,4 +239,21 @@ fn test_serde() {
     let ser = serde_json::to_string(&interp).unwrap();
     let de: Interp3D<_, _> = serde_json::from_str(&ser).unwrap();
     assert_eq!(interp, de);
+
+    // simple format (new serialization output)
+    let ser0 = "{\"grid\":[[0.0,1.0],[0.0,1.0,2.0],[0.0,1.0,2.0,3.0]],\"values\":[[[0.6,0.8,1.0,1.2],[0.8,1.0,1.2,1.4],[1.0,1.2,1.4,1.6]],[[0.8,1.0,1.2,1.4],[1.0,1.2,1.4,1.6],[1.2,1.4,1.6,1.8]]]}";
+    let de0: InterpData3D<_> = serde_json::from_str(&ser0).unwrap();
+    assert_eq!(interp.data, de0);
+    // mixed format (simple grid)
+    let ser1 = "{\"grid\":[[0.0,1.0],[0.0,1.0,2.0],[0.0,1.0,2.0,3.0]],\"values\":{\"v\":1,\"dim\":[2,3,4],\"data\":[0.6,0.8,1.0,1.2,0.8,1.0,1.2,1.4,1.0,1.2,1.4,1.6,0.8,1.0,1.2,1.4,1.0,1.2,1.4,1.6,1.2,1.4,1.6,1.8]}}";
+    let de1: InterpData3D<_> = serde_json::from_str(&ser1).unwrap();
+    assert_eq!(interp.data, de1);
+    // mixed format (simple values)
+    let ser2 = "{\"grid\":[{\"v\":1,\"dim\":[2],\"data\":[0.0,1.0]},{\"v\":1,\"dim\":[3],\"data\":[0.0,1.0,2.0]},{\"v\":1,\"dim\":[4],\"data\":[0.0,1.0,2.0,3.0]}],\"values\":[[[0.6,0.8,1.0,1.2],[0.8,1.0,1.2,1.4],[1.0,1.2,1.4,1.6]],[[0.8,1.0,1.2,1.4],[1.0,1.2,1.4,1.6],[1.2,1.4,1.6,1.8]]]}";
+    let de2: InterpData3D<_> = serde_json::from_str(&ser2).unwrap();
+    assert_eq!(interp.data, de2);
+    // complex format (legacy serialization output)
+    let ser3 = "{\"grid\":[{\"v\":1,\"dim\":[2],\"data\":[0.0,1.0]},{\"v\":1,\"dim\":[3],\"data\":[0.0,1.0,2.0]},{\"v\":1,\"dim\":[4],\"data\":[0.0,1.0,2.0,3.0]}],\"values\":{\"v\":1,\"dim\":[2,3,4],\"data\":[0.6,0.8,1.0,1.2,0.8,1.0,1.2,1.4,1.0,1.2,1.4,1.6,0.8,1.0,1.2,1.4,1.0,1.2,1.4,1.6,1.2,1.4,1.6,1.8]}}";
+    let de3: InterpData3D<_> = serde_json::from_str(&ser3).unwrap();
+    assert_eq!(interp.data, de3);
 }
