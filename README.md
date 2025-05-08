@@ -12,13 +12,13 @@ All interpolators work with both owned and borrowed arrays (array views) of vari
 A variety of interpolation strategies are implemented and exposed in the [`prelude`](https://docs.rs/ninterp/latest/ninterp/prelude/index.html) module.
 Custom interpolation strategies can be defined in downstream crates.
 
-```
+```text
 cargo add ninterp
 ```
 
 #### Cargo Features
 - `serde`: support for [`serde`](https://crates.io/crates/serde) 1.x
-  ```
+  ```text
   cargo add ninterp --features serde
   ```
 
@@ -30,7 +30,7 @@ See examples in `new` method documentation:
 - [`Interp3D::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.Interp3D.html#method.new)
 - [`InterpND::new`](https://docs.rs/ninterp/latest/ninterp/interpolator/struct.InterpND.html#method.new)
 
-Also see the [`examples`](examples) directory for advanced examples:
+Also see the [`examples`](https://github.com/NREL/ninterp/tree/main/examples) directory for advanced examples:
 - Swapping strategies at runtime: **[`dynamic_strategy.rs`](examples/dynamic_strategy.rs)**
   - Using strategy enums (`strategy::enums::Strategy1DEnum`/etc.)
     - Compatible with `serde`

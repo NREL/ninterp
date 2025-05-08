@@ -1,3 +1,5 @@
+//! Strategy trait definitions for all dimensionalities.
+
 use super::*;
 
 /// Find nearest index in `arr` left of `target`
@@ -30,15 +32,18 @@ pub fn find_nearest_index<T: PartialOrd>(arr: ArrayView1<T>, target: &T) -> usiz
     }
 }
 
+/// 1-D interpolation strategy.
 pub trait Strategy1D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     fn init(&mut self, _data: &InterpData1D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
+    /// Execute interpolation (after handling [`Extrapolate`] setting).
     fn interpolate(
         &self,
         data: &InterpData1D<D>,
@@ -56,6 +61,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     #[inline]
     fn init(&mut self, data: &InterpData1D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
@@ -76,15 +82,18 @@ where
     }
 }
 
+/// 2-D interpolation strategy.
 pub trait Strategy2D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     fn init(&mut self, _data: &InterpData2D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
+    /// Execute interpolation (after handling [`Extrapolate`] setting).
     fn interpolate(
         &self,
         data: &InterpData2D<D>,
@@ -102,6 +111,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     #[inline]
     fn init(&mut self, data: &InterpData2D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
@@ -122,15 +132,18 @@ where
     }
 }
 
+/// 3-D interpolation strategy.
 pub trait Strategy3D<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     fn init(&mut self, _data: &InterpData3D<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
+    /// Execute interpolation (after handling [`Extrapolate`] setting).
     fn interpolate(
         &self,
         data: &InterpData3D<D>,
@@ -148,6 +161,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     #[inline]
     fn init(&mut self, data: &InterpData3D<D>) -> Result<(), ValidateError> {
         (**self).init(data)
@@ -168,15 +182,18 @@ where
     }
 }
 
+/// N-D interpolation strategy.
 pub trait StrategyND<D>: Debug + DynClone
 where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialEq + Debug,
 {
+    /// Initialize strategy struct, with access to interpolation data.
     fn init(&mut self, _data: &InterpDataND<D>) -> Result<(), ValidateError> {
         Ok(())
     }
 
+    /// Execute interpolation (after handling [`Extrapolate`] setting).
     fn interpolate(
         &self,
         data: &InterpDataND<D>,

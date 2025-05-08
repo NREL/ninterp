@@ -8,6 +8,7 @@ mod tests;
 
 const N: usize = 2;
 
+/// [`InterpData`] for 2-D data.
 pub type InterpData2D<D> = InterpData<D, N>;
 /// [`InterpData2D`] that views data.
 pub type InterpData2DViewed<T> = InterpData2D<ndarray::ViewRepr<T>>;
@@ -19,6 +20,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialOrd + Debug,
 {
+    /// Construct and validate a new [`InterpData2D`].
     pub fn new(
         x: ArrayBase<D, Ix1>,
         y: ArrayBase<D, Ix1>,
@@ -45,7 +47,7 @@ where
         ",
         deserialize = "
             D: DataOwned,
-            D::Elem: Deserialize<'de> + Clone,
+            D::Elem: Deserialize<'de>,
             S: Deserialize<'de>,
         "
     ))
@@ -56,8 +58,11 @@ where
     D::Elem: PartialEq + Debug,
     S: Strategy2D<D> + Clone,
 {
+    /// Interpolator data.
     pub data: InterpData2D<D>,
+    /// Interpolation strategy.
     pub strategy: S,
+    /// Extrapolation setting.
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate<D::Elem>,
 }
@@ -75,7 +80,7 @@ where
     D::Elem: PartialOrd + Debug,
     S: Strategy2D<D> + Clone,
 {
-    /// Instantiate two-dimensional interpolator.
+    /// Construct and validate a 2-D interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`strategy::Linear`]

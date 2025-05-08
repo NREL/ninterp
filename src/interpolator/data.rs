@@ -1,3 +1,5 @@
+//! Interpolator data-containing types for fixed dimensionalities.
+
 use super::*;
 
 pub use n::{InterpDataND, InterpDataNDOwned, InterpDataNDViewed};
@@ -44,7 +46,9 @@ where
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_fixed"))]
     pub values: ArrayBase<D, Dim<[Ix; N]>>,
 }
+/// [`InterpData`] that views data.
 pub type InterpDataViewed<T, const N: usize> = InterpData<ndarray::ViewRepr<T>, N>;
+/// [`InterpData`] that owns data.
 pub type InterpDataOwned<T, const N: usize> = InterpData<ndarray::ViewRepr<T>, N>;
 
 impl<D, const N: usize> PartialEq for InterpData<D, N>
@@ -65,6 +69,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialOrd + Debug,
 {
+    /// Validate interpolator data.
     pub fn validate(&self) -> Result<(), ValidateError> {
         for i in 0..N {
             let i_grid_len = self.grid[i].len();

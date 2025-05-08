@@ -1,6 +1,7 @@
 use super::*;
 
 /// See [enums module](super) documentation.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]

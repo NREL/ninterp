@@ -8,6 +8,7 @@ mod tests;
 
 const N: usize = 3;
 
+/// [`InterpData`] for 3-D data.
 pub type InterpData3D<D> = InterpData<D, N>;
 /// [`InterpData3D`] that views data.
 pub type InterpData3DViewed<T> = InterpData3D<ndarray::ViewRepr<T>>;
@@ -19,6 +20,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialOrd + Debug,
 {
+    /// Construct and validate a new [`InterpData3D`].
     pub fn new(
         x: ArrayBase<D, Ix1>,
         y: ArrayBase<D, Ix1>,
@@ -46,7 +48,7 @@ where
         ",
         deserialize = "
             D: DataOwned,
-            D::Elem: Deserialize<'de> + Clone,
+            D::Elem: Deserialize<'de>,
             S: Deserialize<'de>,
         "
     ))
@@ -57,8 +59,11 @@ where
     D::Elem: PartialEq + Debug,
     S: Strategy3D<D> + Clone,
 {
+    /// Interpolator data.
     pub data: InterpData3D<D>,
+    /// Interpolation strategy.
     pub strategy: S,
+    /// Extrapolation setting.
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate<D::Elem>,
 }
@@ -76,7 +81,7 @@ where
     D::Elem: PartialOrd + Debug,
     S: Strategy3D<D> + Clone,
 {
-    /// Instantiate three-dimensional interpolator.
+    /// Construct and validate a 3-D interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`strategy::Linear`]

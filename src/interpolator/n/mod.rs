@@ -57,6 +57,7 @@ where
     D: Data + RawDataClone + Clone,
     D::Elem: PartialOrd + Debug,
 {
+    /// Get data dimensionality.
     pub fn ndim(&self) -> usize {
         if self.values.len() == 1 {
             0
@@ -65,6 +66,7 @@ where
         }
     }
 
+    /// Construct and validate a new [`InterpDataND`].
     pub fn new(
         grid: Vec<ArrayBase<D, Ix1>>,
         values: ArrayBase<D, IxDyn>,
@@ -74,6 +76,7 @@ where
         Ok(data)
     }
 
+    /// Validate interpolator data.
     pub fn validate(&self) -> Result<(), ValidateError> {
         let n = self.ndim();
         if (self.grid.len() != n) && !(n == 0 && self.grid.iter().all(|g| g.is_empty())) {
@@ -116,7 +119,7 @@ where
         ",
         deserialize = "
             D: DataOwned,
-            D::Elem: Deserialize<'de> + Clone,
+            D::Elem: Deserialize<'de>,
             S: Deserialize<'de>,
         "
     ))
@@ -127,8 +130,11 @@ where
     D::Elem: PartialEq + Debug,
     S: StrategyND<D> + Clone,
 {
+    /// Interpolator data.
     pub data: InterpDataND<D>,
+    /// Interpolation strategy.
     pub strategy: S,
+    /// Extrapolation setting.
     #[cfg_attr(feature = "serde", serde(default))]
     pub extrapolate: Extrapolate<D::Elem>,
 }
@@ -146,7 +152,7 @@ where
     D::Elem: PartialOrd + Debug,
     S: StrategyND<D> + Clone,
 {
-    /// Instantiate N-dimensional (any dimensionality) interpolator.
+    /// Construct and validate an N-D (any dimensionality) interpolator.
     ///
     /// Applicable interpolation strategies:
     /// - [`strategy::Linear`]

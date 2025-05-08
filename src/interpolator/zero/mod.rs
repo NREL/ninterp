@@ -13,7 +13,7 @@ impl<T> Interp0D<T>
 where
     T: PartialEq + Debug,
 {
-    /// Instantiate constant-value 'interpolator'.
+    /// Construct a constant-value 'interpolator'.
     ///
     /// # Example:
     /// ```
