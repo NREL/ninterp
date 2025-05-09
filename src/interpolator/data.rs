@@ -16,7 +16,7 @@ pub use two::{InterpData2D, InterpData2DOwned, InterpData2DViewed};
     feature = "serde",
     serde(bound(
         serialize = "
-            D::Elem: Serialize + Clone,
+            D::Elem: Serialize,
             Dim<[usize; N]>: Serialize,
             [ArrayBase<D, Ix1>; N]: Serialize,
         ",

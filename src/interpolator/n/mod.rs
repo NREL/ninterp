@@ -16,7 +16,7 @@ mod tests;
 #[cfg_attr(
     feature = "serde",
     serde(bound(
-        serialize = "D::Elem: Serialize + Clone",
+        serialize = "D::Elem: Serialize",
         deserialize = "
             D: DataOwned,
             D::Elem: Deserialize<'de>,
@@ -114,7 +114,7 @@ where
     feature = "serde",
     serde(bound(
         serialize = "
-            D::Elem: Serialize + Clone,
+            D::Elem: Serialize,
             S: Serialize,
         ",
         deserialize = "

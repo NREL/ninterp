@@ -43,7 +43,7 @@ where
     feature = "serde",
     serde(bound(
         serialize = "
-            D::Elem: Serialize + Clone,
+            D::Elem: Serialize,
             S: Serialize,
         ",
         deserialize = "

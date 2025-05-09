@@ -8,11 +8,17 @@ use serde::de::{Deserializer, Error};
 use serde::ser::{SerializeSeq, Serializer};
 use serde_ndim::de::MakeNDim;
 
+#[derive(Serialize)]
+struct ArrayWrapper<'a, D>(
+    #[serde(serialize_with = "serde_ndim::serialize")] &'a ArrayBase<D, Ix1>,
+)
+where
+    D: Data,
+    D::Elem: Serialize;
+
 #[derive(Deserialize)]
 #[serde(untagged)]
-#[serde(bound = "
-    D::Elem: Deserialize<'de>,
-")]
+#[serde(bound = "D::Elem: Deserialize<'de>")]
 enum GridType<D: DataOwned> {
     VecVec(Vec<Vec<D::Elem>>),
     VecArray(Vec<ArrayBase<D, Ix1>>),
@@ -26,14 +32,13 @@ pub(crate) mod serde_arr_array {
         serializer: Ser,
     ) -> Result<Ser::Ok, Ser::Error>
     where
-        D: Data + RawDataClone + Clone,
-        D::Elem: Serialize + Clone,
+        D: Data,
+        D::Elem: Serialize,
         Ser: Serializer,
     {
-        let vecs: [Vec<D::Elem>; N] = std::array::from_fn(|i| grid[i].to_vec());
         let mut seq = serializer.serialize_seq(Some(N))?;
-        for vec in &vecs {
-            seq.serialize_element(vec)?;
+        for arr in grid {
+            seq.serialize_element(&ArrayWrapper(arr))?;
         }
         seq.end()
     }
@@ -63,12 +68,15 @@ pub(crate) mod serde_vec_array {
         serializer: Ser,
     ) -> Result<Ser::Ok, Ser::Error>
     where
-        D: Data + RawDataClone + Clone,
-        D::Elem: Serialize + Clone,
+        D: Data,
+        D::Elem: Serialize,
         Ser: Serializer,
     {
-        let vecs: Vec<Vec<D::Elem>> = grid.iter().map(|arr| arr.to_vec()).collect();
-        vecs.serialize(serializer)
+        let mut seq = serializer.serialize_seq(Some(grid.len()))?;
+        for arr in grid {
+            seq.serialize_element(&ArrayWrapper(arr))?;
+        }
+        seq.end()
     }
 
     pub fn deserialize<'de, D, De>(deserializer: De) -> Result<Vec<ArrayBase<D, Ix1>>, De::Error>
@@ -106,9 +114,8 @@ pub fn deserialize_fixed<'de, D, const N: usize, De>(
 ) -> Result<ArrayBase<D, Dim<[Ix; N]>>, De::Error>
 where
     D: DataOwned,
-    Dim<[Ix; N]>: Dimension,
-    ArrayBase<D, Dim<[Ix; N]>>: Deserialize<'de>,
     D::Elem: Deserialize<'de>,
+    Dim<[Ix; N]>: Dimension + Deserialize<'de>,
     ArrayBase<D, Dim<[Ix; N]>>: MakeNDim<Item = D::Elem>,
     De: Deserializer<'de>,
 {
