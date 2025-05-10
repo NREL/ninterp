@@ -30,7 +30,9 @@ where
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
+        // TODO: avoid this clone
         let mut point = point.to_vec();
+        // TODO: avoid this clone
         let mut grid = data.grid.clone();
         let mut values_view = data.values.view();
         for dim in (0..n).rev() {
@@ -129,7 +131,9 @@ where
         // Point can share up to N values of a grid point, which reduces the problem dimensionality
         // i.e. the point shares one of three values of a 3-D grid point, then the interpolation becomes 2-D at that slice
         // or   if the point shares two of three values of a 3-D grid point, then the interpolation becomes 1-D
+        // TODO: avoid this clone
         let mut point = point.to_vec();
+        // TODO: avoid this clone
         let mut grid = data.grid.clone();
         let mut values_view = data.values.view();
         for dim in (0..n).rev() {
