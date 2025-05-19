@@ -7,6 +7,12 @@ use thiserror::Error;
 #[allow(missing_docs)]
 #[derive(Error, Clone, PartialEq)]
 pub enum ValidateError {
+    // TODO: Add this to next patch release 0.7.x
+    // TODO: Then remove variant in next breaking release
+    // #[deprecated(
+    //     since = "0.7.x",
+    //     note = "unused error variant, will be removed in a future version"
+    // )]
     #[error("selected `Strategy` ({0}) is unimplemented/inapplicable for interpolator")]
     StrategySelection(&'static str),
     #[error("selected `Extrapolate` variant ({0}) is unimplemented/inapplicable for interpolator")]
