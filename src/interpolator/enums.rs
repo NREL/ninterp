@@ -189,6 +189,31 @@ where
             extrapolate,
         )?))
     }
+
+    /// Return an interpolator with viewed data.
+    pub fn view(&self) -> InterpolatorEnumViewed<&D::Elem> {
+        match self {
+            InterpolatorEnum::Interp0D(interp) => InterpolatorEnum::Interp0D(interp.clone()),
+            InterpolatorEnum::Interp1D(interp) => InterpolatorEnum::Interp1D(interp.view()),
+            InterpolatorEnum::Interp2D(interp) => InterpolatorEnum::Interp2D(interp.view()),
+            InterpolatorEnum::Interp3D(interp) => InterpolatorEnum::Interp3D(interp.view()),
+            InterpolatorEnum::InterpND(interp) => InterpolatorEnum::InterpND(interp.view()),
+        }
+    }
+
+    /// Turn the interpolator into an [`InterpolatorEnumOwned`], cloning the array elements if necessary.
+    pub fn into_owned(self) -> InterpolatorEnumOwned<D::Elem>
+    where
+        D::Elem: Clone,
+    {
+        match self {
+            InterpolatorEnum::Interp0D(interp) => InterpolatorEnum::Interp0D(interp.clone()),
+            InterpolatorEnum::Interp1D(interp) => InterpolatorEnum::Interp1D(interp.into_owned()),
+            InterpolatorEnum::Interp2D(interp) => InterpolatorEnum::Interp2D(interp.into_owned()),
+            InterpolatorEnum::Interp3D(interp) => InterpolatorEnum::Interp3D(interp.into_owned()),
+            InterpolatorEnum::InterpND(interp) => InterpolatorEnum::InterpND(interp.into_owned()),
+        }
+    }
 }
 
 impl<D> Interpolator<D::Elem> for InterpolatorEnum<D>

@@ -111,9 +111,20 @@ where
 
     /// View interpolator data.
     pub fn view(&self) -> InterpDataNDViewed<&D::Elem> {
-        InterpDataND {
+        InterpDataNDViewed {
             grid: self.grid.iter().map(|g| g.view()).collect(),
             values: self.values.view(),
+        }
+    }
+
+    /// Turn the data into an [`InterpDataNDOwned`], cloning the array elements if necessary.
+    pub fn into_owned(self) -> InterpDataNDOwned<D::Elem>
+    where
+        D::Elem: Clone,
+    {
+        InterpDataNDOwned {
+            grid: self.grid.into_iter().map(|g| g.into_owned()).collect(),
+            values: self.values.into_owned(),
         }
     }
 }
@@ -233,8 +244,21 @@ where
         S: for<'a> StrategyND<ViewRepr<&'a D::Elem>>,
         D::Elem: Clone,
     {
-        InterpND {
+        InterpNDViewed {
             data: self.data.view(),
+            strategy: self.strategy.clone(),
+            extrapolate: self.extrapolate.clone(),
+        }
+    }
+
+    /// Turn the interpolator into an [`InterpNDOwned`], cloning the array elements if necessary.
+    pub fn into_owned(self) -> InterpNDOwned<D::Elem, S>
+    where
+        S: StrategyND<OwnedRepr<D::Elem>>,
+        D::Elem: Clone,
+    {
+        InterpNDOwned {
+            data: self.data.into_owned(),
             strategy: self.strategy.clone(),
             extrapolate: self.extrapolate.clone(),
         }

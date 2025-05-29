@@ -129,8 +129,21 @@ where
         S: for<'a> Strategy1D<ViewRepr<&'a D::Elem>>,
         D::Elem: Clone,
     {
-        Interp1D {
+        Interp1DViewed {
             data: self.data.view(),
+            strategy: self.strategy.clone(),
+            extrapolate: self.extrapolate.clone(),
+        }
+    }
+
+    /// Turn the interpolator into an [`Interp1DOwned`], cloning the array elements if necessary.
+    pub fn into_owned(self) -> Interp1DOwned<D::Elem, S>
+    where
+        S: Strategy1D<OwnedRepr<D::Elem>>,
+        D::Elem: Clone,
+    {
+        Interp1DOwned {
+            data: self.data.into_owned(),
             strategy: self.strategy.clone(),
             extrapolate: self.extrapolate.clone(),
         }
