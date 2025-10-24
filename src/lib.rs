@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 
 /// The `prelude` module exposes a variety of types:
 /// - All interpolator structs:

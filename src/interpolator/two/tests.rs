@@ -145,6 +145,7 @@ fn test_extrapolate_fill() {
 }
 
 #[test]
+#[cfg(feature = "std")]
 fn test_dyn_strategy() {
     let mut interp = Interp2D::new(
         array![0., 1.],
