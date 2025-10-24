@@ -19,8 +19,8 @@ pub use zero::Interp0D;
 
 /// An interpolator of data type `T`
 ///
-/// This trait is dyn-compatible, meaning you can use:
-/// `Box<dyn Interpolator<_>>`
+/// When `std` is enabled this trait is dyn-compatible,
+/// meaning you can use: `Box<dyn Interpolator<_>>`
 /// and swap the contained interpolator at runtime.
 pub trait Interpolator<T>: DynClone {
     /// Interpolator dimensionality.
@@ -35,6 +35,7 @@ pub trait Interpolator<T>: DynClone {
 
 clone_trait_object!(<T> Interpolator<T>);
 
+#[cfg(feature = "std")]
 impl<T> Interpolator<T> for Box<dyn Interpolator<T>> {
     fn ndim(&self) -> usize {
         (**self).ndim()

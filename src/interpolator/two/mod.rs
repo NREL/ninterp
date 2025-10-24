@@ -232,6 +232,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<D> Interp2D<D, Box<dyn Strategy2D<D>>>
 where
     D: Data + RawDataClone + Clone,

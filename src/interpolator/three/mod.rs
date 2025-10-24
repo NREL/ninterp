@@ -244,6 +244,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<D> Interp3D<D, Box<dyn Strategy3D<D>>>
 where
     D: Data + RawDataClone + Clone,

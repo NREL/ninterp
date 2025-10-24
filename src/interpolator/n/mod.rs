@@ -346,6 +346,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<D> InterpND<D, Box<dyn StrategyND<D>>>
 where
     D: Data + RawDataClone + Clone,

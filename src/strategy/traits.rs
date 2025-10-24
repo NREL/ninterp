@@ -56,6 +56,7 @@ where
 
 clone_trait_object!(<D> Strategy1D<D>);
 
+#[cfg(feature = "std")]
 impl<D> Strategy1D<D> for Box<dyn Strategy1D<D>>
 where
     D: Data + RawDataClone + Clone,
@@ -106,6 +107,7 @@ where
 
 clone_trait_object!(<D> Strategy2D<D>);
 
+#[cfg(feature = "std")]
 impl<D> Strategy2D<D> for Box<dyn Strategy2D<D>>
 where
     D: Data + RawDataClone + Clone,
@@ -156,6 +158,7 @@ where
 
 clone_trait_object!(<D> Strategy3D<D>);
 
+#[cfg(feature = "std")]
 impl<D> Strategy3D<D> for Box<dyn Strategy3D<D>>
 where
     D: Data + RawDataClone + Clone,
@@ -206,6 +209,7 @@ where
 
 clone_trait_object!(<D> StrategyND<D>);
 
+#[cfg(feature = "std")]
 impl<D> StrategyND<D> for Box<dyn StrategyND<D>>
 where
     D: Data + RawDataClone + Clone,
