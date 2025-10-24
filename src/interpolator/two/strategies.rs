@@ -13,7 +13,7 @@ where
     ) -> Result<D::Elem, InterpolateError> {
         // Extrapolation is checked previously in Interpolator::interpolate,
         // meaning by now, point is within grid bounds or extrapolation is enabled
-        let lowers: [usize; 2] = std::array::from_fn(|dim| {
+        let lowers: [usize; 2] = core::array::from_fn(|dim| {
             if &point[dim] < data.grid[dim].first().unwrap() {
                 0
             } else if &point[dim] > data.grid[dim].last().unwrap() {

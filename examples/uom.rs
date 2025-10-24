@@ -14,8 +14,8 @@ fn main() {
     // This means we can get the contained type via transmuting.
     let interp: Interp1DViewed<&f64, _> = unsafe {
         Interp1D::new(
-            std::mem::transmute(x.view()),
-            std::mem::transmute(f_x.view()),
+            core::mem::transmute(x.view()),
+            core::mem::transmute(f_x.view()),
             strategy::Linear,
             Extrapolate::Error,
         )

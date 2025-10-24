@@ -45,7 +45,7 @@ pub(crate) use interpolator::*;
 pub(crate) use error::*;
 pub(crate) use strategy::traits::*;
 
-pub(crate) use std::fmt::Debug;
+pub(crate) use core::fmt::Debug;
 
 pub use ndarray;
 pub(crate) use ndarray::prelude::*;

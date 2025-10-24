@@ -91,7 +91,7 @@ where
     /// View interpolator data.
     pub fn view(&self) -> InterpDataViewed<&D::Elem, N> {
         InterpDataViewed {
-            grid: std::array::from_fn(|i| self.grid[i].view()),
+            grid: core::array::from_fn(|i| self.grid[i].view()),
             values: self.values.view(),
         }
     }

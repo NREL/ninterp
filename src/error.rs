@@ -1,6 +1,6 @@
 //! Crate error types
 
-use std::fmt;
+use core::fmt;
 use thiserror::Error;
 
 /// Error in interpolator data validation

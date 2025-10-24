@@ -191,7 +191,7 @@ where
                     Extrapolate::Enable => {}
                     Extrapolate::Fill(value) => return Ok(*value),
                     Extrapolate::Clamp => {
-                        let clamped_point = std::array::from_fn(|i| {
+                        let clamped_point = core::array::from_fn(|i| {
                             *clamp(
                                 &point[i],
                                 self.data.grid[i].first().unwrap(),
@@ -201,7 +201,7 @@ where
                         return self.strategy.interpolate(&self.data, &clamped_point);
                     }
                     Extrapolate::Wrap => {
-                        let wrapped_point = std::array::from_fn(|i| {
+                        let wrapped_point = core::array::from_fn(|i| {
                             wrap(
                                 point[i],
                                 *self.data.grid[i].first().unwrap(),
